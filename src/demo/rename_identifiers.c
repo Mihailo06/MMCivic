@@ -13,9 +13,7 @@
 #include "palm/str.h"
 #include "palm/memory.h"
 
-
-static void rename_var(node_st *node)
-{
+static void rename_var(node_st *node) {
     char *name = NULL;
 
     name = VARS_NAME(node);
@@ -26,8 +24,7 @@ static void rename_var(node_st *node)
 /**
  * @fn RIvarlet
  */
-node_st *RIvarlet(node_st *node)
-{
+node_st *RIvarlet(node_st *node) {
     rename_var(node);
     return node;
 }
@@ -35,8 +32,7 @@ node_st *RIvarlet(node_st *node)
 /**
  * @fn RIvar
  */
-node_st *RIvar(node_st *node)
-{
+node_st *RIvar(node_st *node) {
     rename_var(node);
     return node;
 }

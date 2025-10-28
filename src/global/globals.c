@@ -2,13 +2,11 @@
 
 struct globals global;
 
-
 /*
  * Initialize global variables from globals.mac
  */
 
-void GLBinitializeGlobals()
-{
+void GLBinitializeGlobals() {
     global.col = 0;
     global.line = 0;
     global.input_file = NULL;
