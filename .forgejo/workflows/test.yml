@@ -1,0 +1,37 @@
+on: [push, pull_request]
+
+jobs:
+  compile:
+    runs-on: docker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Packages
+        run: |
+          apt update
+          apt install -y build-essential cmake bison flex
+
+      - name: Build
+        run: |
+          make -C coconut -j$(nproc)
+          cmake -B build
+          cmake --build build -j$(nproc)
+
+  format-check:
+    runs-on: docker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Packages
+        run: |
+          apt update
+          apt install -y clang-format
+
+      - name: Check Format
+        run: |
+          find -name '*.c' -or -name '*.h' | xargs clang-format --dry-run -Werror
+
