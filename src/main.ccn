@@ -4,6 +4,7 @@ start phase RootPhase {
     actions {
         pass SPdoScanParse;
         Demo;
+        Optimize;
         print;
     }
 };
@@ -14,6 +15,14 @@ traversal Print {
 
 phase Demo {
     actions {
+        traversal CountOperators {
+            uid = CountOperators_,
+            nodes = { Program, Binop },
+            travdata {
+                user progdata_ptr progdata
+            }
+        };
+
         traversal RenameIdentifiers {
             uid = RI,
             nodes = { Var, VarLet }
@@ -26,9 +35,24 @@ phase Demo {
                 int sum
             }
         };
+    }
+};
 
+phase Optimize {
+    actions {
         traversal OptSubstraction {
             uid = OS,
+            nodes = { Binop }
+        };
+
+        // Commented out in favor of super strength reduction. Comment in to test.
+        //traversal StrengthReduction {
+        //    uid = StrengthReduction_, // I don't really get the confusing two-letter UIDs.
+        //    nodes = { Binop }
+        //};
+
+        traversal SuperStrengthReduction {
+            uid = SuperStrengthReduction_,
             nodes = { Binop }
         };
     }
@@ -60,6 +84,10 @@ nodeset Link = Expr | Stmt;
 root node Program {
     children {
         Stmts stmts { constructor, mandatory }
+    },
+    attributes {
+        int n_add, int n_sub, int n_mul, int n_div, int n_mod, int n_lt, int n_le, int n_gt,
+        int n_ge, int n_eq, int n_ne, int n_and, int n_or
     }
 };
 

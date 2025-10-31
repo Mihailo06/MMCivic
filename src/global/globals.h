@@ -9,6 +9,7 @@ struct globals {
     int verbose;
     char *input_file;
     char *output_file;
+    int strength_reduction_depth;
 };
 
 extern struct globals global;

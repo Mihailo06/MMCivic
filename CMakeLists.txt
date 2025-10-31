@@ -33,7 +33,8 @@ add_executable(civicc ${FLEX_CivicLexer_OUTPUTS} ${BISON_CivicParser_OUTPUTS}
     src/global/globals.c src/global/globals.h
 
     # Youre free to remove the demo directory and these entries.
-    src/demo/opt_sub.c src/demo/sum_ints.c src/demo/rename_identifiers.c
+    src/demo/sum_ints.c src/demo/rename_identifiers.c src/demo/count_operators.c
+    src/optimize/opt_sub.c src/optimize/strength_reduction.c src/optimize/super_strength_reduction.c
 )
 
 target_compile_options(civicc PRIVATE

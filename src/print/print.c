@@ -7,7 +7,6 @@
  *
  */
 
-#include "ccn/ccn.h"
 #include "ccngen/ast.h"
 #include "ccngen/trav.h"
 #include "palm/dbug.h"
@@ -16,6 +15,24 @@
  * @fn PRTprogram
  */
 node_st *PRTprogram(node_st *node) {
+    struct NODE_DATA_PROGRAM *progdata = node->data.N_program;
+
+#define OPCOUNT_PRINT(op) printf("number of " #op " operators: %d\n", progdata->n_##op)
+    OPCOUNT_PRINT(add);
+    OPCOUNT_PRINT(sub);
+    OPCOUNT_PRINT(mul);
+    OPCOUNT_PRINT(div);
+    OPCOUNT_PRINT(mod);
+    OPCOUNT_PRINT(lt);
+    OPCOUNT_PRINT(le);
+    OPCOUNT_PRINT(gt);
+    OPCOUNT_PRINT(ge);
+    OPCOUNT_PRINT(eq);
+    OPCOUNT_PRINT(ne);
+    OPCOUNT_PRINT(and);
+    OPCOUNT_PRINT(or);
+#undef OPCOUNT_PRINT
+
     TRAVstmts(node);
     return node;
 }
@@ -49,7 +66,7 @@ node_st *PRTassign(node_st *node) {
  */
 node_st *PRTbinop(node_st *node) {
     char *tmp = NULL;
-    printf("( ");
+    printf("(");
 
     TRAVleft(node);
 
@@ -101,7 +118,7 @@ node_st *PRTbinop(node_st *node) {
 
     TRAVright(node);
 
-    printf(")(%d:%d-%d)", NODE_BLINE(node), NODE_BCOL(node), NODE_ECOL(node));
+    printf(")");
 
     return node;
 }
@@ -110,7 +127,7 @@ node_st *PRTbinop(node_st *node) {
  * @fn PRTvarlet
  */
 node_st *PRTvarlet(node_st *node) {
-    printf("%s(%d:%d)", VARLET_NAME(node), NODE_BLINE(node), NODE_BCOL(node));
+    printf("%s", VARLET_NAME(node));
     return node;
 }
 

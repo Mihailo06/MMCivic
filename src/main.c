@@ -14,28 +14,33 @@ static void Usage(char *program) {
     if (program_bin)
         program = program_bin + 1;
 
+    // clang-format off
     printf("Usage: %s [OPTION...] <civic file>\n", program);
     printf("Options:\n");
-    printf("  -h                           This help message.\n");
-    printf("  --output/-o <output_file>    Output assembly to output file instead of STDOUT.\n");
-    printf("  --verbose/-v                 Enable verbose mode.\n");
-    printf("  --breakpoint/-b <breakpoint> Set a breakpoint.\n");
-    printf("  --structure/-s               Pretty print the structure of the compiler.\n");
+    printf("  -h                             This help message.\n");
+    printf("  --output/-o <output_file>      Output assembly to output file instead of STDOUT.\n");
+    printf("  --verbose/-v                   Enable verbose mode.\n");
+    printf("  --breakpoint/-b <breakpoint>   Set a breakpoint.\n");
+    printf("  --structure/-s                 Pretty print the structure of the compiler.\n");
+    printf("  --strength-reduction-depth/-d  Maximum factor to apply super strength reduction to.\n");
+    // clang-format on
 }
 
 /* Parse command lines. Usages the globals struct to store data. */
 static int ProcessArgs(int argc, char *argv[]) {
-    static struct option long_options[] = { { "verbose", no_argument, 0, 'v' },
-                                            { "output", required_argument, 0, 'o' },
-                                            { "breakpoint", required_argument, 0, 'b' },
-                                            { "structure", no_argument, 0, 's' },
-                                            { 0, 0, 0, 0 } };
+    static struct option long_options[]
+        = { { "verbose", no_argument, 0, 'v' },
+            { "output", required_argument, 0, 'o' },
+            { "breakpoint", required_argument, 0, 'b' },
+            { "structure", no_argument, 0, 's' },
+            { "strength-reduction-depth", required_argument, 0, 'd' },
+            { 0, 0, 0, 0 } };
 
     int option_index;
     int c;
 
     while (1) {
-        c = getopt_long(argc, argv, "hsvo:b:", long_options, &option_index);
+        c = getopt_long(argc, argv, "hsvo:b:d:", long_options, &option_index);
 
         // End of options
         if (c == -1)
@@ -65,6 +70,19 @@ static int ProcessArgs(int argc, char *argv[]) {
             case '?':
                 Usage(argv[0]);
                 exit(EXIT_FAILURE);
+            case 'd':
+                for (char *c = optarg; *c; c++) {
+                    if (!isdigit(*c)) {
+                        fprintf(
+                            stderr,
+                            "Strength reduction argument contains non-digit character '%c'",
+                            *c
+                        );
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                global.strength_reduction_depth = atoi(optarg);
+                break;
         }
     }
     if (optind == argc - 1) {

@@ -11,4 +11,5 @@ void GLBinitializeGlobals() {
     global.line = 0;
     global.input_file = NULL;
     global.output_file = NULL;
+    global.strength_reduction_depth = 3;
 }
