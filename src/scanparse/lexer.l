@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "scanparse/lexer_util.h"
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
 #include "parser.h"
@@ -38,9 +39,14 @@ int yycolumn = 1;
 
 
 %%
+("//".*"\n")               { global.line += 1;}
 
+"{"                        { FILTER( CURLY_BRACKET_L);}
+"}"                        { FILTER( CURLY_BRACKET_R);}
 "("                        { FILTER( BRACKET_L); }
 ")"                        { FILTER( BRACKET_R); }
+"["                        { FILTER( SQUARE_BRACKET_L); }
+"]"                        { FILTER( SQUARE_BRACKET_R); }
 ","                        { FILTER( COMMA); }
 ";"                        { FILTER( SEMICOLON); }
 
@@ -56,19 +62,49 @@ int yycolumn = 1;
 ">"                        { FILTER( GT);    }
 "=="                       { FILTER( EQ);    }
 "!="                       { FILTER( NE);    }
+
 "&&"                       { FILTER( AND);    }
 "||"                       { FILTER( OR);    }
+
+"!"                        { FILTER( NOT);      }
 
 "="                        { FILTER( LET);    }
 
 "true"                     { FILTER( TRUEVAL); }
 "false"                    { FILTER( FALSEVAL); }
 
+"extern"                   { FILTER( EXTERN); }
+"export"                   { FILTER( EXPORT); }
+"void"                     { FILTER( VOID_TYPE); }
+
+"bool"                     { FILTER( BOOL_TYPE); }
+"int"                      { FILTER( INT_TYPE); }
+"float"                    { FILTER( FLOAT_TYPE); }
+
+"if"                       { FILTER( IF); }
+"else"                     { FILTER( ELSE); }
+"while"                    { FILTER( WHILE); }
+"do"                       { FILTER( DO); }
+"for"                      { FILTER( FOR); }
+"return"                   { FILTER( RETURN); }
+
 [A-Za-z][A-Za-z0-9_]*      { yylval.id = STRcpy(yytext);
                              FILTER( ID);
                            }
 
-[0-9]+                     { yylval.cint=atoi(yytext);
+[0-9]+([eE][0-9]+)         { yylval.cint = lexerDigitExponent(yytext, yyleng);
+                             FILTER( NUM);
+                           }
+
+[0-9]+\.[0-9]+([eE][0-9]+) { yylval.cflt = lexerFloatExponent(yytext, yyleng);
+                             FILTER( NUM);
+                           }
+
+[0-9]+\.[0-9]+            { yylval.cflt = strtof(yytext, NULL); 
+                             FILTER( NUM);
+                           }
+
+[0-9]+                     { yylval.cint = atoi(yytext); 
                              FILTER( NUM);
                            }
 

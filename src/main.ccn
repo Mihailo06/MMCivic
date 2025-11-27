@@ -3,7 +3,9 @@ start phase RootPhase {
 
     actions {
         pass SPdoScanParse;
-        Demo;
+
+        // commented out demo to keep the code unchanged for testing the parser
+        // Demo;
         print;
     }
 };
@@ -27,14 +29,28 @@ phase Demo {
             }
         };
 
-        traversal OptSubstraction {
-            uid = OS,
-            nodes = { Binop }
-        };
+        // traversal OptSubstraction {
+        //     uid = OS,
+        //     nodes = { Binop }
+        // };
     }
 };
 
 /*** AST ***/
+
+enum BasicType {
+    prefix = BT,
+    values {
+        bool, int, float
+    }
+};
+
+enum RetType {
+    prefix = RT,
+    values {
+        void
+    }
+};
 
 enum MonOpType {
     prefix = MO,
@@ -51,18 +67,171 @@ enum BinOpType {
     }
 };
 
-nodeset Expr = {Num, Float, Bool, Binop, Var};
-nodeset Stmt = {Assign};
+nodeset Declaration = {FunDec, FunDef, GlobalDec, GlobalDef};
+// nodeset BasicType = {Bool, Num, Float};
+nodeset Expr = {Num, Float, Bool, Binop, Var, ProcedureCall};
+nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
 
 // Nodes you want to be able to link to from your symbol table.
 nodeset Link = Expr | Stmt;
 
 root node Program {
     children {
-        Stmts stmts { constructor, mandatory }
+        Declarations declarations { constructor, mandatory }
     }
 };
 
+node Declarations {
+    children {
+        Declaration declaration { constructor, mandatory },
+        Declarations next { constructor }
+    }
+};
+
+node FunDec {
+    children {
+        FunHeader funHeader { constructor }
+    }
+};
+
+node FunDef {
+    children {
+        FunHeader funHeader { constructor },
+        FunBody funBody { constructor, mandatory }
+    }
+};
+
+nodeset FunHeader {
+    nodes = {VoidFunHeader, BasicFunHeader}
+};
+
+node VoidFunHeader {
+    children {
+        HeaderParams params { constructor }
+    },
+
+    attributes {
+        string id { constructor },
+        RetType type { constructor }
+    }
+};
+
+node BasicFunHeader {
+    children {
+        HeaderParams params { constructor }
+    },
+
+    attributes {
+        string id { constructor },
+        BasicType type { constructor }
+    }
+};
+
+node GlobalDec {
+    children {
+        Ids ids { constructor }
+    },
+
+    attributes {
+        BasicType type { constructor },
+        string id { constructor },
+        string arrayid { constructor }
+    }
+};
+
+// using ArrExpr for the right expression because a single Expr is a mandatory subset of ArrExpr
+node GlobalDef {
+    children {
+        ArrExpr expr { constructor },
+        Exprs arrexprs { constructor }
+    },
+    attributes {
+        BasicType type { constructor },
+        string id { constructor }
+    }
+};
+
+node HeaderParams {
+    children {
+        Parameter param { constructor, mandatory },
+        HeaderParams next { constructor }
+    }
+};
+
+node Parameter {
+    children {
+        Ids paramid { constructor }
+    },
+    attributes {
+        BasicType type { constructor },
+        string id { constructor }
+    }
+};
+
+node FunBody {
+    children {
+        VarDecs vardecs { constructor },
+        LocalFunDefs localfundefs { constructor },
+        Stmts stmts { constructor }
+    }
+};
+
+node LocalFunDefs {
+    children {
+        LocalFunDef localfundef { constructor },
+        LocalFunDefs next { constructor }
+    }
+};
+
+node LocalFunDef {
+    children {
+        FunHeader funheader { constructor, mandatory },
+        FunBody funbody { constructor, mandatory }
+    }
+};
+
+node VarDecs {
+    children {
+        VarDec vardec { constructor, mandatory },
+        VarDecs next { constructor }
+    }
+};
+
+node VarDec {
+    children {
+        Expr expr { constructor },
+        Exprs arrexprs { constructor }
+    },
+
+    attributes {
+        BasicType type { constructor },
+        string id { constructor }
+    }
+};
+
+node ArrExpr {
+    children {
+        Exprs exprs { constructor, mandatory }
+    }
+};
+
+node Ids {
+    children {
+        Ids next { constructor }
+    },
+
+    attributes {
+        string id { constructor }
+    }
+};
+
+node Block {
+    children {
+        Stmts block { constructor }
+    }
+};
+
+// old nodes
 node Stmts {
     children {
         Stmt stmt { constructor, mandatory },
@@ -70,10 +239,68 @@ node Stmts {
     }
 };
 
+node Exprs {
+    children {
+        Expr expr { constructor, mandatory},
+        Exprs next { constructor }
+    }
+};
+
 node Assign {
     children {
         VarLet let { constructor },
         Expr expr { constructor, mandatory }
+    }
+};
+
+// procedurecall for statements
+node ProcedureCall {
+    children {
+        Expr expr { constructor },
+        Exprs exprs { constructor }
+    },
+    attributes {
+        string id { constructor }
+    }
+};
+
+node Conditional {
+    children {
+        Expr expr { constructor, mandatory },
+        Block thenblock { constructor, mandatory },
+        Block elseblock { constructor }
+    }
+};
+
+node WhileLoop {
+    children {
+        Expr expr { constructor, mandatory },
+        Block block { constructor, mandatory }
+    }
+};
+
+node DoWhileLoop {
+    children {
+        Block block { constructor, mandatory },
+        Expr expr { constructor, mandatory }
+    }
+};
+
+node ForLoop {
+    children {
+        Expr assignexpr { constructor, mandatory },
+        Expr whileexpr { constructor, mandatory },
+        Expr incrementexpr { constructor },
+        Block block { constructor, mandatory }
+    },
+    attributes {
+        string id { constructor }
+    }
+};
+
+node Return {
+    children {
+        Expr expr { constructor }
     }
 };
 
@@ -88,6 +315,26 @@ node Binop {
     }
 };
 
+node Monop {
+    children {
+        Expr expr { constructor, mandatory}
+    },
+
+    attributes {
+        MonOpType op { constructor }
+    }
+};
+
+node Cast {
+    children {
+        Expr expr { constructor } 
+    },
+    
+    attributes {
+        BasicType type { constructor }
+    }
+};
+
 nodeset Vars {
     nodes = {VarLet, Var},
 
@@ -98,12 +345,20 @@ nodeset Vars {
 };
 
 node VarLet {
+    children {
+        Exprs exprs { constructor }
+    },
+
     attributes {
         string name { constructor }  // Repeat from nodeset to add constructor
     }
 };
 
 node Var {
+    children {
+        Exprs arrexpr { constructor }
+    },
+
     attributes {
         string name { constructor }
     }
