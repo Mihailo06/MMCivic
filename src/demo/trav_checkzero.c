@@ -10,10 +10,8 @@
 #include "ccn/ccn.h"
 #include "ccngen/ast.h"
 #include "ccngen/trav.h"
-
-#include "palm/ctinfo.h"
-
 #include "global/globals.h"
+#include "palm/ctinfo.h"
 
 /**
  * @fn CZbinop

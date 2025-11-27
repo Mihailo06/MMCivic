@@ -4,9 +4,9 @@
 #include <stddef.h>
 
 struct globals {
-    int line;
-    int col;
-    int verbose;
+    int   line;
+    int   col;
+    int   verbose;
     char *input_file;
     char *output_file;
 };
