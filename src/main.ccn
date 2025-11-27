@@ -4,8 +4,7 @@ start phase RootPhase {
     actions {
         pass SPdoScanParse;
 
-        // commented out demo to keep the code unchanged for testing the parser
-        // Demo;
+        Demo;
         print;
     }
 };
@@ -16,23 +15,13 @@ traversal Print {
 
 phase Demo {
     actions {
-        traversal RenameIdentifiers {
-            uid = RI,
-            nodes = { Var, VarLet }
-        };
-
-        traversal SumInts {
-            uid = SI,
-            nodes = { Stmts, Num },
+        traversal CountIdentifiers {
+            uid = CountIdentifiers_,
+            nodes = { Var, Program },
             travdata {
-                int sum
+                user htable_stptr table
             }
         };
-
-        // traversal OptSubstraction {
-        //     uid = OS,
-        //     nodes = { Binop }
-        // };
     }
 };
 
