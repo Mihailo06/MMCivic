@@ -169,9 +169,7 @@ node_st *PRTstmts(node_st *node) {
 /**
  * @fn PRTblock
  */
-node_st *PRTblock(node_st *node) {
-    return node;
-}
+node_st *PRTblock(node_st *node) { return node; }
 
 /**
  * @fn PRTassign
@@ -191,86 +189,62 @@ node_st *PRTassign(node_st *node) {
 /**
  * @fn PRTprocedurecall
  */
-node_st *PRTprocedurecall(node_st *node) {
-    return node;
-}
+node_st *PRTprocedurecall(node_st *node) { return node; }
 
 /**
  * @fn PRTconditional
  */
-node_st *PRTconditional(node_st *node) {
-    return node;
-}
+node_st *PRTconditional(node_st *node) { return node; }
 
 /**
  * @fn PRTwhileloop
  */
-node_st *PRTwhileloop(node_st *node) {
-    return node;
-}
+node_st *PRTwhileloop(node_st *node) { return node; }
 
 /**
  * @fn PRTdowhileloop
  */
-node_st *PRTdowhileloop(node_st *node) {
-    return node;
-}
+node_st *PRTdowhileloop(node_st *node) { return node; }
 
 /**
  * @fn PRTforloop
  */
-node_st *PRTforloop(node_st *node) {
-    return node;
-}
+node_st *PRTforloop(node_st *node) { return node; }
 
 /**
  * @fn PRTreturn
  */
-node_st *PRTreturn(node_st *node) {
-    return node;
-}
+node_st *PRTreturn(node_st *node) { return node; }
 
 /**
  * @fn PRTexprs
  */
-node_st *PRTexprs(node_st *node) {
-    return node;
-}
+node_st *PRTexprs(node_st *node) { return node; }
 
 /**
  * @fn PRTarrexpr
  */
-node_st *PRTarrexpr(node_st *node) {
-    return node;
-}
+node_st *PRTarrexpr(node_st *node) { return node; }
 
 /**
  * @fn PRTids
  */
-node_st *PRTids(node_st *node) {
-    return node;
-}
+node_st *PRTids(node_st *node) { return node; }
 
 /**
  * @fn PRTstatement
  */
-node_st *PRTstatement(node_st *node) {
-    return node;
-}
+node_st *PRTstatement(node_st *node) { return node; }
 
 /**
  * @fn PRTvardecs
  */
-node_st *PRTvardecs(node_st *node) {
-    return node;
-}
+node_st *PRTvardecs(node_st *node) { return node; }
 
 /**
  * @fn PRTvardec
  */
-node_st *PRTvardec(node_st *node) {
-    return node;
-}
+node_st *PRTvardec(node_st *node) { return node; }
 
 /**
  * @fn PRTbinop
@@ -282,47 +256,20 @@ node_st *PRTbinop(node_st *node) {
     TRAVleft(node);
 
     switch (BINOP_OP(node)) {
-        case BO_add:
-            tmp = "+";
-            break;
-        case BO_sub:
-            tmp = "-";
-            break;
-        case BO_mul:
-            tmp = "*";
-            break;
-        case BO_div:
-            tmp = "/";
-            break;
-        case BO_mod:
-            tmp = "%";
-            break;
-        case BO_lt:
-            tmp = "<";
-            break;
-        case BO_le:
-            tmp = "<=";
-            break;
-        case BO_gt:
-            tmp = ">";
-            break;
-        case BO_ge:
-            tmp = ">=";
-            break;
-        case BO_eq:
-            tmp = "==";
-            break;
-        case BO_ne:
-            tmp = "!=";
-            break;
-        case BO_or:
-            tmp = "||";
-            break;
-        case BO_and:
-            tmp = "&&";
-            break;
-        case BO_NULL:
-            DBUG_ASSERT(false, "unknown binop detected!");
+        case BO_add:  tmp = "+"; break;
+        case BO_sub:  tmp = "-"; break;
+        case BO_mul:  tmp = "*"; break;
+        case BO_div:  tmp = "/"; break;
+        case BO_mod:  tmp = "%"; break;
+        case BO_lt:   tmp = "<"; break;
+        case BO_le:   tmp = "<="; break;
+        case BO_gt:   tmp = ">"; break;
+        case BO_ge:   tmp = ">="; break;
+        case BO_eq:   tmp = "=="; break;
+        case BO_ne:   tmp = "!="; break;
+        case BO_or:   tmp = "||"; break;
+        case BO_and:  tmp = "&&"; break;
+        case BO_NULL: DBUG_ASSERT(false, "unknown binop detected!");
     }
 
     printf(" %s ", tmp);
@@ -337,16 +284,12 @@ node_st *PRTbinop(node_st *node) {
 /**
  * @fn PRTmonop
  */
-node_st *PRTmonop(node_st *node) {
-    return node;
-}
+node_st *PRTmonop(node_st *node) { return node; }
 
 /**
  * @fn PRTcast
  */
-node_st *PRTcast(node_st *node) {
-    return node;
-}
+node_st *PRTcast(node_st *node) { return node; }
 
 /**
  * @fn PRTvarlet

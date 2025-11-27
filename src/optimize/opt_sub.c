@@ -9,8 +9,8 @@
 
 #include "ccn/ccn.h"
 #include "ccngen/ast.h"
-#include "ccngen/trav.h"
 #include "ccngen/enum.h"
+#include "ccngen/trav.h"
 #include "palm/str.h"
 
 /**

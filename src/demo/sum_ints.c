@@ -13,13 +13,9 @@
 #include "ccngen/ast.h"
 #include "ccngen/trav_data.h"
 
-void SIinit() {
-    return;
-}
+void SIinit() { return; }
 
-void SIfini() {
-    return;
-}
+void SIfini() { return; }
 
 static bool first_stmts = false;
 
@@ -29,7 +25,7 @@ static bool first_stmts = false;
 node_st *SIstmts(node_st *node) {
     TRAVchildren(node);
     if (!first_stmts) {
-        first_stmts = true;
+        first_stmts          = true;
         struct data_si *data = DATA_SI_GET();
         printf("Sum of integers: %d\n", data->sum);
     }
@@ -41,6 +37,6 @@ node_st *SIstmts(node_st *node) {
  */
 node_st *SInum(node_st *node) {
     struct data_si *data = DATA_SI_GET();
-    data->sum += NUM_VAL(node);
+    data->sum           += NUM_VAL(node);
     return node;
 }

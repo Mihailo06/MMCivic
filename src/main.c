@@ -1,18 +1,17 @@
+#include <ctype.h>
+#include <getopt.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
-#include <ctype.h>
 #include <string.h>
 
+#include "ccn/ccn.h"
 #include "global/globals.h"
 #include "palm/str.h"
-#include "ccn/ccn.h"
 
 static void Usage(char *program) {
     char *program_bin = strrchr(program, '/');
-    if (program_bin)
-        program = program_bin + 1;
+    if (program_bin) program = program_bin + 1;
 
     printf("Usage: %s [OPTION...] <civic file>\n", program);
     printf("Options:\n");
@@ -25,11 +24,13 @@ static void Usage(char *program) {
 
 /* Parse command lines. Usages the globals struct to store data. */
 static int ProcessArgs(int argc, char *argv[]) {
-    static struct option long_options[] = { { "verbose", no_argument, 0, 'v' },
-                                            { "output", required_argument, 0, 'o' },
-                                            { "breakpoint", required_argument, 0, 'b' },
-                                            { "structure", no_argument, 0, 's' },
-                                            { 0, 0, 0, 0 } };
+    static struct option long_options[] = {
+        { "verbose",    no_argument,       0, 'v' },
+        { "output",     required_argument, 0, 'o' },
+        { "breakpoint", required_argument, 0, 'b' },
+        { "structure",  no_argument,       0, 's' },
+        { 0,            0,                 0, 0   }
+    };
 
     int option_index;
     int c;
@@ -38,8 +39,7 @@ static int ProcessArgs(int argc, char *argv[]) {
         c = getopt_long(argc, argv, "hsvo:b:", long_options, &option_index);
 
         // End of options
-        if (c == -1)
-            break;
+        if (c == -1) break;
 
         switch (c) {
             case 'v':
@@ -53,18 +53,10 @@ static int ProcessArgs(int argc, char *argv[]) {
                     CCNsetBreakpoint(optarg);
                 }
                 break;
-            case 's':
-                CCNshowTree();
-                break;
-            case 'o':
-                global.output_file = optarg;
-                break;
-            case 'h':
-                Usage(argv[0]);
-                exit(EXIT_SUCCESS);
-            case '?':
-                Usage(argv[0]);
-                exit(EXIT_FAILURE);
+            case 's': CCNshowTree(); break;
+            case 'o': global.output_file = optarg; break;
+            case 'h': Usage(argv[0]); exit(EXIT_SUCCESS);
+            case '?': Usage(argv[0]); exit(EXIT_FAILURE);
         }
     }
     if (optind == argc - 1) {

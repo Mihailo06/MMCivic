@@ -10,13 +10,13 @@
 
 #include "ccn/ccn.h"
 #include "ccngen/ast.h"
-#include "palm/str.h"
 #include "palm/memory.h"
+#include "palm/str.h"
 
 static void rename_var(node_st *node) {
     char *name = NULL;
 
-    name = VARS_NAME(node);
+    name            = VARS_NAME(node);
     VARS_NAME(node) = STRfmt("__%s", name);
     MEMfree(name);
 }
