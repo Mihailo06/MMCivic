@@ -1,0 +1,47 @@
+
+void fibs(int n)
+{
+    int a;
+    printNewlines(1);
+    for(int i =0, n)
+    {
+        a = fib(i);
+        printInt(a);
+        printSpaces(1);
+    }
+    printNewlines(1);
+}
+
+void primes(int n)
+{
+    bool isprime(int n)
+    {
+        if(n<2)
+        {
+            return false;
+        }
+        
+        for(int i = 2, n-1)
+        {
+            if(n%i == 0)
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    printNewlines(1);
+
+    for(int i =0, n)
+    {
+        if(isprime(i))
+        {
+            printInt(i);
+            printSpaces(1);
+        }
+    }
+    
+    printNewlines(1);
+}

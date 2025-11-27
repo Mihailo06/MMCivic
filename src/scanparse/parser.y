@@ -1,6 +1,4 @@
 %{
-
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -26,32 +24,282 @@ void AddLocToNode(node_st *node, void *begin_loc, void *end_loc);
  int                 cint;
  float               cflt;
  enum BinOpType     cbinop;
+ enum MonOpType     cmonop;
+ enum BasicType     cbasictype;
+ enum RetType       crettype;
  node_st             *node;
 }
 
 %locations
 
-%token BRACKET_L BRACKET_R COMMA SEMICOLON
-%token MINUS PLUS STAR SLASH PERCENT LE LT GE GT EQ NE OR AND
+%token BRACKET_L BRACKET_R COMMA SEMICOLON CURLY_BRACKET_L CURLY_BRACKET_R SQUARE_BRACKET_L SQUARE_BRACKET_R
+%token MINUS PLUS STAR SLASH PERCENT LE LT GE GT EQ NE OR AND NOT
+%token BOOL_TYPE INT_TYPE FLOAT_TYPE
 %token TRUEVAL FALSEVAL LET
+%token EXTERN EXPORT VOID_TYPE
+%token IF ELSE WHILE DO FOR RETURN
 
 %token <cint> NUM
 %token <cflt> FLOAT
 %token <id> ID
 
-%type <node> intval floatval boolval constant expr
-%type <node> stmts stmt assign varlet program
+%type <node> intval floatval boolval constant exprs expr block arrexpr ids
+%type <node> stmts stmt varlet program declarations
+%type <node> assign procedurecall conditional whileloop dowhileloop forloop return
+%type <node> declaration globaldec globaldef headerparams
+%type <node> vardecs vardec 
+%type <node> fundef fundec funheader funbody localfundef localfundefs
+%type <node> parameter
 %type <cbinop> binop
+%type <cmonop> monop
+%type <cbasictype> basictype
+%type <crettype> rettype
 
 %start program
 
 %%
 
-program: stmts
+program: declarations 
          {
            parseresult = ASTprogram($1);
          }
          ;
+
+declarations: declaration declarations
+              {
+                $$ = ASTdeclarations($1, $2);
+              }
+            | declaration
+              {
+                $$ = ASTdeclarations($1, NULL);
+              }
+              ;
+
+declaration: fundec
+             {
+               $$ = $1;
+             }
+           | fundef
+             {
+               $$ = $1;
+             }
+           | globaldec
+             {
+               $$ = $1;
+             }
+           | globaldef
+             {
+               $$ = $1;
+             }
+             ;
+
+fundec: EXTERN funheader SEMICOLON
+        {
+          $$ = ASTfundec($2);
+        }
+        ;
+
+fundef: funheader CURLY_BRACKET_L funbody CURLY_BRACKET_R
+        {
+          $$ = ASTfundef($1, $3);
+        }
+      | EXPORT funheader CURLY_BRACKET_L funbody CURLY_BRACKET_R
+        {
+          $$ = ASTfundef($2, $4);
+        }
+        ;
+
+globaldec: EXTERN basictype ID SEMICOLON
+           {
+             $$ = ASTglobaldec(NULL, $2, $3, NULL);
+           }
+         | EXTERN basictype SQUARE_BRACKET_L ID SQUARE_BRACKET_R ID SEMICOLON
+           {
+             $$ = ASTglobaldec(NULL, $2, $6, $4);
+           }
+         | EXTERN basictype SQUARE_BRACKET_L ids SQUARE_BRACKET_R ID SEMICOLON
+           {
+             $$ = ASTglobaldec($4,$2,$6, NULL);
+           }  
+           ;
+
+globaldef: basictype ID SEMICOLON
+           {
+             $$ = ASTglobaldef(NULL, NULL, $1, $2);
+           }
+         | EXPORT basictype ID SEMICOLON
+           {
+             $$ = ASTglobaldef(NULL, NULL, $2, $3);
+           }
+         | basictype ID LET expr SEMICOLON
+           {
+             $$ = ASTglobaldef($4, NULL, $1, $2);
+           }
+         | EXPORT basictype ID LET expr SEMICOLON
+           {
+             $$ = ASTglobaldef($5, NULL, $2, $3);
+           }
+         | EXPORT basictype SQUARE_BRACKET_L exprs SQUARE_BRACKET_R ID LET arrexpr SEMICOLON
+           {
+             $$ = ASTglobaldef($8, $4, $2, $6);
+           }
+         | basictype SQUARE_BRACKET_L exprs SQUARE_BRACKET_R ID LET arrexpr SEMICOLON
+           {
+             $$ = ASTglobaldef($7, $3, $1, $5);
+           }
+         | EXPORT basictype SQUARE_BRACKET_L exprs SQUARE_BRACKET_R ID SEMICOLON
+           {
+             $$ = ASTglobaldef(NULL, $4, $2, $6);
+           }
+         | basictype SQUARE_BRACKET_L exprs SQUARE_BRACKET_R ID SEMICOLON
+           {
+             $$ = ASTglobaldef(NULL, $3, $1, $5);
+           }
+         | EXPORT basictype ID LET arrexpr SEMICOLON
+           {
+             $$ = ASTglobaldef($5, NULL, $2, $3);
+           }
+         | basictype ID LET arrexpr SEMICOLON
+           {
+             $$ = ASTglobaldef($4, NULL, $1, $2);
+           } 
+           ;
+
+funheader: rettype ID BRACKET_L BRACKET_R
+           {
+             $$ = ASTvoidfunheader(NULL, $2, $1);
+           }
+         | rettype ID BRACKET_L headerparams BRACKET_R
+           {
+             $$ = ASTvoidfunheader($4, $2, $1);
+           }
+         | basictype ID BRACKET_L BRACKET_R
+           {
+             $$ = ASTbasicfunheader(NULL, $2, $1);
+           }
+         | basictype ID BRACKET_L headerparams BRACKET_R
+           {
+             $$ = ASTbasicfunheader($4, $2, $1);
+           }
+           ;
+
+arrexpr: expr 
+         {
+           $$ = ASTarrexpr($1);
+         }
+       | exprs 
+         {
+           $$ = ASTarrexpr($1);
+         }
+       ;
+
+ids: ID COMMA ids
+     {
+       $$ = ASTids($3, $1);
+     }
+   | ID
+     {
+       $$ = ASTids(NULL, $1);
+     }
+       
+headerparams: parameter COMMA headerparams
+              {
+                $$ = ASTheaderparams($1, $3);
+              }
+            | parameter
+              {
+                $$ = ASTheaderparams($1, NULL);
+              }
+              ;
+
+parameter: basictype ID
+           {
+             $$ = ASTparameter(NULL, $1, $2);
+           }
+         | basictype SQUARE_BRACKET_L ids SQUARE_BRACKET_R ID
+           {
+             $$ = ASTparameter($3, $1, $5);
+           }
+           ;
+
+funbody: vardecs
+         {
+           $$ = ASTfunbody($1, NULL, NULL);
+         }
+       | localfundefs
+         {
+           $$ = ASTfunbody(NULL, $1, NULL);
+         }
+       | stmts
+         {
+           $$ = ASTfunbody(NULL, NULL, $1);
+         }
+       | vardecs localfundefs 
+         {
+           $$ = ASTfunbody($1, $2, NULL);
+         }
+       | vardecs stmts
+         {
+           $$ = ASTfunbody($1, NULL, $2);
+         }
+       | localfundefs stmts
+         {
+           $$ = ASTfunbody(NULL, $1, $2);
+         }
+       | vardecs localfundefs stmts
+         {
+           $$ = ASTfunbody($1, $2, $3);
+         }
+       | 
+         {
+           $$ = ASTfunbody(NULL, NULL, NULL);
+         }
+         ;
+
+localfundefs: localfundef localfundefs
+              {
+                $$ = ASTlocalfundefs($1, $2);
+              }
+            | localfundef
+              {
+                $$ = ASTlocalfundefs($1, NULL);
+              }
+              ;
+
+localfundef: funheader CURLY_BRACKET_L funbody CURLY_BRACKET_R
+             {
+               $$ = ASTlocalfundef($1, $3);
+             }
+             ;
+
+vardecs: vardec vardecs
+         {
+           $$ = ASTvardecs($1, $2);
+         }
+       | vardec
+         {
+           $$ = ASTvardecs($1, NULL);
+         }
+         ;
+
+
+vardec: basictype ID SEMICOLON
+        {
+           $$ = ASTvardec(NULL, NULL, $1, $2);
+        }
+      | basictype ID LET expr SEMICOLON
+        {
+           $$ = ASTvardec($4, NULL, $1, $2);
+        }
+      | basictype SQUARE_BRACKET_L exprs SQUARE_BRACKET_R ID LET expr SEMICOLON
+        {
+           $$ = ASTvardec($7, $3, $1, $5);
+        }
+      | basictype SQUARE_BRACKET_L exprs SQUARE_BRACKET_R ID SEMICOLON
+        {
+           $$ = ASTvardec(NULL, $3, $1, $5);
+        }
+        ;
 
 stmts: stmt stmts
         {
@@ -64,10 +312,34 @@ stmts: stmt stmts
         ;
 
 stmt: assign
-       {
-         $$ = $1;
-       }
-       ;
+      {
+        $$ = $1;
+      }
+    | procedurecall
+      {
+        $$ = $1;
+      }
+    | conditional
+      {
+        $$ = $1;
+      }
+    | whileloop
+      {
+        $$ = $1;
+      }
+    | dowhileloop
+      {
+        $$ = $1;
+      }
+    | forloop
+      {
+        $$ = $1;
+      }
+    | return
+      {
+        $$ = $1;
+      }
+      ;
 
 assign: varlet LET expr SEMICOLON
         {
@@ -75,28 +347,141 @@ assign: varlet LET expr SEMICOLON
         }
         ;
 
+procedurecall: ID BRACKET_L expr BRACKET_R SEMICOLON
+         {
+           $$ = ASTprocedurecall($3, NULL, $1);
+         }
+       | ID BRACKET_L expr exprs BRACKET_R SEMICOLON
+         {
+           $$ = ASTprocedurecall($3, $4, $1);
+         }
+       | ID BRACKET_L BRACKET_R SEMICOLON
+         {
+           $$ = ASTprocedurecall(NULL, NULL, $1);
+         }
+         ;
+
+conditional: IF BRACKET_L expr BRACKET_R block
+             {
+               $$ = ASTconditional($3, $5, NULL);
+             }
+           | IF BRACKET_L expr BRACKET_R block ELSE block
+             {
+               $$ = ASTconditional($3, $5, $7);
+             }
+             ;
+
+whileloop: WHILE BRACKET_L expr BRACKET_R block
+           {
+             $$ = ASTwhileloop($3, $5);
+           }
+           ;
+
+dowhileloop: DO block WHILE BRACKET_L expr BRACKET_R
+             {
+               $$ = ASTdowhileloop($2, $5);
+             }
+             ;
+
+forloop: FOR BRACKET_L INT_TYPE ID LET expr COMMA expr BRACKET_R block
+         {
+           $$ = ASTforloop($6, $8, NULL, $10, $4);
+         }
+       | FOR BRACKET_L INT_TYPE ID LET expr COMMA expr COMMA expr BRACKET_R block
+         {
+           $$ = ASTforloop($6, $8, $10, $12, $4);
+         }
+         ;
+
+return: RETURN SEMICOLON
+        {
+          $$ = ASTreturn(NULL);
+        }
+      | RETURN expr SEMICOLON
+        {
+          $$ = ASTreturn($2);
+        }
+        ;
+
 varlet: ID
         {
-          $$ = ASTvarlet($1);
+          $$ = ASTvarlet(NULL, $1);
+          AddLocToNode($$, &@1, &@1);
+        }
+      | ID SQUARE_BRACKET_L exprs SQUARE_BRACKET_R
+        {
+          $$ = ASTvarlet($3, $1);
           AddLocToNode($$, &@1, &@1);
         }
         ;
 
+exprs: expr COMMA exprs
+       {
+         $$ = ASTexprs($1, $3);
+       }
+     | expr 
+       {
+         $$ = ASTexprs($1, NULL);
+       }
+       ;
 
-expr: constant
+expr: BRACKET_L expr BRACKET_R
       {
-        $$ = $1;
+        $$ = $2;
       }
-    | ID
-      {
-        $$ = ASTvar($1);
-      }
-    | BRACKET_L expr[left] binop[type] expr[right] BRACKET_R
+    | expr[left] binop[type] expr[right]
       {
         $$ = ASTbinop( $left, $right, $type);
         AddLocToNode($$, &@left, &@right);
       }
-    ;
+    | monop[type] expr[exp]
+      {
+        $$ = ASTmonop($exp, $type);
+        AddLocToNode($$, &@exp, &@exp);
+      }
+    | BRACKET_L basictype BRACKET_R expr
+      {
+        $$ = ASTcast($4, $2);
+      }
+    | ID BRACKET_L BRACKET_R
+      {
+        $$ = ASTprocedurecall(NULL, NULL, $1);
+      }
+    | ID BRACKET_L expr BRACKET_R
+      {
+        $$ = ASTprocedurecall($3, NULL, $1);
+      }
+    | ID BRACKET_L expr COMMA exprs BRACKET_R
+      {
+        $$ = ASTprocedurecall($3, $5, $1);
+      }
+    | ID
+      {
+        $$ = ASTvar(NULL, $1);
+      }
+    | ID SQUARE_BRACKET_L exprs SQUARE_BRACKET_R
+      {
+        $$ = ASTvar($3, $1);
+      }
+    | constant
+      {
+        $$ = $1;
+      }
+      ;
+
+block: CURLY_BRACKET_L CURLY_BRACKET_R
+       {
+         $$ = ASTblock(NULL);
+       }
+     | CURLY_BRACKET_L stmts CURLY_BRACKET_R
+       {
+         $$ = ASTblock($2);
+       }
+     | stmt
+       {
+         $$ = ASTblock($1);
+       }
+       ;
 
 constant: floatval
           {
@@ -110,19 +495,19 @@ constant: floatval
           {
             $$ = $1;
           }
-        ;
+          ;
 
 floatval: FLOAT
            {
              $$ = ASTfloat($1);
            }
-         ;
+           ;
 
 intval: NUM
         {
           $$ = ASTnum($1);
         }
-      ;
+        ;
 
 boolval: TRUEVAL
          {
@@ -132,7 +517,7 @@ boolval: TRUEVAL
          {
            $$ = ASTbool(false);
          }
-       ;
+         ;
 
 binop: PLUS      { $$ = BO_add; }
      | MINUS     { $$ = BO_sub; }
@@ -144,10 +529,22 @@ binop: PLUS      { $$ = BO_add; }
      | GE        { $$ = BO_ge; }
      | GT        { $$ = BO_gt; }
      | EQ        { $$ = BO_eq; }
+     | NE        { $$ = BO_ne; }
      | OR        { $$ = BO_or; }
      | AND       { $$ = BO_and; }
      ;
 
+monop: MINUS     { $$ = MO_neg; }
+     | NOT       { $$ = MO_not; }
+     ;
+
+basictype: BOOL_TYPE  { $$ = BT_bool; }
+         | INT_TYPE   { $$ = BT_int;  }
+         | FLOAT_TYPE { $$ = BT_float;}
+         ;
+
+rettype: VOID_TYPE    { $$ = RT_void; }
+       ;
 %%
 
 void AddLocToNode(node_st *node, void *begin_loc, void *end_loc)

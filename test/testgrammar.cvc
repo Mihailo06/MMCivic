@@ -1,0 +1,41 @@
+extern void testmethod();
+export void testmethod2(){}
+//this is a comment
+extern int testVar;
+
+extern int[n,m] testarray;
+
+
+
+export int fac()
+{
+    if(n == n)
+    {
+        return 1.0e10;
+    }
+    return n*fac(n-n);
+}
+
+export void fib(int n)
+{
+    if (n == 0)
+    {
+        return 0;
+    }
+}
+
+export void isprime(int n)
+{
+    if(n<2)
+    {
+        return false;
+    }
+    for(int i = 2e0, n-1e0)
+    {
+        if(n%i == 0e0)
+        {
+            return false;
+        }
+    }
+    return true;
+}
