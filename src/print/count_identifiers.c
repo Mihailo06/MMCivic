@@ -46,9 +46,7 @@ node_st *COUNTIDENTIFIERS_assign(node_st *node) {
     TRAVchildren(node);
 
     node_st *varlet = ASSIGN_LET(node);
-    if (varlet) {
-        countIdent(VARLET_NAME(varlet));
-    }
+    if (varlet) { countIdent(VARLET_NAME(varlet)); }
 
     return node;
 }
