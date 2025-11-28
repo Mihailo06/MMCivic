@@ -12,4 +12,4 @@ struct globals {
 };
 
 extern struct globals global;
-extern void GLBinitializeGlobals(void);
+extern void           GLBinitializeGlobals(void);
