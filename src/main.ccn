@@ -17,7 +17,7 @@ phase Demo {
     actions {
         traversal CountIdentifiers {
             uid = CountIdentifiers_,
-            nodes = { Program, Var, Assign },
+            nodes = { Var, Program },
             travdata {
                 user htable_stptr table
             }
@@ -87,6 +87,10 @@ node FunDef {
     children {
         FunHeader funHeader { constructor },
         FunBody funBody { constructor, mandatory }
+    },
+
+    attributes {
+        bool local { constructor }
     }
 };
 
@@ -160,22 +164,19 @@ node Parameter {
 node FunBody {
     children {
         VarDecs vardecs { constructor },
-        LocalFunDefs localfundefs { constructor },
+        FunDefs localfundefs { constructor },
         Stmts stmts { constructor }
     }
 };
 
-node LocalFunDefs {
+node FunDefs {
     children {
-        LocalFunDef localfundef { constructor },
-        LocalFunDefs next { constructor }
-    }
-};
+        FunDef fundef { constructor },
+        FunDefs next { constructor }
+    },
 
-node LocalFunDef {
-    children {
-        FunHeader funheader { constructor, mandatory },
-        FunBody funbody { constructor, mandatory }
+    attributes {
+        bool local { constructor }
     }
 };
 
