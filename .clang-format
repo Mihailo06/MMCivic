@@ -18,7 +18,6 @@ AlignConsecutiveDeclarations:
   Enabled: true
   AcrossEmptyLines: false
   AcrossComments: true
-  AlignFunctionDeclarations: false
   AlignFunctionPointers: true
 AlignConsecutiveMacros:
   Enabled: true
@@ -46,8 +45,7 @@ AllowShortLambdasOnASingleLine: All
 AllowShortLoopsOnASingleLine: true
 AlwaysBreakBeforeMultilineStrings: true
 BinPackArguments: false
-BinPackLongBracedList: true
-BinPackParameters: OnePerLine
+BinPackParameters: false
 BitFieldColonSpacing: Both
 BraceWrapping:
   AfterCaseLabel: false
@@ -75,7 +73,6 @@ BreakArrays: false
 BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeBraces: Custom
 BreakBeforeConceptDeclarations: Always
-BreakBeforeTemplateCloser: true
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: AfterColon
 BreakFunctionDefinitionParameters: false
@@ -100,7 +97,6 @@ IncludeCategories:
 IndentAccessModifiers: false
 IndentCaseBlocks: false
 IndentCaseLabels: true
-IndentExportBlock: true
 IndentExternBlock: Indent
 IndentGotoLabels: true
 IndentPPDirectives: BeforeHash
@@ -127,8 +123,7 @@ PointerAlignment: Right
 QualifierAlignment: Custom
 QualifierOrder: [static, friend, inline, restrict, volatile, constexpr, const, type]
 ReferenceAlignment: Right
-ReflowComments: Always
-RemoveEmptyLinesInUnwrappedLines: true
+ReflowComments: true
 RemoveParentheses: MultipleParentheses
 RemoveSemicolon: true
 SeparateDefinitionBlocks: Always
@@ -136,7 +131,6 @@ ShortNamespaceLines: 0
 SortUsingDeclarations: Lexicographic
 SpaceAfterCStyleCast: true
 SpaceAfterLogicalNot: false
-SpaceAfterOperatorKeyword: false
 SpaceAfterTemplateKeyword: false
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeCaseColon: false
@@ -159,4 +153,3 @@ SpacesInSquareBrackets: false
 Standard: Latest
 TabWidth: 4
 UseTab: Never
-WrapNamespaceBodyWithEmptyLines: Never
