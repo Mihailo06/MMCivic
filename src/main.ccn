@@ -17,7 +17,7 @@ phase Demo {
     actions {
         traversal CountIdentifiers {
             uid = CountIdentifiers_,
-            nodes = { Var, Program },
+            nodes = { Program, Var, Assign },
             travdata {
                 user htable_stptr table
             }
