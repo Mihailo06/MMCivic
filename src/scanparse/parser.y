@@ -48,7 +48,7 @@ void AddLocToNode(node_st *node, void *begin_loc, void *end_loc);
 %type <node> assign procedurecall conditional whileloop dowhileloop forloop return
 %type <node> declaration globaldec globaldef headerparams
 %type <node> vardecs vardec 
-%type <node> fundef fundec funheader funbody localfundef localfundefs
+%type <node> fundef fundefs fundec funheader funbody
 %type <node> parameter
 %type <cbinop> binop
 %type <cmonop> monop
@@ -79,9 +79,13 @@ declaration: fundec
              {
                $$ = $1;
              }
-           | fundef
+           | funheader CURLY_BRACKET_L funbody CURLY_BRACKET_R
              {
-               $$ = $1;
+               $$ = ASTfundef($1, $3, false);
+             }
+           | EXPORT funheader CURLY_BRACKET_L funbody CURLY_BRACKET_R
+             {
+               $$ = ASTfundef($2, $4, false);
              }
            | globaldec
              {
@@ -101,11 +105,11 @@ fundec: EXTERN funheader SEMICOLON
 
 fundef: funheader CURLY_BRACKET_L funbody CURLY_BRACKET_R
         {
-          $$ = ASTfundef($1, $3);
+          $$ = ASTfundef($1, $3, true);
         }
       | EXPORT funheader CURLY_BRACKET_L funbody CURLY_BRACKET_R
         {
-          $$ = ASTfundef($2, $4);
+          $$ = ASTfundef($2, $4, true);
         }
         ;
 
@@ -226,29 +230,45 @@ funbody: vardecs
          {
            $$ = ASTfunbody($1, NULL, NULL);
          }
-       | localfundefs
+       | fundef fundefs
          {
-           $$ = ASTfunbody(NULL, $1, NULL);
+           $$ = ASTfundefs($1, $2, true);
+         }
+       | fundef
+         {
+           $$ = ASTfundef($1, NULL, true);
          }
        | stmts
          {
            $$ = ASTfunbody(NULL, NULL, $1);
          }
-       | vardecs localfundefs 
+       | vardecs fundef fundefs
          {
-           $$ = ASTfunbody($1, $2, NULL);
+           $$ = ASTfunbody($1, ASTfundefs($2, $3, true), NULL);
+         }
+       | vardecs fundef
+         {
+           $$ = ASTfunbody($1, ASTfundefs($2, NULL, true), NULL);
          }
        | vardecs stmts
          {
            $$ = ASTfunbody($1, NULL, $2);
          }
-       | localfundefs stmts
+       | fundef fundefs stmts
          {
-           $$ = ASTfunbody(NULL, $1, $2);
+           $$ = ASTfunbody(NULL, ASTfundefs($1, $2, true), $3);
          }
-       | vardecs localfundefs stmts
+       | fundef stmts
          {
-           $$ = ASTfunbody($1, $2, $3);
+           $$ = ASTfunbody(NULL, ASTfundefs($1, NULL, true), $2);
+         }
+       | vardecs fundef fundefs stmts
+         {
+           $$ = ASTfunbody($1, ASTfundefs($2, $3, true), $4);
+         }
+       | vardecs fundef stmts
+         {
+           $$ = ASTfunbody($1, ASTfundefs($2, NULL, true), $2);
          }
        | 
          {
@@ -256,21 +276,15 @@ funbody: vardecs
          }
          ;
 
-localfundefs: localfundef localfundefs
+fundefs: fundef fundefs
               {
-                $$ = ASTlocalfundefs($1, $2);
+                $$ = ASTfundefs($1, $2, false);
               }
-            | localfundef
+            | fundef
               {
-                $$ = ASTlocalfundefs($1, NULL);
+                $$ = ASTfundefs($1, NULL, false);
               }
               ;
-
-localfundef: funheader CURLY_BRACKET_L funbody CURLY_BRACKET_R
-             {
-               $$ = ASTlocalfundef($1, $3);
-             }
-             ;
 
 vardecs: vardec vardecs
          {

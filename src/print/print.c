@@ -109,17 +109,9 @@ node_st *PRTfunbody(node_st *node) {
 }
 
 /**
- * @fn PRTlocalfundefs
+ * @fn PRTfundefs
  */
-node_st *PRTlocalfundefs(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTlocalfundef
- */
-node_st *PRTlocalfundef(node_st *node) {
+node_st *PRTfundefs(node_st *node) {
     // TRAVchildren(node);
     return node;
 }
