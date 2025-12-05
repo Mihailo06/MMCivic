@@ -13,12 +13,12 @@ export int[2] a;
 export int fac()
 {
     int a;
-    int a = x[0];
-    int [1]b=5;
-    //int [1]x = [1,2];
-    x[1] = 1;
-    a = b[1];
-    a = [1];
+    //int a = x[0];
+    //int [1]b=5;
+    int [1]x = [1,5];
+    //x[1] = 1;
+    //a = b[1];
+    //a = [1];
 
     if(n == n)
     {
