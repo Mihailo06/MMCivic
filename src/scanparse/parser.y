@@ -43,7 +43,7 @@ void AddLocToNode(node_st *node, void *begin_loc, void *end_loc);
 %token <cflt> FLOAT
 %token <id> ID
 
-%type <node> intval floatval boolval constant exprs expr block arrexpr ids
+%type <node> intval floatval boolval constant exprs expr block ids
 %type <node> stmts stmt varlet program declarations
 %type <node> assign procedurecall conditional whileloop dowhileloop forloop return
 %type <node> declaration globaldec globaldef headerparams
@@ -137,35 +137,35 @@ globaldef: basictype ID SEMICOLON
            }
          | basictype ID LET expr SEMICOLON
            {
-             $$ = ASTglobaldef($4, NULL, $1, $2);
+             $$ = ASTglobaldef(ASTexprs($4, NULL), NULL, $1, $2);
            }
          | EXPORT basictype ID LET expr SEMICOLON
            {
-             $$ = ASTglobaldef($5, NULL, $2, $3);
+             $$ = ASTglobaldef(ASTexprs($5, NULL), NULL, $2, $3);
            }
-         | EXPORT basictype SQUARE_BRACKET_L exprs SQUARE_BRACKET_R ID LET arrexpr SEMICOLON
+         | EXPORT basictype SQUARE_BRACKET_L expr SQUARE_BRACKET_R ID LET SQUARE_BRACKET_L exprs SQUARE_BRACKET_R SEMICOLON
            {
-             $$ = ASTglobaldef($8, $4, $2, $6);
+             $$ = ASTglobaldef($9, $4, $2, $6);
            }
-         | basictype SQUARE_BRACKET_L exprs SQUARE_BRACKET_R ID LET arrexpr SEMICOLON
+         | basictype SQUARE_BRACKET_L expr SQUARE_BRACKET_R ID LET SQUARE_BRACKET_L exprs SQUARE_BRACKET_R SEMICOLON
            {
-             $$ = ASTglobaldef($7, $3, $1, $5);
+             $$ = ASTglobaldef($8, $3, $1, $5);
            }
-         | EXPORT basictype SQUARE_BRACKET_L exprs SQUARE_BRACKET_R ID SEMICOLON
+         | EXPORT basictype SQUARE_BRACKET_L expr SQUARE_BRACKET_R ID SEMICOLON
            {
              $$ = ASTglobaldef(NULL, $4, $2, $6);
            }
-         | basictype SQUARE_BRACKET_L exprs SQUARE_BRACKET_R ID SEMICOLON
+         | basictype SQUARE_BRACKET_L expr SQUARE_BRACKET_R ID SEMICOLON
            {
              $$ = ASTglobaldef(NULL, $3, $1, $5);
            }
-         | EXPORT basictype ID LET arrexpr SEMICOLON
+         | EXPORT basictype ID LET exprs SEMICOLON
            {
-             $$ = ASTglobaldef($5, NULL, $2, $3);
+             $$ = ASTglobaldef(ASTexprs($5, NULL), NULL, $2, $3);
            }
-         | basictype ID LET arrexpr SEMICOLON
+         | basictype ID LET exprs SEMICOLON
            {
-             $$ = ASTglobaldef($4, NULL, $1, $2);
+             $$ = ASTglobaldef(ASTexprs($4, NULL), NULL, $1, $2);
            } 
            ;
 
@@ -186,16 +186,6 @@ funheader: rettype ID BRACKET_L BRACKET_R
              $$ = ASTbasicfunheader($4, $2, $1);
            }
            ;
-
-arrexpr: expr 
-         {
-           $$ = ASTarrexpr($1);
-         }
-       | exprs 
-         {
-           $$ = ASTarrexpr($1);
-         }
-       ;
 
 ids: ID COMMA ids
      {
@@ -355,9 +345,13 @@ stmt: assign
       }
       ;
 
-assign: varlet LET expr SEMICOLON
+assign: varlet LET exprs SEMICOLON
         {
           $$ = ASTassign($1, $3);
+        }
+      | varlet LET SQUARE_BRACKET_L exprs SQUARE_BRACKET_R SEMICOLON
+        {
+          $$ = ASTassign($1,$4);
         }
         ;
 
@@ -475,7 +469,7 @@ expr: BRACKET_L expr BRACKET_R
       }
     | ID SQUARE_BRACKET_L exprs SQUARE_BRACKET_R
       {
-        $$ = ASTvar($3, $1);
+        $$ = ASTarrexpr($3, $1); ///// error lies here!!!!!!! do not forget!!!!
       }
     | constant
       {
