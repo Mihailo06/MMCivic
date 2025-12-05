@@ -89,7 +89,8 @@ node FunDef {
     },
 
     attributes {
-        bool local { constructor }
+        bool local { constructor },
+        bool export { constructor }
     }
 };
 
@@ -139,7 +140,8 @@ node GlobalDef {
     },
     attributes {
         BasicType type { constructor },
-        string id { constructor }
+        string id { constructor },
+        bool export { constructor }
     }
 };
 

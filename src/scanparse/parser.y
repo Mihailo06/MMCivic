@@ -82,11 +82,11 @@ declaration: fundec
              }
            | funheader CURLY_BRACKET_L funbody CURLY_BRACKET_R
              {
-               $$ = ASTfundef($1, $3, false);
+               $$ = ASTfundef($1, $3, false, false);
              }
            | EXPORT funheader CURLY_BRACKET_L funbody CURLY_BRACKET_R
              {
-               $$ = ASTfundef($2, $4, false);
+               $$ = ASTfundef($2, $4, false, true);
              }
            | globaldec
              {
@@ -106,11 +106,11 @@ fundec: EXTERN funheader SEMICOLON
 
 fundef: funheader CURLY_BRACKET_L funbody CURLY_BRACKET_R
         {
-          $$ = ASTfundef($1, $3, true);
+          $$ = ASTfundef($1, $3, true, false);
         }
       | EXPORT funheader CURLY_BRACKET_L funbody CURLY_BRACKET_R
         {
-          $$ = ASTfundef($2, $4, true);
+          $$ = ASTfundef($2, $4, true, true);
         }
         ;
 
@@ -130,43 +130,43 @@ globaldec: EXTERN basictype ID SEMICOLON
 
 globaldef: basictype ID SEMICOLON
            {
-             $$ = ASTglobaldef(NULL, NULL, $1, $2);
+             $$ = ASTglobaldef(NULL, NULL, $1, $2, false);
            }
          | EXPORT basictype ID SEMICOLON
            {
-             $$ = ASTglobaldef(NULL, NULL, $2, $3);
+             $$ = ASTglobaldef(NULL, NULL, $2, $3, true);
            }
          | basictype ID LET expr SEMICOLON
            {
-             $$ = ASTglobaldef(ASTexprs($4, NULL), NULL, $1, $2);
+             $$ = ASTglobaldef(ASTexprs($4, NULL), NULL, $1, $2, false);
            }
          | EXPORT basictype ID LET expr SEMICOLON
            {
-             $$ = ASTglobaldef(ASTexprs($5, NULL), NULL, $2, $3);
+             $$ = ASTglobaldef(ASTexprs($5, NULL), NULL, $2, $3, true);
            }
          | EXPORT basictype SQUARE_BRACKET_L expr SQUARE_BRACKET_R ID LET SQUARE_BRACKET_L exprs SQUARE_BRACKET_R SEMICOLON
            {
-             $$ = ASTglobaldef($9, $4, $2, $6);
+             $$ = ASTglobaldef($9, $4, $2, $6, true);
            }
          | basictype SQUARE_BRACKET_L expr SQUARE_BRACKET_R ID LET SQUARE_BRACKET_L exprs SQUARE_BRACKET_R SEMICOLON
            {
-             $$ = ASTglobaldef($8, $3, $1, $5);
+             $$ = ASTglobaldef($8, $3, $1, $5, false);
            }
          | EXPORT basictype SQUARE_BRACKET_L expr SQUARE_BRACKET_R ID SEMICOLON
            {
-             $$ = ASTglobaldef(NULL, $4, $2, $6);
+             $$ = ASTglobaldef(NULL, $4, $2, $6, true);
            }
          | basictype SQUARE_BRACKET_L expr SQUARE_BRACKET_R ID SEMICOLON
            {
-             $$ = ASTglobaldef(NULL, $3, $1, $5);
+             $$ = ASTglobaldef(NULL, $3, $1, $5, false);
            }
          | EXPORT basictype ID LET exprs SEMICOLON
            {
-             $$ = ASTglobaldef(ASTexprs($5, NULL), NULL, $2, $3);
+             $$ = ASTglobaldef(ASTexprs($5, NULL), NULL, $2, $3, true);
            }
          | basictype ID LET exprs SEMICOLON
            {
-             $$ = ASTglobaldef(ASTexprs($4, NULL), NULL, $1, $2);
+             $$ = ASTglobaldef(ASTexprs($4, NULL), NULL, $1, $2, false);
            } 
            ;
 
@@ -227,7 +227,7 @@ funbody: vardecs
          }
        | fundef
          {
-           $$ = ASTfundef($1, NULL, true);
+           $$ = ASTfundef($1, NULL, true, false);
          }
        | stmts
          {
