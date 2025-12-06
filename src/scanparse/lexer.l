@@ -96,12 +96,12 @@ int yycolumn = 1;
                              FILTER( NUM);
                            }
 
-[0-9]+\.[0-9]+([eE][0-9]+) { yylval.cflt = lexerFloatExponent(yytext, yyleng);
-                             FILTER( NUM);
+[0-9]+\.[0-9]+([eE][0-9]+) { yylval.cflt = strtof(yytext, NULL);
+                             FILTER( FLOAT);
                            }
 
 [0-9]+\.[0-9]+            { yylval.cflt = strtof(yytext, NULL); 
-                             FILTER( NUM);
+                             FILTER( FLOAT);
                            }
 
 [0-9]+                     { yylval.cint = atoi(yytext); 

@@ -3,11 +3,13 @@ export void testmethod2(){}
 //this is a comment
 extern int testVar;
 
+extern int[n] testarray1;
 extern int[n,m] testarray;
 
+int testglobal = a[4, 2];
 export int testglobal = a[4];
 export int testglobal = 42;
-export int[2] testglobal = [42];
+export int[2] testglobal = [42, 420];
 export int[2] a;
 
 export int fac()
@@ -20,10 +22,16 @@ export int fac()
     //a = b[1];
     //a = [1];
 
-    if(n == n)
-    {
+    if(n == n) {
         return 1.0e10;
+    } else {
+        x = 42; // test else
+        x = 24;
     }
+
+    while ((bool) x < 5) { doStuff(); } // test while
+
+    do { doStuff(); } while (x < 5); // test do while
     return n*fac(n-n);
 }
 
@@ -33,6 +41,7 @@ export void fib(int n)
     {
         return 0;
     }
+    return 1.0e10;
 }
 
 export void isprime(int n)
@@ -41,7 +50,7 @@ export void isprime(int n)
     {
         return false;
     }
-    for(int i = 2e0, n-1e0)
+    for(int i = 2e0, n-1e0, 1)
     {
         if(n%i == 0e0)
         {
@@ -50,7 +59,6 @@ export void isprime(int n)
     }
     return true;
 }
-
 
 int a;
 export int a;

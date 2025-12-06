@@ -1,325 +1,426 @@
-/**
- * @file
- *
- * This file contains the code for the Print traversal.
- * The traversal has the uid: PRT
- *
- *
- */
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "ccn/ccn.h"
+#include "ccn/dynamic_core.h"
 #include "ccngen/ast.h"
-#include "ccngen/trav.h"
+#include "ccngen/enum.h"
+#include "ccngen/trav_data.h"
 #include "palm/dbug.h"
+#include "palm/memory.h"
 
-/**
- * @fn PRTprogram
- */
+static void indent(void) { DATA_PRT_GET()->indent_depth++; }
+
+static void unindent(void) { DATA_PRT_GET()->indent_depth--; }
+
+#define EXPRPOS(blk)                                                   \
+    {                                                                  \
+        bool __prev_exprpos              = DATA_PRT_GET()->is_exprpos; \
+        DATA_PRT_GET()->is_exprpos       = true;                       \
+        blk DATA_PRT_GET() -> is_exprpos = __prev_exprpos;             \
+    }
+
+static const char *padstr(void) {
+    static const uint32_t shiftwidth = 4;
+    uint32_t              depth      = DATA_PRT_GET()->indent_depth * shiftwidth;
+
+    if (DATA_PRT_GET()->indent_bufsiz < depth + 1) {
+        DATA_PRT_GET()->indent_buf    = MEMrealloc(DATA_PRT_GET()->indent_buf, depth + 1);
+        DATA_PRT_GET()->indent_bufsiz = depth + 1;
+    }
+
+    memset(DATA_PRT_GET()->indent_buf, ' ', depth);
+    DATA_PRT_GET()->indent_buf[depth] = 0;
+
+    return DATA_PRT_GET()->indent_buf;
+}
+
+static const char *typename(enum BasicType type) {
+    switch (type) {
+        case BT_NULL:  return "NULL";
+        case BT_bool:  return "bool";
+        case BT_int:   return "int";
+        case BT_float: return "float";
+    }
+    DBUG_ASSERT(false, "Missing typename definition!");
+    return NULL; // unreachable
+}
+
+void PRTinit(void) {
+    DATA_PRT_GET()->indent_depth  = 0;
+    DATA_PRT_GET()->indent_buf    = MEMmalloc(64);
+    DATA_PRT_GET()->indent_bufsiz = 64;
+    memset(DATA_PRT_GET()->indent_buf, ' ', 63);
+    DATA_PRT_GET()->indent_buf[63] = 0;
+    DATA_PRT_GET()->is_exprpos     = false;
+}
+
+void PRTfini(void) { MEMfree(DATA_PRT_GET()->indent_buf); }
+
 node_st *PRTprogram(node_st *node) {
-    TRAVdeclarations(node);
+    TRAVchildren(node);
     return node;
 }
 
-/**
- * @fn PRTdeclarations
- */
 node_st *PRTdeclarations(node_st *node) {
-    TRAVdeclaration(node);
+    TRAVchildren(node);
     return node;
 }
 
-/**
- * @fn PRTfundec
- */
 node_st *PRTfundec(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTfundef
- */
-node_st *PRTfundef(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTglobaldec
- */
-node_st *PRTglobaldec(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTglobaldef
- */
-node_st *PRTglobaldef(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTfunheader
- */
-node_st *PRTfunheader(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTvoidfunheader
- */
-node_st *PRTvoidfunheader(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTbasicfunheader
- */
-node_st *PRTbasicfunheader(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTrettypes
- */
-node_st *PRTrettypes(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTbasictypes
- */
-node_st *PRTbasictypes(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTfunbody
- */
-node_st *PRTfunbody(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTfundefs
- */
-node_st *PRTfundefs(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTheaderparams
- */
-node_st *PRTheaderparams(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTparameters
- */
-node_st *PRTparameters(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTparameter
- */
-node_st *PRTparameter(node_st *node) {
-    // TRAVchildren(node);
-    return node;
-}
-
-/**
- * @fn PRTvoid
- */
-node_st *PRTvoid(node_st *node) {
-    // TRAVchildren(node);
-    printf("void ");
-    return node;
-}
-
-/**
- * @fn PRTstmts
- */
-node_st *PRTstmts(node_st *node) {
-    TRAVstmt(node);
-    TRAVnext(node);
-    return node;
-}
-
-/**
- * @fn PRTblock
- */
-node_st *PRTblock(node_st *node) { return node; }
-
-/**
- * @fn PRTassign
- */
-node_st *PRTassign(node_st *node) {
-    if (ASSIGN_LET(node) != NULL) {
-        TRAVlet(node);
-        printf(" = ");
-    }
-
-    TRAVexpr(node);
+    TRAVchildren(node);
     printf(";\n");
-
     return node;
 }
 
-/**
- * @fn PRTprocedurecall
- */
-node_st *PRTprocedurecall(node_st *node) { return node; }
+node_st *PRTfundef(node_st *node) {
+    if (FUNDEF_EXPORT(node)) printf("%sexport ", padstr());
+    else printf("%s", padstr());
 
-/**
- * @fn PRTconditional
- */
-node_st *PRTconditional(node_st *node) { return node; }
+    TRAVopt(FUNDEF_FUNHEADER(node));
+    printf(" ");
+    TRAVopt(FUNDEF_FUNBODY(node));
+    return node;
+}
 
-/**
- * @fn PRTwhileloop
- */
-node_st *PRTwhileloop(node_st *node) { return node; }
+node_st *PRTvoidfunheader(node_st *node) {
+    printf("void %s(", VOIDFUNHEADER_ID(node));
+    TRAVchildren(node);
+    printf(")");
+    return node;
+}
 
-/**
- * @fn PRTdowhileloop
- */
-node_st *PRTdowhileloop(node_st *node) { return node; }
+node_st *PRTbasicfunheader(node_st *node) {
+    printf("%s %s(", typename(BASICFUNHEADER_TYPE(node)), BASICFUNHEADER_ID(node));
+    TRAVchildren(node);
+    printf(")");
+    return node;
+}
 
-/**
- * @fn PRTforloop
- */
-node_st *PRTforloop(node_st *node) { return node; }
+node_st *PRTglobaldec(node_st *node) {
+    if (GLOBALDEC_IDS(node) == NULL && GLOBALDEC_ARRAYID(node) == NULL) {
+        // Normal variable
+        printf("%sextern %s %s;\n", padstr(), typename(GLOBALDEC_TYPE(node)), GLOBALDEC_ID(node));
+    } else if (GLOBALDEC_IDS(node) == NULL) {
+        // 1D array
+        printf(
+            "%sextern %s[%s] %s;\n",
+            padstr(),
+            typename(GLOBALDEC_TYPE(node)),
+            GLOBALDEC_ARRAYID(node),
+            GLOBALDEC_ID(node)
+        );
+    } else {
+        // N-D array
+        printf("%sextern %s[", padstr(), typename(GLOBALDEC_TYPE(node)));
+        TRAVchildren(node);
+        printf("] %s;\n", GLOBALDEC_ID(node));
+    }
+    return node;
+}
 
-/**
- * @fn PRTreturn
- */
-node_st *PRTreturn(node_st *node) { return node; }
-
-/**
- * @fn PRTexprs
- */
-node_st *PRTexprs(node_st *node) { return node; }
-
-/**
- * @fn PRTarrexpr
- */
-node_st *PRTarrexpr(node_st *node) { return node; }
-
-/**
- * @fn PRTids
- */
-node_st *PRTids(node_st *node) { return node; }
-
-/**
- * @fn PRTstatement
- */
-node_st *PRTstatement(node_st *node) { return node; }
-
-/**
- * @fn PRTvardecs
- */
-node_st *PRTvardecs(node_st *node) { return node; }
-
-/**
- * @fn PRTvardec
- */
-node_st *PRTvardec(node_st *node) { return node; }
-
-/**
- * @fn PRTbinop
- */
-node_st *PRTbinop(node_st *node) {
-    char *tmp = NULL;
-    printf("( ");
-
-    TRAVleft(node);
-
-    switch (BINOP_OP(node)) {
-        case BO_add:  tmp = "+"; break;
-        case BO_sub:  tmp = "-"; break;
-        case BO_mul:  tmp = "*"; break;
-        case BO_div:  tmp = "/"; break;
-        case BO_mod:  tmp = "%"; break;
-        case BO_lt:   tmp = "<"; break;
-        case BO_le:   tmp = "<="; break;
-        case BO_gt:   tmp = ">"; break;
-        case BO_ge:   tmp = ">="; break;
-        case BO_eq:   tmp = "=="; break;
-        case BO_ne:   tmp = "!="; break;
-        case BO_or:   tmp = "||"; break;
-        case BO_and:  tmp = "&&"; break;
-        case BO_NULL: DBUG_ASSERT(false, "unknown binop detected!");
+node_st *PRTglobaldef(node_st *node) {
+    if (GLOBALDEF_EXPORT(node)) {
+        printf("%sexport ", padstr());
+    } else {
+        printf("%s", padstr());
     }
 
-    printf(" %s ", tmp);
+    printf("%s", typename(GLOBALDEF_TYPE(node)));
 
-    TRAVright(node);
+    if (GLOBALDEF_INDEX_EXPRS(node)) {
+        printf("[");
+        EXPRPOS({ TRAVopt(GLOBALDEF_INDEX_EXPRS(node)); })
+        printf("]");
+    }
 
-    printf(")(%d:%d-%d)", NODE_BLINE(node), NODE_BCOL(node), NODE_ECOL(node));
+    if (GLOBALDEF_VALUE_EXPRS(node)) {
+        printf(" %s = ", GLOBALDEF_ID(node));
+        EXPRPOS({
+            if (GLOBALDEF_INDEX_EXPRS(node)) printf("[");
+            TRAVopt(GLOBALDEF_VALUE_EXPRS(node));
+        })
+        if (GLOBALDEF_INDEX_EXPRS(node)) printf("]");
+        puts(";"); // includes newline
+    } else {
+        printf(" %s;\n", GLOBALDEF_ID(node));
+    }
 
     return node;
 }
 
-/**
- * @fn PRTmonop
- */
-node_st *PRTmonop(node_st *node) { return node; }
+node_st *PRTheaderparams(node_st *node) {
+    TRAVopt(HEADERPARAMS_PARAM(node));
+    if (HEADERPARAMS_NEXT(node)) {
+        printf(", ");
+        TRAVopt(HEADERPARAMS_NEXT(node));
+    }
+    return node;
+}
 
-/**
- * @fn PRTcast
- */
-node_st *PRTcast(node_st *node) { return node; }
+node_st *PRTparameter(node_st *node) {
+    printf("%s", typename(PARAMETER_TYPE(node)));
+    if (PARAMETER_PARAMID(node)) {
+        printf("[");
+        TRAVopt(PARAMETER_PARAMID(node));
+        printf("]");
+    }
+    printf(" %s", PARAMETER_ID(node));
+    return node;
+}
 
-/**
- * @fn PRTvarlet
- */
+node_st *PRTfunbody(node_st *node) {
+    printf("{\n");
+    indent();
+    TRAVchildren(node);
+    unindent();
+    printf("%s}\n", padstr());
+    return node;
+}
+
+node_st *PRTfundefs(node_st *node) {
+    TRAVchildren(node);
+    return node;
+}
+
+node_st *PRTvardecs(node_st *node) {
+    TRAVchildren(node);
+    return node;
+}
+
+node_st *PRTvardec(node_st *node) {
+    printf("%s%s", padstr(), typename(VARDEC_TYPE(node)));
+    if (VARDEC_ARREXPRS(node)) {
+        printf("[");
+        EXPRPOS({ TRAVopt(VARDEC_ARREXPRS(node)); })
+        printf("]");
+    }
+    printf(" %s", VARDEC_ID(node));
+    if (VARDEC_EXPR(node)) {
+        printf(" = ");
+        EXPRPOS({ TRAVopt(VARDEC_EXPR(node)); })
+    }
+    puts(";");
+    return node;
+}
+
+node_st *PRTarrexpr(node_st *node) {
+    printf("%s[", ARREXPR_ID(node));
+    TRAVchildren(node);
+    printf("]");
+    return node;
+}
+
+node_st *PRTids(node_st *node) {
+    printf("%s", IDS_ID(node));
+    if (IDS_NEXT(node)) {
+        printf(", ");
+        TRAVchildren(node);
+    }
+    return node;
+}
+
+node_st *PRTblock(node_st *node) {
+    // Significant effort has been put into printing blocks with only one statement without braces.
+    // This is partially to trigger those with bad taste.
+    if ((DATA_PRT_GET()->prev_block_was_single_line = !STMTS_NEXT(BLOCK_BLOCK(node)))) {
+        // Single-line block
+        indent();
+        puts("");
+        TRAVchildren(node);
+        unindent();
+    } else {
+        // Multi-statement block
+        printf("{\n");
+        indent();
+        TRAVchildren(node);
+        unindent();
+        printf("%s}", padstr());
+    }
+    return node;
+}
+
+node_st *PRTstmts(node_st *node) {
+    TRAVchildren(node);
+    return node;
+}
+
+node_st *PRTexprs(node_st *node) {
+    EXPRPOS({
+        TRAVopt(EXPRS_EXPR(node));
+        if (EXPRS_NEXT(node)) {
+            printf(", ");
+            TRAVopt(EXPRS_NEXT(node));
+        }
+    })
+    return node;
+}
+
+node_st *PRTassign(node_st *node) {
+    printf("%s", padstr());
+    TRAVopt(ASSIGN_LET(node));
+    printf(" = ");
+    EXPRPOS({ TRAVopt(ASSIGN_EXPR(node)); })
+    puts(";");
+    return node;
+}
+
+node_st *PRTprocedurecall(node_st *node) {
+    bool is_exprpos = DATA_PRT_GET()->is_exprpos;
+    printf("%s%s(", is_exprpos ? "" : padstr(), PROCEDURECALL_ID(node));
+    EXPRPOS({ TRAVopt(PROCEDURECALL_EXPRS(node)); })
+    printf(is_exprpos ? ")" : ");\n");
+    return node;
+}
+
+node_st *PRTconditional(node_st *node) {
+    printf("%sif (", padstr());
+    EXPRPOS({ TRAVopt(CONDITIONAL_EXPR(node)); })
+    printf(") ");
+    TRAVopt(CONDITIONAL_THENBLOCK(node));
+    if (CONDITIONAL_ELSEBLOCK(node)) {
+        if (DATA_PRT_GET()->prev_block_was_single_line) printf("%selse ", padstr());
+        else printf(" else ");
+        TRAVopt(CONDITIONAL_ELSEBLOCK(node));
+    }
+
+    puts(""); // newline
+    return node;
+}
+
+node_st *PRTwhileloop(node_st *node) {
+    printf("%swhile (", padstr());
+    EXPRPOS({ TRAVopt(WHILELOOP_EXPR(node)); })
+    printf(") ");
+    TRAVopt(WHILELOOP_BLOCK(node));
+    puts(""); // newline
+    return node;
+}
+
+node_st *PRTdowhileloop(node_st *node) {
+    printf("%sdo ", padstr());
+    TRAVopt(DOWHILELOOP_BLOCK(node));
+    if (DATA_PRT_GET()->prev_block_was_single_line) printf("%swhile (", padstr());
+    else printf(" while (");
+    EXPRPOS({ TRAVopt(DOWHILELOOP_EXPR(node)); })
+    puts(");");
+    return node;
+}
+
+node_st *PRTforloop(node_st *node) {
+    printf("%sfor (int %s = ", padstr(), FORLOOP_ID(node));
+    EXPRPOS({ TRAVopt(FORLOOP_ASSIGNEXPR(node)); })
+    printf(", ");
+    EXPRPOS({ TRAVopt(FORLOOP_WHILEEXPR(node)); })
+    if (FORLOOP_INCREMENTEXPR(node)) {
+        printf(", ");
+        EXPRPOS({ TRAVopt(FORLOOP_INCREMENTEXPR(node)); })
+    }
+    printf(") ");
+    TRAVopt(FORLOOP_BLOCK(node));
+    puts("");
+    return node;
+}
+
+node_st *PRTreturn(node_st *node) {
+    if (RETURN_EXPR(node)) {
+        printf("%sreturn ", padstr());
+        EXPRPOS({ TRAVopt(RETURN_EXPR(node)); })
+        puts(";");
+    } else {
+        printf("%sreturn;\n", padstr());
+    }
+    return node;
+}
+
+static const char *binopStr(enum BinOpType type) {
+    switch (type) {
+        case BO_add: return "+";
+        case BO_sub: return "-";
+        case BO_mul: return "*";
+        case BO_div: return "/";
+        case BO_mod: return "%";
+        case BO_lt:  return "<";
+        case BO_le:  return "<=";
+        case BO_gt:  return ">";
+        case BO_ge:  return ">=";
+        case BO_eq:  return "==";
+        case BO_ne:  return "!=";
+        case BO_and: return "&&";
+        case BO_or:  return "||";
+
+        case BO_NULL:
+        default:      return "???";
+    }
+}
+
+node_st *PRTbinop(node_st *node) {
+    EXPRPOS({
+        TRAVopt(BINOP_LEFT(node));
+        printf(" %s ", binopStr(BINOP_OP(node)));
+        TRAVopt(BINOP_RIGHT(node));
+    })
+    return node;
+}
+
+static const char *monopStr(enum MonOpType type) {
+    switch (type) {
+        case MO_not: return "!";
+        case MO_neg: return "-";
+
+        case MO_NULL:
+        default:      return "???";
+    }
+}
+
+node_st *PRTmonop(node_st *node) {
+    EXPRPOS({
+        printf("%s", monopStr(MONOP_OP(node)));
+        TRAVchildren(node);
+    })
+    return node;
+}
+
+node_st *PRTcast(node_st *node) {
+    printf("(%s) ", typename(CAST_TYPE(node)));
+    TRAVopt(CAST_EXPR(node));
+    return node;
+}
+
 node_st *PRTvarlet(node_st *node) {
-    printf("%s(%d:%d)", VARLET_NAME(node), NODE_BLINE(node), NODE_BCOL(node));
+    printf("%s", VARLET_NAME(node));
+    if (VARLET_EXPRS(node)) {
+        printf("[");
+        TRAVopt(VARLET_EXPRS(node));
+        printf("]");
+    }
     return node;
 }
 
-/**
- * @fn PRTvar
- */
 node_st *PRTvar(node_st *node) {
     printf("%s", VAR_NAME(node));
+    if (VAR_ARREXPR(node)) {
+        EXPRPOS({
+            printf("[");
+            TRAVopt(VAR_ARREXPR(node));
+            printf("]");
+        })
+    }
     return node;
 }
 
-/**
- * @fn PRTnum
- */
 node_st *PRTnum(node_st *node) {
     printf("%d", NUM_VAL(node));
     return node;
 }
 
-/**
- * @fn PRTfloat
- */
 node_st *PRTfloat(node_st *node) {
     printf("%f", FLOAT_VAL(node));
     return node;
 }
 
-/**
- * @fn PRTbool
- */
 node_st *PRTbool(node_st *node) {
-    char *bool_str = BOOL_VAL(node) ? "true" : "false";
-    printf("%s", bool_str);
+    printf(BOOL_VAL(node) ? "true" : "false");
     return node;
 }
