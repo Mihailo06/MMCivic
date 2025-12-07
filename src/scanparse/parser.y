@@ -14,7 +14,6 @@ static node_st *parseresult = NULL;
 extern int yylex();
 int yyerror(char *errname);
 extern FILE *yyin;
-void debug();
 void AddLocToNode(node_st *node, void *begin_loc, void *end_loc);
 
 
@@ -298,7 +297,6 @@ vardec: basictype ID SEMICOLON
         }
       | basictype SQUARE_BRACKET_L expr SQUARE_BRACKET_R ID LET exprs SEMICOLON
         {
-          debug();
            $$ = ASTvardec($3, $7, $1, $5);
         }
       | basictype SQUARE_BRACKET_L expr SQUARE_BRACKET_R ID LET SQUARE_BRACKET_L exprs SQUARE_BRACKET_R SEMICOLON
@@ -353,15 +351,10 @@ stmt: assign
 
 assign: varlet LET exprs SEMICOLON
         {
-          debug();
-          debug();
-          debug();
           $$ = ASTassign($1, $3);
-
         }
       | varlet LET SQUARE_BRACKET_L expr SQUARE_BRACKET_R SEMICOLON
         {
-          debug();
           $$ = ASTassign($1,ASTexprs($4, NULL));
         }
         ;
@@ -595,9 +588,4 @@ node_st *SPdoScanParse(node_st *root)
     }
     yyparse();
     return parseresult;
-}
-
-void debug()
-{
-  printf("\n \n node \n \n \n");
 }
