@@ -473,7 +473,7 @@ expr: BRACKET_L expr BRACKET_R
       }
     | ID SQUARE_BRACKET_L exprs SQUARE_BRACKET_R
       {
-        $$ = ASTarrexpr($3, $1); ///// error lies here!!!!!!! do not forget!!!!
+        $$ = ASTarrexpr($3, $1);
       }
     | constant
       {
