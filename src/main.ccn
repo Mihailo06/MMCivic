@@ -24,7 +24,6 @@ phase Demo {
         };
     }
 };
-
 /*** AST ***/
 
 enum BasicType {
@@ -58,7 +57,7 @@ enum BinOpType {
 
 nodeset Declaration = {FunDec, FunDef, GlobalDec, GlobalDef};
 // nodeset BasicType = {Bool, Num, Float};
-nodeset Expr = {Num, Float, Bool, Binop, Var, ProcedureCall};
+nodeset Expr = {Num, Float, Bool, Binop, Monop,Var, ProcedureCall, Cast, ArrExpr};
 nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
 
 // Nodes you want to be able to link to from your symbol table.
@@ -90,7 +89,8 @@ node FunDef {
     },
 
     attributes {
-        bool local { constructor }
+        bool local { constructor },
+        bool export { constructor }
     }
 };
 
@@ -135,12 +135,13 @@ node GlobalDec {
 // using ArrExpr for the right expression because a single Expr is a mandatory subset of ArrExpr
 node GlobalDef {
     children {
-        ArrExpr expr { constructor },
-        Exprs arrexprs { constructor }
+        Exprs arrexprs { constructor },
+        Expr exprs { constructor }
     },
     attributes {
         BasicType type { constructor },
-        string id { constructor }
+        string id { constructor },
+        bool export { constructor }
     }
 };
 
@@ -201,7 +202,11 @@ node VarDec {
 
 node ArrExpr {
     children {
-        Exprs exprs { constructor, mandatory }
+        Exprs indexes { constructor, mandatory }
+    },
+
+    attributes {
+        string id { constructor }
     }
 };
 
@@ -231,7 +236,7 @@ node Stmts {
 
 node Exprs {
     children {
-        Expr expr { constructor, mandatory},
+        Expr expr { constructor, mandatory },
         Exprs next { constructor }
     }
 };
@@ -239,7 +244,7 @@ node Exprs {
 node Assign {
     children {
         VarLet let { constructor },
-        Expr expr { constructor, mandatory }
+        Exprs expr { constructor, mandatory }
     }
 };
 

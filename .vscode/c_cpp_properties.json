@@ -6,7 +6,7 @@
                 "${workspaceFolder}/src",
                 "${workspaceFolder}/coconut/copra",
                 "${workspaceFolder}/coconut/palm/include",
-                "${workspaceFolder}/build-debug/ccngen"
+                "${workspaceFolder}/build/ccngen"
             ],
             "defines": ["CCN_USES_UNSAFE=1"],
             "compilerPath": "/bin/gcc",
