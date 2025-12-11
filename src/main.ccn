@@ -5,12 +5,7 @@ start phase RootPhase {
         pass SPdoScanParse;
 
         Demo;
-        print;
     }
-};
-
-traversal Print {
-    uid = PRT
 };
 
 phase Demo {
@@ -20,6 +15,17 @@ phase Demo {
             nodes = { Var, Program },
             travdata {
                 user htable_stptr table
+            }
+        };
+
+        traversal Print {
+            uid = PRT,
+            travdata {
+                uint32 indent_depth,
+                string indent_buf,
+                uint64 indent_bufsiz,
+                bool   is_exprpos,
+                bool   prev_block_was_single_line
             }
         };
     }
@@ -57,7 +63,7 @@ enum BinOpType {
 
 nodeset Declaration = {FunDec, FunDef, GlobalDec, GlobalDef};
 // nodeset BasicType = {Bool, Num, Float};
-nodeset Expr = {Num, Float, Bool, Binop, Monop,Var, ProcedureCall, Cast, ArrExpr};
+nodeset Expr = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr};
 nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
 
 // Nodes you want to be able to link to from your symbol table.
@@ -89,7 +95,7 @@ node FunDef {
     },
 
     attributes {
-        bool local { constructor },
+        bool local { constructor }, // True if this is a nested function
         bool export { constructor }
     }
 };
@@ -132,11 +138,10 @@ node GlobalDec {
     }
 };
 
-// using ArrExpr for the right expression because a single Expr is a mandatory subset of ArrExpr
 node GlobalDef {
     children {
-        Exprs arrexprs { constructor },
-        Expr exprs { constructor }
+        Exprs value_exprs { constructor },
+        Expr index_exprs { constructor }
     },
     attributes {
         BasicType type { constructor },
@@ -202,7 +207,7 @@ node VarDec {
 
 node ArrExpr {
     children {
-        Exprs indexes { constructor, mandatory }
+        Exprs indices { constructor, mandatory }
     },
 
     attributes {
@@ -251,7 +256,6 @@ node Assign {
 // procedurecall for statements
 node ProcedureCall {
     children {
-        Expr expr { constructor },
         Exprs exprs { constructor }
     },
     attributes {
