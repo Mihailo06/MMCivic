@@ -361,15 +361,15 @@ assign: varlet LET exprs SEMICOLON
 
 procedurecall: ID BRACKET_L expr BRACKET_R SEMICOLON
          {
-           $$ = ASTprocedurecall($3, NULL, $1);
+           $$ = ASTprocedurecall(ASTexprs($3, NULL), $1);
          }
        | ID BRACKET_L expr exprs BRACKET_R SEMICOLON
          {
-           $$ = ASTprocedurecall($3, $4, $1);
+           $$ = ASTprocedurecall(ASTexprs($3, $4), $1);
          }
        | ID BRACKET_L BRACKET_R SEMICOLON
          {
-           $$ = ASTprocedurecall(NULL, NULL, $1);
+           $$ = ASTprocedurecall(NULL, $1);
          }
          ;
 
@@ -389,7 +389,7 @@ whileloop: WHILE BRACKET_L expr BRACKET_R block
            }
            ;
 
-dowhileloop: DO block WHILE BRACKET_L expr BRACKET_R
+dowhileloop: DO block WHILE BRACKET_L expr BRACKET_R SEMICOLON
              {
                $$ = ASTdowhileloop($2, $5);
              }
@@ -457,15 +457,15 @@ expr: BRACKET_L expr BRACKET_R
       }
     | ID BRACKET_L BRACKET_R
       {
-        $$ = ASTprocedurecall(NULL, NULL, $1);
+        $$ = ASTprocedurecall(NULL, $1);
       }
     | ID BRACKET_L expr BRACKET_R
       {
-        $$ = ASTprocedurecall($3, NULL, $1);
+        $$ = ASTprocedurecall(ASTexprs($3, NULL), $1);
       }
     | ID BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = ASTprocedurecall($3, $5, $1);
+        $$ = ASTprocedurecall(ASTexprs($3, $5), $1);
       }
     | ID
       {
