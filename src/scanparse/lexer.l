@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "scanparse/lexer_util.h"
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
 #include "parser.h"
@@ -90,10 +89,6 @@ int yycolumn = 1;
 
 [A-Za-z][A-Za-z0-9_]*      { yylval.id = STRcpy(yytext);
                              FILTER( ID);
-                           }
-
-[0-9]+([eE][0-9]+)         { yylval.cint = lexerDigitExponent(yytext, yyleng);
-                             FILTER( NUM);
                            }
 
 [0-9]+\.[0-9]+([eE][0-9]+) { yylval.cflt = strtof(yytext, NULL);
