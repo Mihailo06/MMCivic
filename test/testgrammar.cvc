@@ -50,9 +50,9 @@ export void isprime(int n)
     {
         return false;
     }
-    for(int i = 2e0, n-1e0, 1)
+    for(int i = 1, n-1, 1)
     {
-        if(n%i == 0e0)
+        if(n%i == 0)
         {
             return false;
         }
