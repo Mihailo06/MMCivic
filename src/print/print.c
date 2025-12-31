@@ -99,18 +99,9 @@ node_st *PRTbasicfunheader(node_st *node) {
 }
 
 node_st *PRTglobaldec(node_st *node) {
-    if (GLOBALDEC_IDS(node) == NULL && GLOBALDEC_ARRAYID(node) == NULL) {
+    if (GLOBALDEC_IDS(node) == NULL) {
         // Normal variable
         printf("%sextern %s %s;\n", padstr(), typename(GLOBALDEC_TYPE(node)), GLOBALDEC_ID(node));
-    } else if (GLOBALDEC_IDS(node) == NULL) {
-        // 1D array
-        printf(
-            "%sextern %s[%s] %s;\n",
-            padstr(),
-            typename(GLOBALDEC_TYPE(node)),
-            GLOBALDEC_ARRAYID(node),
-            GLOBALDEC_ID(node)
-        );
     } else {
         // N-D array
         printf("%sextern %s[", padstr(), typename(GLOBALDEC_TYPE(node)));
@@ -197,9 +188,9 @@ node_st *PRTvardec(node_st *node) {
         printf("]");
     }
     printf(" %s", VARDEC_ID(node));
-    if (VARDEC_EXPR(node)) {
+    if (VARDEC_LETEXPR(node)) {
         printf(" = ");
-        EXPRPOS({ TRAVopt(VARDEC_EXPR(node)); })
+        EXPRPOS({ TRAVopt(VARDEC_LETEXPR(node)); })
     }
     puts(";");
     return node;
