@@ -77,7 +77,7 @@ root node Program {
 
 node Declarations {
     children {
-        Declaration declaration { constructor, mandatory },
+        Declaration declaration { constructor },
         Declarations next { constructor }
     }
 };
@@ -95,8 +95,8 @@ node FunDef {
     },
 
     attributes {
-        bool local { constructor }, // True if this is a nested function
-        bool export { constructor }
+        bool local { constructor }, // true if this is a nested function
+        bool export { constructor } // true if the function is an export
     }
 };
 
@@ -128,20 +128,19 @@ node BasicFunHeader {
 
 node GlobalDec {
     children {
-        Ids ids { constructor }
+        Ids ids { constructor } // array ids
     },
 
     attributes {
-        BasicType type { constructor },
-        string id { constructor },
-        string arrayid { constructor }
+        BasicType type { constructor }, // the declarations type
+        string id { constructor } // declaration id
     }
 };
 
 node GlobalDef {
     children {
         Exprs value_exprs { constructor },
-        Expr index_exprs { constructor }
+        Exprs index_exprs { constructor }
     },
     attributes {
         BasicType type { constructor },
@@ -152,7 +151,7 @@ node GlobalDef {
 
 node HeaderParams {
     children {
-        Parameter param { constructor, mandatory },
+        Parameter param { constructor },
         HeaderParams next { constructor }
     }
 };
@@ -188,14 +187,14 @@ node FunDefs {
 
 node VarDecs {
     children {
-        VarDec vardec { constructor, mandatory },
+        VarDec vardec { constructor },
         VarDecs next { constructor }
     }
 };
 
 node VarDec {
     children {
-        Expr expr { constructor },
+        Exprs letexpr { constructor },
         Exprs arrexprs { constructor }
     },
 
@@ -234,14 +233,14 @@ node Block {
 // old nodes
 node Stmts {
     children {
-        Stmt stmt { constructor, mandatory },
+        Stmt stmt { constructor },
         Stmts next { constructor }
     }
 };
 
 node Exprs {
     children {
-        Expr expr { constructor, mandatory },
+        Expr expr { constructor },
         Exprs next { constructor }
     }
 };

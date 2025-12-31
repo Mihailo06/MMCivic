@@ -1,12 +1,20 @@
 extern void testmethod();
 export void testmethod2(){}
 //this is a comment
+
+
 extern int testVar;
+
+
+
 
 extern int[n] testarray1;
 extern int[n,m] testarray;
+int[n,m] testarray5;
+export int[1,2] testarray6;
 
-int testglobal = a[4, 2];
+
+int testglobal =    a[4, 2];
 export int testglobal = a[4];
 export int testglobal = 42;
 export int[2] testglobal = [42, 420];
@@ -15,12 +23,12 @@ export int[2] a;
 export int fac()
 {
     int a;
-    //int a = x[0];
-    //int [1]b=5;
+    int a = x[0];
+    int [1]b=5;
     int [1]x = [1,5];
-    //x[1] = 1;
-    //a = b[1];
-    //a = [1];
+    x[1] = 1;
+    a = b[1];
+    a = [1];
 
     if(n == n) {
         return 1.0e10;
@@ -66,8 +74,8 @@ int [1]a;
 //int a = [1];
 
 
-//int a = 5;
-//export int b = 4;
+int a = 5;
+export int b = 4;
 //export int[2] a = a[4];
 //int[2] b = a[3];
 export int[3] v;
