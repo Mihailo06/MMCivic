@@ -4,7 +4,26 @@ start phase RootPhase {
     actions {
         pass SPdoScanParse;
 
+        ContextAnalysis;
         Demo;
+    }
+};
+
+phase ContextAnalysis {
+    actions {
+        traversal InitSymtables {
+            uid = InitSymtables_,
+            nodes = {
+                // Globals
+                Program, GlobalDec, GlobalDef,
+
+                // Functions
+                FunBody, FunDec, FunDef, VoidFunHeader, BasicFunHeader
+            },
+            travdata {
+                user symtab_stack_ptr stack
+            }
+        };
     }
 };
 
@@ -72,6 +91,9 @@ nodeset Link = Expr | Stmt;
 root node Program {
     children {
         Declarations declarations { constructor, mandatory }
+    },
+    attributes {
+        user symtable_ptr symtab
     }
 };
 
@@ -85,6 +107,9 @@ node Declarations {
 node FunDec {
     children {
         FunHeader funHeader { constructor }
+    },
+    attributes {
+        user symtable_ptr symtab
     }
 };
 
@@ -95,6 +120,7 @@ node FunDef {
     },
 
     attributes {
+        user symtable_ptr symtab,
         bool local { constructor }, // true if this is a nested function
         bool export { constructor } // true if the function is an export
     }
