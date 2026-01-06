@@ -57,7 +57,7 @@ node_st *current_exprs = NULL;
 %type <node> intval floatval boolval constant exprs expr exprlogicor exprlogicand expreq exprrel expradd exprmul exprunary exprprime
 %type <node> block ids
 %type <node> stmts stmt varlet program declarations
-%type <node> assign assigntail procedurecall procedurecalltail conditional conditionalelse whileloop dowhileloop forloop forloopincs return returnprime
+%type <node> assign procedurecall procedurecalltail conditional conditionalelse whileloop dowhileloop forloop forloopincs return returnprime
 %type <node> declaration globaldec globaldef globaldefprime globaldeflet globaldefletarr headerparams headerparamstail
 %type <node> vardecs vardec vardeclet vardecletexprs
 %type <node> fundef fundefs fundec funheader funbody
@@ -257,7 +257,7 @@ vardecs: vardecs vardec
          }
          ;
 
-vardec: basictype SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R ID vardeclet SEMICOLON
+vardec: basictype SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R ID vardecletexprs SEMICOLON
         {
           $$ = ASTvardec(ASTexprs($3, $4), $7, $1, $6);
         }
@@ -267,9 +267,9 @@ vardec: basictype SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R ID vardeclet SEMI
         }
         ;
 
-vardeclet: LET vardecletexprs
+vardeclet: LET expr
            {
-             $$ = $2;
+             $$ = ASTexprs($2, NULL);
            }
          | 
            {
@@ -277,13 +277,13 @@ vardeclet: LET vardecletexprs
            }
            ;
 
-vardecletexprs: expr
+vardecletexprs: LET SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R
                 {
-                  $$ = ASTexprs($1, NULL);
+                  $$ = ASTexprs($3, $4);
                 }
-              | SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R
+              | 
                 {
-                  $$ = ASTexprs($2, $3);
+                  $$ = NULL;
                 }
                 ;
 
@@ -331,21 +331,11 @@ stmt: assign
       }
       ;
 
-assign: varlet LET assigntail
+assign: varlet LET expr SEMICOLON
         {
           $$ = ASTassign($1, $3);
         }
         ;
-
-assigntail: expr exprs SEMICOLON // debug: not sure why this is exprs
-            {
-               $$ = ASTexprs($1, $2);
-            }
-          | SQUARE_BRACKET_L expr SQUARE_BRACKET_R SEMICOLON
-            {
-               $$ = ASTexprs($2, NULL); 
-            }
-            ;
 
 procedurecall: ID BRACKET_L procedurecalltail
                {
