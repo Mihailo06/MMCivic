@@ -38,9 +38,12 @@ typedef struct {
 
 void symtable_entry_deinit(symtable_entry ent);
 
-symtable *symtable_init(symtable *parent);
-void      symtable_deinit(symtable *tab);
-bool      symtable_contains(symtable *tab, const char *sym);
+symtable       *symtable_init(symtable *parent);
+void            symtable_deinit(symtable *tab);
+bool            symtable_contains(symtable *tab, const char *sym);
+bool            symtable_isdefined(symtable *tab, const char *sym);
+symtable_entry *symtable_lookup(symtable *tab, const char *sym);
+symtable       *symtable_get_parent(symtable *tab);
 
 /**
  * Adds a new entry to the symbol table. Caller asserts that an entry with the given name
