@@ -7,13 +7,13 @@
 #include "ctxanalysis/symtable.h"
 #include "palm/ctinfo.h"
 #include "palm/dbug.h"
+#include "util.h"
 
 #define CUR_SYMTAB DATA_CHECKIDENTIFIERS__GET()->current_symtab
 
-static void checkdef(const char *name) {
+static void checkdef(node_st *node, const char *name) {
     if (!symtable_isdefined(CUR_SYMTAB, name)) {
-        // TODO: better error messages using `CTIobj`
-        CTI(CTI_ERROR, true, "reference to undefined symbol '%s'\n", name);
+        CTIobj(CTI_ERROR, true, node_ctinfo(node), "reference to undefined symbol '%s'\n", name);
         CCNerrorAction();
     }
 }
@@ -50,19 +50,19 @@ node_st *CHECKIDENTIFIERS_fundef(node_st *node) {
 }
 
 node_st *CHECKIDENTIFIERS_var(node_st *node) {
-    checkdef(VAR_NAME(node));
+    checkdef(node, VAR_NAME(node));
     TRAVchildren(node);
     return node;
 }
 
 node_st *CHECKIDENTIFIERS_varlet(node_st *node) {
-    checkdef(VARLET_NAME(node));
+    checkdef(node, VARLET_NAME(node));
     TRAVchildren(node);
     return node;
 }
 
 node_st *CHECKIDENTIFIERS_arrexpr(node_st *node) {
-    checkdef(ARREXPR_ID(node));
+    checkdef(node, ARREXPR_ID(node));
     TRAVchildren(node);
     return node;
 }
@@ -80,12 +80,15 @@ node_st *CHECKIDENTIFIERS_procedurecall(node_st *node) {
     for (node_st *args = PROCEDURECALL_EXPRS(node); args; args = EXPRS_NEXT(args)) argcount++;
 
     if (argcount != ent->arity) {
-        CTI(CTI_ERROR,
+        CTIobj(
+            CTI_ERROR,
             true,
+            node_ctinfo(node),
             "call to function '%s' with invalid number of arguments. expected %u, found %u",
             PROCEDURECALL_ID(node),
             ent->arity,
-            argcount);
+            argcount
+        );
 
         CCNerrorAction();
     }
