@@ -30,6 +30,7 @@ include(./coconut/coconut.cmake)
 # Whenever you add a file, add it here too.
 add_executable(civicc
     src/main.c
+    src/util.c
     src/global/globals.c
 
     # printing

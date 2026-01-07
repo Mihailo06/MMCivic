@@ -11,6 +11,7 @@
 #include "palm/dbug.h"
 #include "palm/memory.h"
 #include "user_types.h"
+#include "util.h"
 
 static void pushSymtab(symtable *tab) {
     DBUG_ASSERT(DATA_INITSYMTABLES__GET()->stack->top < 64, "symtable stack overflow!");
@@ -34,14 +35,13 @@ static symtable *pushNewSymtab(void) {
     return tab;
 }
 
-static bool checkdupSym(const char *sym) {
+static bool checkdupSym(node_st *node, const char *sym) {
     symtable *top =
         DATA_INITSYMTABLES__GET()->stack->stack[DATA_INITSYMTABLES__GET()->stack->top - 1];
 
     bool is_dup = symtable_contains(top, sym);
     if (is_dup) {
-        // TODO: better error messages using `CTIobj`
-        CTI(CTI_ERROR, true, "redefinition of symbol '%s'\n", sym);
+        CTIobj(CTI_ERROR, true, node_ctinfo(node), "redefinition of symbol '%s'\n", sym);
         CCNerrorAction();
     }
 
@@ -64,7 +64,7 @@ node_st *INITSYMTABLES_program(node_st *node) {
 }
 
 node_st *INITSYMTABLES_globaldec(node_st *node) {
-    if (checkdupSym(GLOBALDEC_ID(node))) return node; // error
+    if (checkdupSym(node, GLOBALDEC_ID(node))) return node; // error
 
     symtable_entry ent = {
         .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
@@ -76,7 +76,7 @@ node_st *INITSYMTABLES_globaldec(node_st *node) {
 }
 
 node_st *INITSYMTABLES_globaldef(node_st *node) {
-    if (checkdupSym(GLOBALDEF_ID(node))) return node; // error
+    if (checkdupSym(node, GLOBALDEF_ID(node))) return node; // error
 
     symtable_entry ent = {
         .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
@@ -109,7 +109,7 @@ node_st *INITSYMTABLES_voidfunheader(node_st *node) {
         param_count++;
         node_st *param = HEADERPARAMS_PARAM(params);
 
-        if (checkdupSym(PARAMETER_ID(param))) continue; // error
+        if (checkdupSym(node, PARAMETER_ID(param))) continue; // error
 
         symtable_entry ent = {
             .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
@@ -153,7 +153,7 @@ node_st *INITSYMTABLES_basicfunheader(node_st *node) {
         param_count++;
         node_st *param = HEADERPARAMS_PARAM(params);
 
-        if (checkdupSym(PARAMETER_ID(param))) continue;
+        if (checkdupSym(node, PARAMETER_ID(param))) continue;
 
         symtable_entry ent = {
             .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
@@ -192,7 +192,7 @@ node_st *INITSYMTABLES_funbody(node_st *node) {
     // Variable declaractions
     for (node_st *vardecs = FUNBODY_VARDECS(node); vardecs; vardecs = VARDECS_NEXT(vardecs)) {
         node_st *vardec = VARDECS_VARDEC(vardecs);
-        if (checkdupSym(VARDEC_ID(vardec))) continue; // error
+        if (checkdupSym(node, VARDEC_ID(vardec))) continue; // error
 
         symtable_entry ent = {
             .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
