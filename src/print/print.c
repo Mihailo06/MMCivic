@@ -203,6 +203,11 @@ node_st *PRTarrexpr(node_st *node) {
     return node;
 }
 
+node_st *PRTid(node_st *node) {
+    printf("%s", ID_ID(node));
+    return node;
+}
+
 node_st *PRTids(node_st *node) {
     printf("%s", IDS_ID(node));
     if (IDS_NEXT(node)) {

@@ -106,45 +106,45 @@ nodeset FunHeader {
 
 node VoidFunHeader {
     children {
-        HeaderParams params { constructor }
+        HeaderParams params { constructor },
+        Id id { constructor }
     },
 
     attributes {
-        string id { constructor },
         RetType type { constructor }
     }
 };
 
 node BasicFunHeader {
     children {
-        HeaderParams params { constructor }
+        HeaderParams params { constructor },
+        Id id { constructor }
     },
 
     attributes {
-        string id { constructor },
         BasicType type { constructor }
     }
 };
 
 node GlobalDec {
     children {
-        Ids ids { constructor } // array ids
+        Ids ids { constructor }, // array ids
+        Id id { constructor } // declaration id
     },
 
     attributes {
-        BasicType type { constructor }, // the declarations type
-        string id { constructor } // declaration id
+        BasicType type { constructor } // the declarations type
     }
 };
 
 node GlobalDef {
     children {
         Exprs value_exprs { constructor },
-        Exprs index_exprs { constructor }
+        Exprs index_exprs { constructor },
+        Id id { constructor }
     },
     attributes {
         BasicType type { constructor },
-        string id { constructor },
         bool export { constructor }
     }
 };
@@ -158,11 +158,11 @@ node HeaderParams {
 
 node Parameter {
     children {
-        Ids paramid { constructor }
+        Ids paramid { constructor },
+        Id id { constructor }
     },
     attributes {
-        BasicType type { constructor },
-        string id { constructor }
+        BasicType type { constructor }
     }
 };
 
@@ -195,20 +195,23 @@ node VarDecs {
 node VarDec {
     children {
         Exprs letexpr { constructor },
-        Exprs arrexprs { constructor }
+        Exprs arrexprs { constructor },
+        Id id { constructor }
     },
 
     attributes {
-        BasicType type { constructor },
-        string id { constructor }
+        BasicType type { constructor }
     }
 };
 
 node ArrExpr {
     children {
-        Exprs indices { constructor, mandatory }
-    },
+        Exprs indices { constructor, mandatory },
+        Id id { constructor }
+    }
+};
 
+node Id {
     attributes {
         string id { constructor }
     }
@@ -216,11 +219,8 @@ node ArrExpr {
 
 node Ids {
     children {
-        Ids next { constructor }
-    },
-
-    attributes {
-        string id { constructor }
+        Ids next { constructor },
+        Id id { constructor }
     }
 };
 
@@ -255,10 +255,8 @@ node Assign {
 // procedurecall for statements
 node ProcedureCall {
     children {
-        Exprs exprs { constructor }
-    },
-    attributes {
-        string id { constructor }
+        Exprs exprs { constructor },
+        Id id { constructor }
     }
 };
 
@@ -289,10 +287,8 @@ node ForLoop {
         Expr assignexpr { constructor, mandatory },
         Expr whileexpr { constructor, mandatory },
         Expr incrementexpr { constructor },
-        Block block { constructor, mandatory }
-    },
-    attributes {
-        string id { constructor }
+        Block block { constructor, mandatory },
+        Id id { constructor }
     }
 };
 
@@ -344,21 +340,15 @@ nodeset Vars {
 
 node VarLet {
     children {
-        Exprs exprs { constructor }
-    },
-
-    attributes {
-        string name { constructor }  // Repeat from nodeset to add constructor
+        Exprs exprs { constructor },
+        Id id { constructor }
     }
 };
 
 node Var {
     children {
-        Exprs arrexpr { constructor }
-    },
-
-    attributes {
-        string name { constructor }
+        Exprs arrexpr { constructor },
+        Id id { constructor }
     }
 };
 
