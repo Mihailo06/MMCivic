@@ -38,7 +38,7 @@ typedef struct {
 
 void symtable_entry_deinit(symtable_entry ent);
 
-symtable *symtable_init(uint32_t nesting_lvl);
+symtable *symtable_init(symtable *parent);
 void      symtable_deinit(symtable *tab);
 bool      symtable_contains(symtable *tab, const char *sym);
 

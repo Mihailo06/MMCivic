@@ -19,12 +19,6 @@ static void pushSymtab(symtable *tab) {
     DATA_INITSYMTABLES__GET()->stack->stack[DATA_INITSYMTABLES__GET()->stack->top++] = tab;
 }
 
-static symtable *pushNewSymtab(void) {
-    symtable *tab = symtable_init(DATA_INITSYMTABLES__GET()->stack->top);
-    pushSymtab(tab);
-    return tab;
-}
-
 static symtable *popSymtab(void) {
     DBUG_ASSERT(DATA_INITSYMTABLES__GET()->stack->top > 0, "symtable stack underflow!");
     return DATA_INITSYMTABLES__GET()->stack->stack[--DATA_INITSYMTABLES__GET()->stack->top];
@@ -33,6 +27,13 @@ static symtable *popSymtab(void) {
 static symtable *peekSymtab(void) {
     DBUG_ASSERT(DATA_INITSYMTABLES__GET()->stack->top > 0, "symtable stack underflow!");
     return DATA_INITSYMTABLES__GET()->stack->stack[DATA_INITSYMTABLES__GET()->stack->top - 1];
+}
+
+static symtable *pushNewSymtab(void) {
+    symtable *parent = DATA_INITSYMTABLES__GET()->stack->top == 0 ? NULL : peekSymtab();
+    symtable *tab    = symtable_init(parent);
+    pushSymtab(tab);
+    return tab;
 }
 
 static bool checkdupSym(const char *sym) {
