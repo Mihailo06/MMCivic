@@ -182,15 +182,21 @@ node_st *PRTvardecs(node_st *node) {
 
 node_st *PRTvardec(node_st *node) {
     printf("%s%s", padstr(), typename(VARDEC_TYPE(node)));
-    if (VARDEC_ARREXPRS(node)) {
+    if (VARDEC_ARR_DIMS(node)) {
         printf("[");
-        EXPRPOS({ TRAVopt(VARDEC_ARREXPRS(node)); })
+        EXPRPOS({ TRAVopt(VARDEC_ARR_DIMS(node)); })
         printf("]");
     }
     printf(" %s", VARDEC_ID(node));
-    if (VARDEC_LETEXPR(node)) {
-        printf(" = ");
-        EXPRPOS({ TRAVopt(VARDEC_LETEXPR(node)); })
+    if (VARDEC_EXPRS(node)) {
+        if (VARDEC_ARR_DIMS(node)) {
+            printf(" = [");
+            EXPRPOS({ TRAVopt(VARDEC_EXPRS(node)); })
+            printf("]");
+        } else {
+            printf(" = ");
+            EXPRPOS({ TRAVopt(VARDEC_EXPRS(node)); })
+        }
     }
     puts(";");
     return node;
@@ -215,7 +221,10 @@ node_st *PRTids(node_st *node) {
 node_st *PRTblock(node_st *node) {
     // Significant effort has been put into printing blocks with only one statement without braces.
     // This is partially to trigger those with bad taste.
-    if ((DATA_PRT_GET()->prev_block_was_single_line = !STMTS_NEXT(BLOCK_BLOCK(node)))) {
+    node_st *blk                               = BLOCK_BLOCK(node);
+    bool     is_single_line                    = blk && !STMTS_NEXT(BLOCK_BLOCK(node));
+    DATA_PRT_GET()->prev_block_was_single_line = is_single_line;
+    if (is_single_line) {
         // Single-line block
         indent();
         puts("");

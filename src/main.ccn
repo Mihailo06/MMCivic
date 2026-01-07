@@ -194,8 +194,8 @@ node VarDecs {
 
 node VarDec {
     children {
-        Exprs letexpr { constructor },
-        Exprs arrexprs { constructor }
+        Exprs arr_dims { constructor },
+        Exprs exprs { constructor }
     },
 
     attributes {
