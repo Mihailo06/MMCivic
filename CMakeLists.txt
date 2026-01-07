@@ -44,6 +44,7 @@ add_executable(civicc
     # context analysis
     src/ctxanalysis/symtable.c
     src/ctxanalysis/trav_initsymtables.c
+    src/ctxanalysis/trav_checkidentifiers.c
     src/ctxanalysis/trav_freesymtables.c
 )
 

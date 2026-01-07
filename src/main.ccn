@@ -25,6 +25,14 @@ phase ContextAnalysis {
             }
         };
 
+        traversal CheckIdentifiers {
+            uid = CheckIdentifiers_,
+            nodes = Scope | WithSymbolReferences,
+            travdata {
+                user symtable_ptr current_symtab
+            }
+        };
+
         traversal FreeSymtables {
             uid = FreeSymtables_,
             nodes = { Symtable }
@@ -89,6 +97,18 @@ nodeset Declaration = {FunDec, FunDef, GlobalDec, GlobalDef};
 // nodeset BasicType = {Bool, Num, Float};
 nodeset Expr = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr};
 nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
+
+// Nodes that reference an identifier, but not nodes that define one.
+nodeset WithSymbolReferences = {
+    ArrExpr,
+    ProcedureCall
+} | Vars;
+
+nodeset Scope = {
+    Program,
+    FunDef,
+    FunDec
+};
 
 // Nodes you want to be able to link to from your symbol table.
 //
