@@ -1,6 +1,6 @@
 int fun(int[n] b)
 {
-    int[1] a = [1];
-    fun(a);
-    return a;
+    int a = 1;
+    int[42] a = [1, 2, 3];
+    for (int i = 1, 4) {}
 }
