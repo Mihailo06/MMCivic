@@ -6,8 +6,7 @@
 #include "palm/str.h"
 
 struct symtable {
-    // TODO: save a pointer to the symtable in outer scope.
-    int        nesting_lvl;
+    symtable  *parent;
     htable_st *tab;
 };
 
@@ -15,11 +14,11 @@ void symtable_entry_deinit(symtable_entry ent) {
     if (ent.kind == SYMTABLE_ENTRY_KIND_FUNCTION) { MEMfree(ent.argtypes); }
 }
 
-symtable *symtable_init(uint32_t nesting_lvl) {
+symtable *symtable_init(symtable *parent) {
     symtable *tab = MEMmalloc(sizeof(symtable));
 
-    tab->nesting_lvl = nesting_lvl;
-    tab->tab         = HTnew_String(11);
+    tab->parent = parent;
+    tab->tab    = HTnew_String(11);
 
     return tab;
 }
@@ -39,6 +38,14 @@ void symtable_deinit(symtable *tab) {
 
 bool symtable_contains(symtable *tab, const char *sym) {
     return HTlookup(tab->tab, (void *) sym) != NULL;
+}
+
+bool symtable_isdefined(symtable *tab, const char *sym) {
+    for (; tab; tab = tab->parent) {
+        if (symtable_contains(tab, sym)) return true;
+    }
+
+    return false;
 }
 
 void symtable_insert(symtable *tab, const char *sym, symtable_entry ent) {
