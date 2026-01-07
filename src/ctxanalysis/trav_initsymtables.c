@@ -1,12 +1,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "ccn/ccn.h"
 #include "ccn/dynamic_core.h"
 #include "ccn/phase_driver.h"
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
-#include "ccngen/trav.h"
 #include "ccngen/trav_data.h"
 #include "ctxanalysis/symtable.h"
 #include "palm/ctinfo.h"
@@ -59,7 +57,7 @@ void INITSYMTABLES_fini(void) { MEMfree(DATA_INITSYMTABLES__GET()->stack); }
 
 node_st *INITSYMTABLES_program(node_st *node) {
     DBUG_ASSERT(DATA_INITSYMTABLES__GET()->stack->top == 0, "nonzero nesting at root node!");
-    PROGRAM_SYMTAB(node) = pushNewSymtab();
+    PROGRAM_SYMTABLE(node) = ASTsymtable(pushNewSymtab());
     TRAVchildren(node);
     popSymtab();
     return node;
@@ -90,14 +88,14 @@ node_st *INITSYMTABLES_globaldef(node_st *node) {
 }
 
 node_st *INITSYMTABLES_fundec(node_st *node) {
-    FUNDEC_SYMTAB(node) = pushNewSymtab();
+    FUNDEC_SYMTABLE(node) = ASTsymtable(pushNewSymtab());
     TRAVchildren(node);
     popSymtab();
     return node;
 }
 
 node_st *INITSYMTABLES_fundef(node_st *node) {
-    FUNDEF_SYMTAB(node) = pushNewSymtab();
+    FUNDEF_SYMTABLE(node) = ASTsymtable(pushNewSymtab());
     TRAVchildren(node);
     popSymtab();
     return node;

@@ -24,6 +24,11 @@ phase ContextAnalysis {
                 user symtab_stack_ptr stack
             }
         };
+
+        traversal FreeSymtables {
+            uid = FreeSymtables_,
+            nodes = { Symtable }
+        };
     }
 };
 
@@ -86,14 +91,25 @@ nodeset Expr = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExp
 nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
 
 // Nodes you want to be able to link to from your symbol table.
+//
+// I have no idea what the above comment wants me to do. Why do I need to reference nodes from my
+// symbol table? Why even care about what node a symbol was originally defined at when we have a
+// symbol table already? -Moritz
 nodeset Link = Expr | Stmt;
 
 root node Program {
     children {
-        Declarations declarations { constructor, mandatory }
-    },
+        Declarations declarations { constructor, mandatory },
+        Symtable symtable
+    }
+};
+
+node Symtable {
     attributes {
-        user symtable_ptr symtab
+        user symtable_ptr symtab { constructor }
+    },
+    lifetime {
+        allowed (ContextAnalysis.InitSymtables -> ContextAnalysis.FreeSymtables]
     }
 };
 
@@ -106,21 +122,19 @@ node Declarations {
 
 node FunDec {
     children {
-        FunHeader funHeader { constructor }
+        FunHeader funHeader { constructor },
+        Symtable symtable
     },
-    attributes {
-        user symtable_ptr symtab
-    }
 };
 
 node FunDef {
     children {
         FunHeader funHeader { constructor },
-        FunBody funBody { constructor, mandatory }
+        FunBody funBody { constructor, mandatory },
+        Symtable symtable
     },
 
     attributes {
-        user symtable_ptr symtab,
         bool local { constructor }, // true if this is a nested function
         bool export { constructor } // true if the function is an export
     }
