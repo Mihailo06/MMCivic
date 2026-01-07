@@ -182,15 +182,21 @@ node_st *PRTvardecs(node_st *node) {
 
 node_st *PRTvardec(node_st *node) {
     printf("%s%s", padstr(), typename(VARDEC_TYPE(node)));
-    if (VARDEC_ARREXPRS(node)) {
+    if (VARDEC_ARR_DIMS(node)) {
         printf("[");
-        EXPRPOS({ TRAVopt(VARDEC_ARREXPRS(node)); })
+        EXPRPOS({ TRAVopt(VARDEC_ARR_DIMS(node)); })
         printf("]");
     }
     printf(" %s", VARDEC_ID(node));
-    if (VARDEC_LETEXPR(node)) {
-        printf(" = ");
-        EXPRPOS({ TRAVopt(VARDEC_LETEXPR(node)); })
+    if (VARDEC_EXPRS(node)) {
+        if (VARDEC_ARR_DIMS(node)) {
+            printf(" = [");
+            EXPRPOS({ TRAVopt(VARDEC_EXPRS(node)); })
+            printf("]");
+        } else {
+            printf(" = ");
+            EXPRPOS({ TRAVopt(VARDEC_EXPRS(node)); })
+        }
     }
     puts(";");
     return node;
