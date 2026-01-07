@@ -1,6 +1,5 @@
 int fun(int[n] b)
 {
     int[1] a = [1];
-    fun(a);
-    return a;
+    for (int i = 1, 4) {}
 }

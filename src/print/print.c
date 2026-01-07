@@ -215,7 +215,10 @@ node_st *PRTids(node_st *node) {
 node_st *PRTblock(node_st *node) {
     // Significant effort has been put into printing blocks with only one statement without braces.
     // This is partially to trigger those with bad taste.
-    if ((DATA_PRT_GET()->prev_block_was_single_line = !STMTS_NEXT(BLOCK_BLOCK(node)))) {
+    node_st *blk                               = BLOCK_BLOCK(node);
+    bool     is_single_line                    = blk && !STMTS_NEXT(BLOCK_BLOCK(node));
+    DATA_PRT_GET()->prev_block_was_single_line = is_single_line;
+    if (is_single_line) {
         // Single-line block
         indent();
         puts("");
