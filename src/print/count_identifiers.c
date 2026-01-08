@@ -37,7 +37,7 @@ node_st *COUNTIDENTIFIERS_program(node_st *node) {
 node_st *COUNTIDENTIFIERS_var(node_st *node) {
     TRAVchildren(node);
 
-    countIdent(VAR_NAME(node));
+    countIdent(ID_ID(VAR_ID(node)));
 
     return node;
 }
@@ -46,7 +46,7 @@ node_st *COUNTIDENTIFIERS_assign(node_st *node) {
     TRAVchildren(node);
 
     node_st *varlet = ASSIGN_LET(node);
-    if (varlet) { countIdent(VARLET_NAME(varlet)); }
+    if (varlet) { countIdent(ID_ID(VARLET_ID(varlet))); }
 
     return node;
 }

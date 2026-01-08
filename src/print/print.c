@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ccn/ccn.h"
 #include "ccn/dynamic_core.h"
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
@@ -85,14 +84,14 @@ node_st *PRTfundef(node_st *node) {
 }
 
 node_st *PRTvoidfunheader(node_st *node) {
-    printf("void %s(", VOIDFUNHEADER_ID(node));
+    printf("void %s(", ID_ID(VOIDFUNHEADER_ID(node)));
     TRAVchildren(node);
     printf(")");
     return node;
 }
 
 node_st *PRTbasicfunheader(node_st *node) {
-    printf("%s %s(", typename(BASICFUNHEADER_TYPE(node)), BASICFUNHEADER_ID(node));
+    printf("%s %s(", typename(BASICFUNHEADER_TYPE(node)), ID_ID(BASICFUNHEADER_ID(node)));
     TRAVchildren(node);
     printf(")");
     return node;
@@ -101,12 +100,17 @@ node_st *PRTbasicfunheader(node_st *node) {
 node_st *PRTglobaldec(node_st *node) {
     if (GLOBALDEC_IDS(node) == NULL) {
         // Normal variable
-        printf("%sextern %s %s;\n", padstr(), typename(GLOBALDEC_TYPE(node)), GLOBALDEC_ID(node));
+        printf(
+            "%sextern %s %s;\n",
+            padstr(),
+            typename(GLOBALDEC_TYPE(node)),
+            ID_ID(GLOBALDEC_ID(node))
+        );
     } else {
         // N-D array
         printf("%sextern %s[", padstr(), typename(GLOBALDEC_TYPE(node)));
         TRAVchildren(node);
-        printf("] %s;\n", GLOBALDEC_ID(node));
+        printf("] %s;\n", ID_ID(GLOBALDEC_ID(node)));
     }
     return node;
 }
@@ -127,7 +131,7 @@ node_st *PRTglobaldef(node_st *node) {
     }
 
     if (GLOBALDEF_VALUE_EXPRS(node)) {
-        printf(" %s = ", GLOBALDEF_ID(node));
+        printf(" %s = ", ID_ID(GLOBALDEF_ID(node)));
         EXPRPOS({
             if (GLOBALDEF_INDEX_EXPRS(node)) printf("[");
             TRAVopt(GLOBALDEF_VALUE_EXPRS(node));
@@ -135,7 +139,7 @@ node_st *PRTglobaldef(node_st *node) {
         if (GLOBALDEF_INDEX_EXPRS(node)) printf("]");
         puts(";"); // includes newline
     } else {
-        printf(" %s;\n", GLOBALDEF_ID(node));
+        printf(" %s;\n", ID_ID(GLOBALDEF_ID(node)));
     }
 
     return node;
@@ -157,7 +161,7 @@ node_st *PRTparameter(node_st *node) {
         TRAVopt(PARAMETER_PARAMID(node));
         printf("]");
     }
-    printf(" %s", PARAMETER_ID(node));
+    printf(" %s", ID_ID(PARAMETER_ID(node)));
     return node;
 }
 
@@ -187,7 +191,7 @@ node_st *PRTvardec(node_st *node) {
         EXPRPOS({ TRAVopt(VARDEC_ARR_DIMS(node)); })
         printf("]");
     }
-    printf(" %s", VARDEC_ID(node));
+    printf(" %s", ID_ID(VARDEC_ID(node)));
     if (VARDEC_EXPRS(node)) {
         if (VARDEC_ARR_DIMS(node)) {
             printf(" = [");
@@ -203,14 +207,19 @@ node_st *PRTvardec(node_st *node) {
 }
 
 node_st *PRTarrexpr(node_st *node) {
-    printf("%s[", ARREXPR_ID(node));
+    printf("%s[", ID_ID(ARREXPR_ID(node)));
     TRAVchildren(node);
     printf("]");
     return node;
 }
 
+node_st *PRTid(node_st *node) {
+    // no-op
+    return node;
+}
+
 node_st *PRTids(node_st *node) {
-    printf("%s", IDS_ID(node));
+    printf("%s", ID_ID(IDS_ID(node)));
     if (IDS_NEXT(node)) {
         printf(", ");
         TRAVchildren(node);
@@ -268,7 +277,7 @@ node_st *PRTassign(node_st *node) {
 
 node_st *PRTprocedurecall(node_st *node) {
     bool is_exprpos = DATA_PRT_GET()->is_exprpos;
-    printf("%s%s(", is_exprpos ? "" : padstr(), PROCEDURECALL_ID(node));
+    printf("%s%s(", is_exprpos ? "" : padstr(), ID_ID(PROCEDURECALL_ID(node)));
     EXPRPOS({ TRAVopt(PROCEDURECALL_EXPRS(node)); })
     printf(is_exprpos ? ")" : ");\n");
     return node;
@@ -309,7 +318,7 @@ node_st *PRTdowhileloop(node_st *node) {
 }
 
 node_st *PRTforloop(node_st *node) {
-    printf("%sfor (int %s = ", padstr(), FORLOOP_ID(node));
+    printf("%sfor (int %s = ", padstr(), ID_ID(FORLOOP_ID(node)));
     EXPRPOS({ TRAVopt(FORLOOP_ASSIGNEXPR(node)); })
     printf(", ");
     EXPRPOS({ TRAVopt(FORLOOP_WHILEEXPR(node)); })
@@ -389,7 +398,7 @@ node_st *PRTcast(node_st *node) {
 }
 
 node_st *PRTvarlet(node_st *node) {
-    printf("%s", VARLET_NAME(node));
+    printf("%s", ID_ID(VARLET_ID(node)));
     if (VARLET_EXPRS(node)) {
         printf("[");
         TRAVopt(VARLET_EXPRS(node));
@@ -399,7 +408,7 @@ node_st *PRTvarlet(node_st *node) {
 }
 
 node_st *PRTvar(node_st *node) {
-    printf("%s", VAR_NAME(node));
+    printf("%s", ID_ID(VAR_ID(node)));
     if (VAR_ARREXPR(node)) {
         EXPRPOS({
             printf("[");

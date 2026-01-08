@@ -69,19 +69,19 @@ node_st *current_exprs = NULL;
 
 %%
 
-program: declarations
+program: declaration declarations
          {
-           parseresult = ASTprogram($1);
+           parseresult = ASTprogram(ASTdeclarations($1, $2));
          }
          ;
 
-declarations: declarations declaration
+declarations: declaration declarations
               {
-                $$ = ASTdeclarations($2, $1);
+                $$ = ASTdeclarations($1, $2);
               }
-            | declaration
+            | 
               {
-                $$ = ASTdeclarations($1, NULL);
+                $$ = NULL;
               }
               ;
 
@@ -121,21 +121,21 @@ fundef: funheader CURLY_BRACKET_L funbody CURLY_BRACKET_R
 
 globaldec: EXTERN basictype SQUARE_BRACKET_L ID ids SQUARE_BRACKET_R ID SEMICOLON
            {
-             $$ = ASTglobaldec(ASTids($5, $4), $2, $7);
+             $$ = ASTglobaldec(ASTids($5, ASTid($4)), ASTid($7), $2);
            }
          | EXTERN basictype ID SEMICOLON
            {
-             $$ = ASTglobaldec(NULL, $2, $3);
+             $$ = ASTglobaldec(NULL, ASTid($3), $2);
            }
            ;
 
 globaldef: basictype globaldefprime
            {
-             $$ = ASTglobaldef($2, current_exprs, $1, current_id, false); // developer note: if there's somehow any unambigous parts (which there shouln't be), this might break...
+             $$ = ASTglobaldef($2, current_exprs, ASTid(current_id), $1, false); // developer note: if there's somehow any unambigous parts (which there shouln't be), this might break...
            }
          | EXPORT basictype globaldefprime
            {
-             $$ = ASTglobaldef($3, current_exprs, $2, current_id, true);
+             $$ = ASTglobaldef($3, current_exprs, ASTid(current_id), $2, true);
            }
            ;
 
@@ -175,17 +175,17 @@ globaldeflet: LET expr SEMICOLON // not sure if this is a valid rule
 
 funheader: rettype ID BRACKET_L headerparams BRACKET_R
            {
-             $$ = ASTvoidfunheader($4, $2, $1);
+             $$ = ASTvoidfunheader($4, ASTid($2), $1);
            }
          | basictype ID BRACKET_L headerparams BRACKET_R
            {
-             $$ = ASTbasicfunheader($4, $2, $1);
+             $$ = ASTbasicfunheader($4, ASTid($2), $1);
            }
            ;
 
 ids: ids COMMA ID
      {
-       $$ = ASTids($1, $3);
+       $$ = ASTids($1, ASTid($3));
      }
    |
      {
@@ -215,7 +215,7 @@ headerparamstail: headerparams COMMA
 
 parameter: basictype parameterarray
            {
-             $$ = ASTparameter($2, $1, current_id);
+             $$ = ASTparameter($2, ASTid(current_id), $1);
            }
            ;
 
@@ -227,7 +227,7 @@ parameterarray: ID
              | SQUARE_BRACKET_L ID ids SQUARE_BRACKET_R ID
                {
                  current_id = $5;
-                 $$ = ASTids($3, $2);
+                 $$ = ASTids($3, ASTid($2));
                }
                ;
 
@@ -259,11 +259,11 @@ vardecs: vardecs vardec
 
 vardec: basictype SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R ID vardecletexprs SEMICOLON
         {
-          $$ = ASTvardec(ASTexprs($3, $4), $7, $1, $6);
+          $$ = ASTvardec(ASTexprs($3, $4), $7, ASTid($6), $1);
         }
       | basictype ID vardeclet SEMICOLON
         {
-          $$ = ASTvardec(NULL, $3, $1, $2);
+          $$ = ASTvardec(NULL, $3, ASTid($2), $1);
         }
         ;
 
@@ -339,7 +339,7 @@ assign: varlet LET expr SEMICOLON
 
 procedurecall: ID BRACKET_L procedurecalltail
                {
-                 $$ = ASTprocedurecall($3, $1);
+                 $$ = ASTprocedurecall($3, ASTid($1));
                }
                ;
 
@@ -379,7 +379,7 @@ dowhileloop: DO block WHILE BRACKET_L expr BRACKET_R SEMICOLON
 
 forloop: FOR BRACKET_L INT_TYPE ID LET expr COMMA forloopincs BRACKET_R block
          {
-           $$ = ASTforloop($6, $8, current_forloop_inc_expr, $10, $4);
+           $$ = ASTforloop($6, $8, current_forloop_inc_expr, $10, ASTid($4));
          }
          ;
 
@@ -412,12 +412,12 @@ returnprime: expr SEMICOLON
 
 varlet: ID
         {
-          $$ = ASTvarlet(NULL, $1);
+          $$ = ASTvarlet(NULL, ASTid($1));
           AddLocToNode($$, &@1, &@1);
         }
       | ID SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R
         {
-          $$ = ASTvarlet(ASTexprs($3, $4), $1);
+          $$ = ASTvarlet(ASTexprs($3, $4), ASTid($1));
           AddLocToNode($$, &@1, &@1);
         }
         ;
@@ -565,19 +565,19 @@ exprprime: BRACKET_L expr BRACKET_R
            }
          | ID BRACKET_L BRACKET_R
            {
-             $$ = ASTprocedurecall(NULL, $1);
+             $$ = ASTprocedurecall(NULL, ASTid($1));
            }
          | ID BRACKET_L expr exprs BRACKET_R
            {
-             $$ = ASTprocedurecall(ASTexprs($3, $4), $1);
+             $$ = ASTprocedurecall(ASTexprs($3, $4), ASTid($1));
            }
          | ID SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R
            {
-             $$ = ASTarrexpr(ASTexprs($3, $4), $1);
+             $$ = ASTarrexpr(ASTexprs($3, $4), ASTid($1));
            }
          | ID
            {
-             $$ = ASTvar(NULL, $1);
+             $$ = ASTvar(NULL, ASTid($1));
            }
          | constant
            {
