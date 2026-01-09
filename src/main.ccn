@@ -66,9 +66,6 @@ nodeset Declaration = {FunDec, FunDef, GlobalDec, GlobalDef};
 nodeset Expr = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr};
 nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
 
-// Nodes you want to be able to link to from your symbol table.
-nodeset Link = Expr | Stmt;
-
 root node Program {
     children {
         Declarations declarations { constructor, mandatory }
