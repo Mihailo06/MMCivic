@@ -50,28 +50,28 @@ node_st *CHECKIDENTIFIERS_fundef(node_st *node) {
 }
 
 node_st *CHECKIDENTIFIERS_var(node_st *node) {
-    checkdef(node, VAR_NAME(node));
+    checkdef(node, ID_ID(VAR_ID(node)));
     TRAVchildren(node);
     return node;
 }
 
 node_st *CHECKIDENTIFIERS_varlet(node_st *node) {
-    checkdef(node, VARLET_NAME(node));
+    checkdef(node, ID_ID(VARLET_ID(node)));
     TRAVchildren(node);
     return node;
 }
 
 node_st *CHECKIDENTIFIERS_arrexpr(node_st *node) {
-    checkdef(node, ARREXPR_ID(node));
+    checkdef(node, ID_ID(ARREXPR_ID(node)));
     TRAVchildren(node);
     return node;
 }
 
 node_st *CHECKIDENTIFIERS_procedurecall(node_st *node) {
-    symtable_entry *ent = symtable_lookup(CUR_SYMTAB, PROCEDURECALL_ID(node));
+    symtable_entry *ent = symtable_lookup(CUR_SYMTAB, ID_ID(PROCEDURECALL_ID(node)));
 
     if (!ent || ent->kind != SYMTABLE_ENTRY_KIND_FUNCTION) {
-        CTI(CTI_ERROR, true, "call to undefined function '%s'", PROCEDURECALL_ID(node));
+        CTI(CTI_ERROR, true, "call to undefined function '%s'", ID_ID(PROCEDURECALL_ID(node)));
         CCNerrorAction();
         goto done;
     }
@@ -85,7 +85,7 @@ node_st *CHECKIDENTIFIERS_procedurecall(node_st *node) {
             true,
             node_ctinfo(node),
             "call to function '%s' with invalid number of arguments. expected %u, found %u",
-            PROCEDURECALL_ID(node),
+            ID_ID(PROCEDURECALL_ID(node)),
             ent->arity,
             argcount
         );

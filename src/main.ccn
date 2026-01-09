@@ -101,8 +101,10 @@ nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForL
 // Nodes that reference an identifier, but not nodes that define one.
 nodeset WithSymbolReferences = {
     ArrExpr,
-    ProcedureCall
-} | Vars;
+    ProcedureCall,
+    Var,
+    VarLet
+};
 
 nodeset Scope = {
     Program,
