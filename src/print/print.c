@@ -433,3 +433,8 @@ node_st *PRTbool(node_st *node) {
     printf(BOOL_VAL(node) ? "true" : "false");
     return node;
 }
+
+#define MK_NOOP_PRINT(nodetype)                            \
+    node_st *PRT##nodetype(node_st *node) { return node; }
+
+MK_NOOP_PRINT(symtable)

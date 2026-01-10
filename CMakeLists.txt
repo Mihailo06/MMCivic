@@ -28,9 +28,25 @@ ADD_FLEX_BISON_DEPENDENCY(CivicLexer CivicParser)
 include(./coconut/coconut.cmake)
 
 # Whenever you add a file, add it here too.
-add_executable(civicc ${FLEX_CivicLexer_OUTPUTS} ${BISON_CivicParser_OUTPUTS}
-    src/main.c src/print/count_identifiers.c src/print/print.c
-    src/scanparse/scanParse.c src/global/globals.c src/global/globals.h
+add_executable(civicc
+    src/main.c
+    src/util.c
+    src/global/globals.c
+
+    # printing
+    src/print/count_identifiers.c
+    src/print/print.c
+
+    # parsing
+    src/scanparse/scanParse.c
+    ${FLEX_CivicLexer_OUTPUTS}
+    ${BISON_CivicParser_OUTPUTS}
+
+    # context analysis
+    src/ctxanalysis/symtable.c
+    src/ctxanalysis/trav_initsymtables.c
+    src/ctxanalysis/trav_checkidentifiers.c
+    src/ctxanalysis/trav_freesymtables.c
 )
 
 target_compile_options(civicc PRIVATE
