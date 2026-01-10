@@ -4,7 +4,39 @@ start phase RootPhase {
     actions {
         pass SPdoScanParse;
 
+        ContextAnalysis;
         Demo;
+    }
+};
+
+phase ContextAnalysis {
+    actions {
+        traversal InitSymtables {
+            uid = InitSymtables_,
+            nodes = {
+                // Globals
+                Program, GlobalDec, GlobalDef,
+
+                // Functions
+                FunBody, FunDec, FunDef, VoidFunHeader, BasicFunHeader
+            },
+            travdata {
+                user symtab_stack_ptr stack
+            }
+        };
+
+        traversal CheckIdentifiers {
+            uid = CheckIdentifiers_,
+            nodes = Scope | WithSymbolReferences,
+            travdata {
+                user symtable_ptr current_symtab
+            }
+        };
+
+        traversal FreeSymtables {
+            uid = FreeSymtables_,
+            nodes = { Symtable }
+        };
     }
 };
 
@@ -66,12 +98,40 @@ nodeset Declaration = {FunDec, FunDef, GlobalDec, GlobalDef};
 nodeset Expr = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr};
 nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
 
+// Nodes that reference an identifier, but not nodes that define one.
+nodeset WithSymbolReferences = {
+    ArrExpr,
+    ProcedureCall,
+    Var,
+    VarLet
+};
+
+nodeset Scope = {
+    Program,
+    FunDef,
+    FunDec
+};
+
 // Nodes you want to be able to link to from your symbol table.
+//
+// I have no idea what the above comment wants me to do. Why do I need to reference nodes from my
+// symbol table? Why even care about what node a symbol was originally defined at when we have a
+// symbol table already? -Moritz
 nodeset Link = Expr | Stmt;
 
 root node Program {
     children {
-        Declarations declarations { constructor, mandatory }
+        Declarations declarations { constructor, mandatory },
+        Symtable symtable
+    }
+};
+
+node Symtable {
+    attributes {
+        user symtable_ptr symtab { constructor }
+    },
+    lifetime {
+        allowed (ContextAnalysis.InitSymtables -> ContextAnalysis.FreeSymtables]
     }
 };
 
@@ -84,14 +144,16 @@ node Declarations {
 
 node FunDec {
     children {
-        FunHeader funHeader { constructor }
-    }
+        FunHeader funHeader { constructor },
+        Symtable symtable
+    },
 };
 
 node FunDef {
     children {
         FunHeader funHeader { constructor },
-        FunBody funBody { constructor, mandatory }
+        FunBody funBody { constructor, mandatory },
+        Symtable symtable
     },
 
     attributes {

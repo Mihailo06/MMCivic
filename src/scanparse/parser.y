@@ -340,6 +340,7 @@ assign: varlet LET expr SEMICOLON
 procedurecall: ID BRACKET_L procedurecalltail
                {
                  $$ = ASTprocedurecall($3, ASTid($1));
+                 AddLocToNode($$, &@1, &@1);
                }
                ;
 
@@ -566,10 +567,12 @@ exprprime: BRACKET_L expr BRACKET_R
          | ID BRACKET_L BRACKET_R
            {
              $$ = ASTprocedurecall(NULL, ASTid($1));
+             AddLocToNode($$, &@1, &@1);
            }
          | ID BRACKET_L expr exprs BRACKET_R
            {
              $$ = ASTprocedurecall(ASTexprs($3, $4), ASTid($1));
+             AddLocToNode($$, &@1, &@1);
            }
          | ID SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R
            {
