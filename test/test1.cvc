@@ -1,10 +1,12 @@
-int var1;
-int var2;
-int fun(int[n] b)
+int twos = 0;
+int two ()
 {
-    int[1] a = [1];
-    fun(a);
-    var2 = 3;
-    var1 = 2;
-    return a;
+twos = twos + 1;
+return 2;
+}
+void foo ()
+{
+int [2 , two ()] a = two();
+//printInt ( twos );
+//printInt ( a [1 , 1]);
 }

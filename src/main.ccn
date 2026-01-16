@@ -208,9 +208,9 @@ node GlobalDec {
 
 node GlobalDef {
     children {
-        Exprs value_exprs { constructor },
-        Exprs index_exprs { constructor },
-        Id id { constructor }
+        ArrExprs value_exprs { constructor }, // var value
+        Exprs index_exprs { constructor }, // array indexes 
+        Id id { constructor } // var id
     },
     attributes {
         BasicType type { constructor },
@@ -264,7 +264,7 @@ node VarDecs {
 node VarDec {
     children {
         Exprs arr_dims { constructor },
-        Exprs exprs { constructor },
+        ArrExprs exprs { constructor },
         Id id { constructor }
     },
 
@@ -273,10 +273,19 @@ node VarDec {
     }
 };
 
+// node for array accesses
 node ArrExpr {
     children {
         Exprs indices { constructor, mandatory },
         Id id { constructor }
+    }
+};
+
+// node for multi-dim arrays
+node ArrExprs {
+    children {
+        Exprs exprs { constructor },
+        ArrExprs next { constructor }
     }
 };
 

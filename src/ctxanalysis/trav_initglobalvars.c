@@ -41,7 +41,6 @@ node_st *INITGLOBALVARS_program(node_st *node) {
     {
         node_st *__init = ASTdeclarations(ASTfundef(ASTvoidfunheader(NULL, ASTid(NULL), RT_NULL), ASTfunbody(NULL, NULL, nextvar), false, false), PROGRAM_DECLARATIONS(node));
         PROGRAM_DECLARATIONS(node) = __init;
-        // // for some reason when i try to call ASTid(NULL) with a string as an id, such as ASTid("__init") it creates an invalid pointer. No idea why.
     }
 
  
@@ -50,7 +49,7 @@ node_st *INITGLOBALVARS_program(node_st *node) {
 
 node_st *INITGLOBALVARS_assign(node_st *node) {
     
-    if(NODE_TYPE(node) == NT_ASSIGN && symtable_isdefined(SYMTABLE_SYMTAB(PROGRAM_SYMTABLE(program)), ID_ID(VARLET_ID(ASSIGN_LET(node)))) && ) // if in symtable above program then false 
+    if(NODE_TYPE(node) == NT_ASSIGN && symtable_isdefined(SYMTABLE_SYMTAB(PROGRAM_SYMTABLE(program)), ID_ID(VARLET_ID(ASSIGN_LET(node))))  ) // if in symtable above program then false 
     {
         if(first)
         {
