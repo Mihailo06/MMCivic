@@ -1,6 +1,10 @@
+int var1;
+int var2;
 int fun(int[n] b)
 {
     int[1] a = [1];
-    fun(a, b);
+    fun(a);
+    var2 = 3;
+    var1 = 2;
     return a;
 }

@@ -33,6 +33,14 @@ phase ContextAnalysis {
             }
         };
 
+        traversal InitGlobalVars {
+            uid = InitGlobalVars_,
+            nodes = { Program, assign },
+            travdata {
+                user symtable_ptr current_symtab
+            }
+        };
+
         traversal FreeSymtables {
             uid = FreeSymtables_,
             nodes = { Symtable }
@@ -94,7 +102,6 @@ enum BinOpType {
 };
 
 nodeset Declaration = {FunDec, FunDef, GlobalDec, GlobalDef};
-// nodeset BasicType = {Bool, Num, Float};
 nodeset Expr = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr};
 nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
 
@@ -117,6 +124,8 @@ nodeset Scope = {
 // I have no idea what the above comment wants me to do. Why do I need to reference nodes from my
 // symbol table? Why even care about what node a symbol was originally defined at when we have a
 // symbol table already? -Moritz
+//
+// No idea, that was part of their original demo implementation, i kept it because we didn't have a symbol table yet. I guess you can remove it if you want. -developer01
 nodeset Link = Expr | Stmt;
 
 root node Program {
@@ -162,9 +171,7 @@ node FunDef {
     }
 };
 
-nodeset FunHeader {
-    nodes = {VoidFunHeader, BasicFunHeader}
-};
+nodeset FunHeader = {VoidFunHeader, BasicFunHeader };
 
 node VoidFunHeader {
     children {
@@ -310,7 +317,7 @@ node Exprs {
 node Assign {
     children {
         VarLet let { constructor },
-        Exprs expr { constructor, mandatory }
+        Expr expr { constructor }
     }
 };
 
