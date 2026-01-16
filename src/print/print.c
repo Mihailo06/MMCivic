@@ -145,6 +145,10 @@ node_st *PRTglobaldef(node_st *node) {
     return node;
 }
 
+node_st *PRTarrexprs(node_st *node) {
+    return node;
+}
+
 node_st *PRTheaderparams(node_st *node) {
     TRAVopt(HEADERPARAMS_PARAM(node));
     if (HEADERPARAMS_NEXT(node)) {

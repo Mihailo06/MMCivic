@@ -59,7 +59,7 @@ node_st *current_exprs = NULL;
 %type <node> stmts stmt varlet program declarations
 %type <node> assign procedurecall procedurecalltail conditional conditionalelse whileloop dowhileloop forloop forloopincs return returnprime
 %type <node> declaration globaldec globaldef globaldefprime globaldeflet globaldefletarr headerparams headerparamstail
-%type <node> vardecs vardec vardeclet vardecletexprs
+%type <node> vardecs vardec vardeclet vardecletexprs arrayexpr arrayexprs arrayexprprime
 %type <node> fundef fundefs fundec funheader funbody
 %type <node> parameter parameterarray
 %type <cbasictype> basictype
@@ -153,9 +153,13 @@ globaldefprime: SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R ID globaldefletarr
                 }
                 ;
 
-globaldefletarr: LET SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R SEMICOLON
+globaldefletarr: LET arrayexpr SEMICOLON
                  {
-                   $$ = ASTexprs($3, $4);
+                   $$ = $2;
+                 }
+               | LET expr SEMICOLON
+                 {
+                   $$ = ASTarrexprs(ASTexprs($2, NULL), NULL);
                  }
                | SEMICOLON
                  {
@@ -163,9 +167,41 @@ globaldefletarr: LET SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R SEMICOLON
                  }
                  ;
 
+arrayexpr: SQUARE_BRACKET_L arrayexprprime SQUARE_BRACKET_R
+           {
+             $$ = $2;
+           }
+//         | expr        // Developer note: This part was commented out and changed, due to an impossible reduce/reduce conflict caused by the grammar. The case "arrexpr -> expr" was moved a rule up
+//           {           // This doesn't allow for the recursion in arrexpr -> [ arrexprs ] | [ exprs ] | expr
+//                       // For example arrexpr -> [ expr ] could reduce arrexpr -> [exprs] -> [expr] or arrexpr -> [ arrexprs ] -> [expr]
+//                       // This comment is here (for now at least, until we test our implementation on the tests) in case for some weird reason we need to change this back, but we would have an extra reduce/reduce conflict in the end.
+//             $$ = ASTarrexprs(ASTexprs($1, NULL), NULL);
+//           }
+           ;
+
+arrayexprprime: expr exprs
+                {
+                  $$ = ASTarrexprs(ASTexprs($1, $2), NULL);
+                }
+              | arrayexprs
+                {
+                  $$ = $1;
+                }
+              ;
+
+arrayexprs: arrayexpr COMMA arrayexprs
+            {
+              $$ = ASTarrexprs($1, $3);
+            }
+          | 
+            {
+              $$ = NULL;
+            }
+            ;
+
 globaldeflet: LET expr SEMICOLON // not sure if this is a valid rule
               {
-                $$ = ASTexprs($2, NULL);
+                $$ = ASTarrexprs(ASTexprs($2, NULL), NULL);
               }
             | SEMICOLON
               {
@@ -277,10 +313,14 @@ vardeclet: LET expr
            }
            ;
 
-vardecletexprs: LET SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R
-                {
-                  $$ = ASTexprs($3, $4);
-                }
+vardecletexprs: LET arrayexpr
+                 {
+                   $$ = $2;
+                 }
+               | LET expr
+                 {
+                   $$ = ASTarrexprs(ASTexprs($2, NULL), NULL);
+                 }
               | 
                 {
                   $$ = NULL;
