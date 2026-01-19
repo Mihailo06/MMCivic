@@ -35,9 +35,10 @@ phase ContextAnalysis {
 
         traversal InitGlobalVars {
             uid = InitGlobalVars_,
-            nodes = { Program, assign },
+            nodes = { Program, GlobalDef, FunBody, Declarations },
             travdata {
-                user symtable_ptr current_symtab
+                Stmts init_stmts,
+                user symtable_ptr global_symtab
             }
         };
 

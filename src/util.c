@@ -1,6 +1,7 @@
 #include "util.h"
 
 #include "global/globals.h"
+#include "palm/str.h"
 
 struct ctinfo node_ctinfo(node_st *node) {
     struct ctinfo info = {
@@ -12,4 +13,10 @@ struct ctinfo node_ctinfo(node_st *node) {
     };
 
     return info;
+}
+
+char *genident(void) {
+    static int n = 0;
+
+    return STRfmt("__mmcivicc_gen%d", n);
 }
