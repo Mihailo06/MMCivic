@@ -285,8 +285,9 @@ node ArrExpr {
 // node for multi-dim arrays
 node ArrExprs {
     children {
-        Exprs exprs { constructor },
-        ArrExprs next { constructor }
+        ArrExprs dimexprs { constructor }, // for arrexprs on the same "level" e.g [ [],[],[] ] == ArrExprs(NULL, ArrExprs(ArrExprs(NULL,NULL),NULL),NULL)
+        ArrExprs nextdimension { constructor }, // for the next arrexprs "level" e.g. [[[]]] == ArrExprs(NULL, ArrExprs(NULL, ArrExprs(NULL, NULL)))
+        Exprs exprs { constructor } // for expressions
     }
 };
 
