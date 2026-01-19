@@ -159,7 +159,7 @@ globaldefletarr: LET arrayexpr SEMICOLON
                  }
                | LET expr SEMICOLON
                  {
-                   $$ = ASTarrexprs(ASTexprs($2, NULL), NULL);
+                   $$ = ASTarrexprs(NULL, NULL, ASTexprs($2, NULL));
                  }
                | SEMICOLON
                  {
@@ -181,17 +181,21 @@ arrayexpr: SQUARE_BRACKET_L arrayexprprime SQUARE_BRACKET_R
 
 arrayexprprime: expr exprs
                 {
-                  $$ = ASTarrexprs(ASTexprs($1, $2), NULL);
+                  $$ = ASTarrexprs(NULL, NULL, ASTexprs($1, $2));
                 }
-              | arrayexprs
+              | arrayexpr arrayexprs
                 {
-                  $$ = $1;
+                  $$ = ASTarrexprs($2, $1, NULL);
+                }
+              | 
+                {
+                  $$ = NULL;
                 }
               ;
 
-arrayexprs: arrayexpr COMMA arrayexprs
+arrayexprs: COMMA arrayexpr arrayexprs
             {
-              $$ = ASTarrexprs($1, $3);
+              $$ = ASTarrexprs($3, $2, NULL);
             }
           | 
             {
@@ -201,7 +205,7 @@ arrayexprs: arrayexpr COMMA arrayexprs
 
 globaldeflet: LET expr SEMICOLON // not sure if this is a valid rule
               {
-                $$ = ASTarrexprs(ASTexprs($2, NULL), NULL);
+                $$ = ASTarrexprs(NULL, NULL, ASTexprs($2, NULL));
               }
             | SEMICOLON
               {
@@ -319,7 +323,7 @@ vardecletexprs: LET arrayexpr
                  }
                | LET expr
                  {
-                   $$ = ASTarrexprs(ASTexprs($2, NULL), NULL);
+                   $$ = ASTarrexprs(NULL, NULL, ASTexprs($2, NULL));
                  }
               | 
                 {
