@@ -146,6 +146,7 @@ node_st *PRTglobaldef(node_st *node) {
 }
 
 node_st *PRTarrexprs(node_st *node) {
+    TRAVchildren(node);
     return node;
 }
 
