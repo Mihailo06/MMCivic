@@ -3,6 +3,10 @@
 #include "ccngen/ast.h"
 #include "palm/ctinfo.h"
 
+#define TRAVDATA_STUB(travid)   \
+    void travid##_init(void) {} \
+    void travid##_fini(void) {}
+
 struct ctinfo node_ctinfo(node_st *node);
 
 /**

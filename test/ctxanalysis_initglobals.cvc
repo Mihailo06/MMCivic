@@ -9,3 +9,14 @@ int[3] arr_1d = [1, 2, 3];
 
 int[2, 2] splat_2d = 0;
 int[3, 2] arr_2d = [[1, 2], [3, 4], [5, 6]];
+
+int twos = 0;
+int two() {
+    twos = twos + 1;
+    return 2;
+}
+
+void foo() {
+    int[2, two()] a = two();
+    int b = 42;
+}

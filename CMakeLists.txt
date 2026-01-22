@@ -49,6 +49,7 @@ add_executable(civicc
     src/ctxanalysis/trav_checkidentifiers.c
     src/ctxanalysis/trav_freesymtables.c
     src/ctxanalysis/trav_initglobalvars.c
+    src/ctxanalysis/trav_initlocalvars.c
     src/ctxanalysis/trav_initsymtables.c
 )
 

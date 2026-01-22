@@ -14,9 +14,7 @@ static void prependInit(node_st *id, node_st *expr) {
         ASTstmts(assign, DATA_INITGLOBALVARS__GET()->init_stmts);
 }
 
-void INITGLOBALVARS_init(void) {}
-
-void INITGLOBALVARS_fini(void) {}
+TRAVDATA_STUB(INITGLOBALVARS)
 
 node_st *INITGLOBALVARS_program(node_st *node) {
     TRAVchildren(node);
@@ -65,7 +63,8 @@ node_st *INITGLOBALVARS_globaldef(node_st *node) {
             GLOBALDEF_ID(node),
             GLOBALDEF_TYPE(node),
             GLOBALDEF_INDEX_EXPRS(node),
-            GLOBALDEF_VALUE_EXPRS(node)
+            GLOBALDEF_VALUE_EXPRS(node),
+            false
         );
     }
 

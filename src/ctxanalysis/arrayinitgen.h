@@ -9,8 +9,9 @@
  * @param out_stmts :: Stmts - statements of resulting function to append to
  * @param out_vardecs :: VarDecs - VarDecs of resulting function to append to
  * @param target_id :: Id - Identifier of the array to initialize
- * @param index_exprs :: Exprs - Index exprs of the array definition
+ * @param index_exprs :: Exprs - Index exprs of the array definition.
  * @param arrexprs :: ArrExprs - Initializer of the array
+ * @param update_indices If set, updates `index_exprs` to include intermediate identifiers.
  */
 void genArrayInit(
     node_st      **out_stmts,
@@ -18,5 +19,6 @@ void genArrayInit(
     node_st       *target_id,
     enum BasicType target_type,
     node_st       *index_exprs,
-    node_st       *arrexprs
+    node_st       *arrexprs,
+    bool           update_indices
 );
