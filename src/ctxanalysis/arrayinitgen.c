@@ -105,18 +105,17 @@ void genArrayInit(
     enum BasicType target_type,
     node_st       *index_exprs,
     node_st       *arrexprs,
-    bool           update_indices
+    bool           update_indices,
+    bool           is_splat
 ) {
     DBUG_ASSERT(index_exprs, "No index exprs! Is this even an array?");
     DBUG_ASSERT(arrexprs, "No array exprs! Is this a declaration with no assignment?");
 
-    // TODO: this is not correct. To fix this, we first must adjust the AST to differentiate between
-    // single expressions and arrays with one element.
-    if (ARREXPRS_EXPRS(arrexprs) && !EXPRS_NEXT(ARREXPRS_EXPRS(arrexprs))) {
+    if (is_splat) {
         // splat
         node_st *elem    = EXPRS_EXPR(ARREXPRS_EXPRS(arrexprs));
         node_st *elem_id = genidNode();
-        *out_vardecs     = ASTvardecs(ASTvardec(NULL, NULL, elem_id, target_type), *out_vardecs);
+        *out_vardecs = ASTvardecs(ASTvardec(NULL, NULL, elem_id, target_type, true), *out_vardecs);
 
         size_t n_size_ids = EXPRS_count(index_exprs);
 
@@ -130,8 +129,10 @@ void genArrayInit(
         // initialize variables
         for (size_t i = 0; i < n_size_ids; i++) {
             index_ids[i] = genidNode();
-            *out_vardecs =
-                ASTvardecs(ASTvardec(NULL, NULL, size_ids[i] = genidNode(), BT_int), *out_vardecs);
+            *out_vardecs = ASTvardecs(
+                ASTvardec(NULL, NULL, size_ids[i] = genidNode(), BT_int, true),
+                *out_vardecs
+            );
         }
 
         // create assignment statement for array

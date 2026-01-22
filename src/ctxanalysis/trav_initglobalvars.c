@@ -64,7 +64,8 @@ node_st *INITGLOBALVARS_globaldef(node_st *node) {
             GLOBALDEF_TYPE(node),
             GLOBALDEF_INDEX_EXPRS(node),
             GLOBALDEF_VALUE_EXPRS(node),
-            false
+            false,
+            GLOBALDEF_IS_SINGLE_EXPR(node)
         );
     }
 

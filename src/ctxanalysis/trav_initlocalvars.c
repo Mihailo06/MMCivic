@@ -30,7 +30,8 @@ node_st *INITLOCALVARS_vardec(node_st *node) {
             VARDEC_TYPE(node),
             VARDEC_ARR_DIMS(node),
             VARDEC_EXPRS(node),
-            true
+            true,
+            VARDEC_IS_SINGLE_EXPR(node)
         );
     } else {
         // single expr

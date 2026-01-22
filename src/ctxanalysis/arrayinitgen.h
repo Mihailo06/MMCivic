@@ -12,6 +12,8 @@
  * @param index_exprs :: Exprs - Index exprs of the array definition.
  * @param arrexprs :: ArrExprs - Initializer of the array
  * @param update_indices If set, updates `index_exprs` to include intermediate identifiers.
+ * @param is_splat If set, this is an initialization of all elements of an array to one scalar
+ *                 value. Caller asserts that arrexprs has the appropriate form.
  */
 void genArrayInit(
     node_st      **out_stmts,
@@ -20,5 +22,6 @@ void genArrayInit(
     enum BasicType target_type,
     node_st       *index_exprs,
     node_st       *arrexprs,
-    bool           update_indices
+    bool           update_indices,
+    bool           is_splat
 );
