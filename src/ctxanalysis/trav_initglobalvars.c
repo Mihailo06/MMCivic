@@ -4,6 +4,7 @@
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
 #include "ccngen/trav_data.h"
+#include "ctxanalysis/arrayinitgen.h"
 #include "palm/str.h"
 #include "util.h"
 
@@ -18,12 +19,15 @@ void INITGLOBALVARS_init(void) {}
 void INITGLOBALVARS_fini(void) {}
 
 node_st *INITGLOBALVARS_program(node_st *node) {
-    DATA_INITGLOBALVARS__GET()->global_symtab = SYMTABLE_SYMTAB(PROGRAM_SYMTABLE(node));
     TRAVchildren(node);
 
     node_st *init_fn = ASTfundef(
         ASTvoidfunheader(NULL, ASTid(STRcpy("__init")), RT_void),
-        ASTfunbody(NULL, NULL, DATA_INITGLOBALVARS__GET()->init_stmts),
+        ASTfunbody(
+            DATA_INITGLOBALVARS__GET()->init_decs,
+            NULL,
+            DATA_INITGLOBALVARS__GET()->init_stmts
+        ),
         false,
         true
     );
@@ -43,11 +47,27 @@ node_st *INITGLOBALVARS_declarations(node_st *node) {
 }
 
 node_st *INITGLOBALVARS_globaldef(node_st *node) {
-    node_st *id_cpy = CCNcopy(GLOBALDEF_ID(node));
+    // If we already have a node without initializer, return
+    if (!GLOBALDEF_VALUE_EXPRS(node)) return node;
 
-    // TODO: handle arrays correctly. The parser probably doesn't handle it right at the moment
-    // either.
-    prependInit(id_cpy, CCNcopy(EXPRS_EXPR(ARREXPRS_EXPRS(GLOBALDEF_VALUE_EXPRS(node)))));
+    node_st *exprs1d = ARREXPRS_EXPRS(GLOBALDEF_VALUE_EXPRS(node));
+    if (exprs1d && !GLOBALDEF_INDEX_EXPRS(node)) {
+        // single value
+        prependInit(
+            CCNcopy(GLOBALDEF_ID(node)),
+            CCNcopy(EXPRS_EXPR(ARREXPRS_EXPRS(GLOBALDEF_VALUE_EXPRS(node))))
+        );
+    } else {
+        // array
+        genArrayInit(
+            &DATA_INITGLOBALVARS__GET()->init_stmts,
+            &DATA_INITGLOBALVARS__GET()->init_decs,
+            GLOBALDEF_ID(node),
+            GLOBALDEF_TYPE(node),
+            GLOBALDEF_INDEX_EXPRS(node),
+            GLOBALDEF_VALUE_EXPRS(node)
+        );
+    }
 
     CCNfree(GLOBALDEF_VALUE_EXPRS(node));
     GLOBALDEF_VALUE_EXPRS(node) = NULL;
