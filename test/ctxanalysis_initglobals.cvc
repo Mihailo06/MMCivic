@@ -2,5 +2,10 @@ int x = 1;
 int y = 2;
 int z = 3;
 
-int[3] a = 0;
-int[3] b = [1, 2, 3];
+int no_initializer;
+
+int[3] splat_1d = 1;
+int[3] arr_1d = [1, 2, 3];
+
+int[2, 2] splat_2d = 0;
+int[3, 2] arr_2d = [[1, 2], [3, 4], [5, 6]];

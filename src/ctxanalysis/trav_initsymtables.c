@@ -202,8 +202,16 @@ node_st *INITSYMTABLES_funbody(node_st *node) {
         symtable_insert(peekSymtab(), ID_ID(VARDEC_ID(vardec)), ent);
     }
 
-    // Local function definitions
-    if (FUNBODY_LOCALFUNDEFS(node)) TRAVdo(FUNBODY_LOCALFUNDEFS(node));
+    TRAVchildren(node);
+
+    return node;
+}
+
+node_st *INITSYMTABLES_forloop(node_st *node) {
+    symtable_entry ent = { .kind = SYMTABLE_ENTRY_KIND_VARIABLE, .type = BT_int };
+    symtable_insert(peekSymtab(), ID_ID(FORLOOP_ID(node)), ent);
+
+    TRAVchildren(node);
 
     return node;
 }
