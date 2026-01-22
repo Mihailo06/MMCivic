@@ -15,10 +15,12 @@ extern int yylex();
 int yyerror(char *errname);
 extern FILE *yyin;
 void AddLocToNode(node_st *node, void *begin_loc, void *end_loc);
+node_st *reverse_vardecs(node_st *vardecs);
 
 char *current_id = NULL;
 node_st *current_forloop_inc_expr = NULL;
 node_st *current_exprs = NULL;
+bool is_single_expr = true;
 %}
 
 %union {
@@ -131,11 +133,11 @@ globaldec: EXTERN basictype SQUARE_BRACKET_L ID ids SQUARE_BRACKET_R ID SEMICOLO
 
 globaldef: basictype globaldefprime
            {
-             $$ = ASTglobaldef($2, current_exprs, ASTid(current_id), $1, false); // developer note: if there's somehow any unambigous parts (which there shouln't be), this might break...
+             $$ = ASTglobaldef($2, current_exprs, ASTid(current_id), $1, false, is_single_expr); // developer note: if there's somehow any unambigous parts (which there shouln't be), this might break...
            }
          | EXPORT basictype globaldefprime
            {
-             $$ = ASTglobaldef($3, current_exprs, ASTid(current_id), $2, true);
+             $$ = ASTglobaldef($3, current_exprs, ASTid(current_id), $2, true, true);
            }
            ;
 
@@ -155,14 +157,17 @@ globaldefprime: SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R ID globaldefletarr
 
 globaldefletarr: LET arrayexpr SEMICOLON
                  {
+                   is_single_expr = false;
                    $$ = $2;
                  }
                | LET expr SEMICOLON
                  {
+                   is_single_expr = true;
                    $$ = ASTarrexprs(NULL, NULL, ASTexprs($2, NULL));
                  }
                | SEMICOLON
                  {
+                   is_single_expr = true;
                    $$ = NULL;
                  }
                  ;
@@ -273,7 +278,7 @@ parameterarray: ID
 
 funbody: vardecs fundefs stmts
          {
-           $$ = ASTfunbody($1, $2, $3); // Developer note: $2 used to be ASTfundefs(NULL, $2, true); and the ASTfundefs in fundefsrule was set to local = false, which is probably an error.
+           $$ = ASTfunbody(reverse_vardecs($1), $2, $3); // Developer note: $2 used to be ASTfundefs(NULL, $2, true); and the ASTfundefs in fundefsrule was set to local = false, which is probably an error.
          }
          ;
 
@@ -299,11 +304,11 @@ vardecs: vardecs vardec
 
 vardec: basictype SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R ID vardecletexprs SEMICOLON
         {
-          $$ = ASTvardec(ASTexprs($3, $4), $7, ASTid($6), $1);
+          $$ = ASTvardec(ASTexprs($3, $4), $7, ASTid($6), $1, is_single_expr);
         }
       | basictype ID vardeclet SEMICOLON
         {
-          $$ = ASTvardec(NULL, $3, ASTid($2), $1);
+          $$ = ASTvardec(NULL, $3, ASTid($2), $1, true);
         }
         ;
 
@@ -319,14 +324,17 @@ vardeclet: LET expr
 
 vardecletexprs: LET arrayexpr
                  {
+                  is_single_expr = false;
                    $$ = $2;
                  }
                | LET expr
                  {
+                  is_single_expr = true;
                    $$ = ASTarrexprs(NULL, NULL, ASTexprs($2, NULL));
                  }
               | 
                 {
+                  is_single_expr = true;
                   $$ = NULL;
                 }
                 ;
@@ -716,4 +724,21 @@ node_st *SPdoScanParse(node_st *root)
     }
     yyparse();
     return parseresult;
+}
+
+node_st *reverse_vardecs(node_st *list)
+{
+    node_st *prev = NULL;
+    node_st *curr = list;
+    node_st *next;
+
+    while (curr != NULL)
+    {
+        next = VARDECS_NEXT(curr);
+        VARDECS_NEXT(curr) = prev;
+        prev = curr;
+        curr = next;
+    }
+
+    return prev;
 }

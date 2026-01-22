@@ -223,7 +223,8 @@ node GlobalDef {
     },
     attributes {
         BasicType type { constructor },
-        bool export { constructor }
+        bool export { constructor },
+        bool is_single_expr { constructor }
     }
 };
 
@@ -278,7 +279,8 @@ node VarDec {
     },
 
     attributes {
-        BasicType type { constructor }
+        BasicType type { constructor },
+        bool is_single_expr { constructor }
     }
 };
 
