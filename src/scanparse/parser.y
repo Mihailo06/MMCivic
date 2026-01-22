@@ -314,7 +314,7 @@ vardec: basictype SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R ID vardecletexprs
 
 vardeclet: LET expr
            {
-             $$ = ASTexprs($2, NULL);
+             $$ = ASTarrexprs(NULL, NULL, ASTexprs($2, NULL));
            }
          | 
            {

@@ -104,7 +104,8 @@ void genArrayInit(
     node_st       *target_id,
     enum BasicType target_type,
     node_st       *index_exprs,
-    node_st       *arrexprs
+    node_st       *arrexprs,
+    bool           update_indices
 ) {
     DBUG_ASSERT(index_exprs, "No index exprs! Is this even an array?");
     DBUG_ASSERT(arrexprs, "No array exprs! Is this a declaration with no assignment?");
@@ -174,15 +175,19 @@ void genArrayInit(
             cur_idx_exprs = EXPRS_NEXT(cur_idx_exprs);
         }
 
+        if (update_indices) {
+            node_st *cur_exps = index_exprs;
+            for (size_t i = n_size_ids; i > 0; i--) {
+                CCNfree(EXPRS_EXPR(cur_exps));
+                EXPRS_EXPR(cur_exps) = ASTvar(NULL, CCNcopy(size_ids[i - 1]));
+                cur_exps             = EXPRS_NEXT(cur_exps);
+            }
+        }
+
         MEMfree(index_ids);
         MEMfree(size_ids);
     } else {
         // initialization of individual elements
-        //DBUG_ASSERT(
-        //    !ARREXPRS_DIMEXPRS(arrexprs),
-        //    "Toplevel arrexprs must not have next initializer!"
-        //);
-
         genIndividualInit(out_stmts, target_id, arrexprs, NULL, 0, 0);
     }
 }

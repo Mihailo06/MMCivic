@@ -25,6 +25,15 @@ phase ContextAnalysis {
             }
         };
 
+        traversal InitLocalVars {
+            uid = InitLocalVars_,
+            nodes = { FunBody, VarDec },
+            travdata {
+                Stmts fun_stmts,
+                VarDecs fun_vardecs
+            }
+        };
+
         traversal InitSymtables {
             uid = InitSymtables_,
             nodes = {
