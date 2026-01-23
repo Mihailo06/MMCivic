@@ -11,6 +11,29 @@ start phase RootPhase {
 
 phase ContextAnalysis {
     actions {
+        traversal CheckArrDims {
+            uid = CheckArrDims_,
+            nodes = { GlobalDef, VarDec }
+        };
+
+        traversal InitGlobalVars {
+            uid = InitGlobalVars_,
+            nodes = { Program, GlobalDef, FunBody, Declarations },
+            travdata {
+                Stmts init_stmts,
+                VarDecs init_decs
+            }
+        };
+
+        traversal InitLocalVars {
+            uid = InitLocalVars_,
+            nodes = { FunBody, VarDec },
+            travdata {
+                Stmts fun_stmts,
+                VarDecs fun_vardecs
+            }
+        };
+
         traversal InitSymtables {
             uid = InitSymtables_,
             nodes = {
@@ -18,7 +41,10 @@ phase ContextAnalysis {
                 Program, GlobalDec, GlobalDef,
 
                 // Functions
-                FunBody, FunDec, FunDef, VoidFunHeader, BasicFunHeader
+                FunBody, FunDec, FunDef, VoidFunHeader, BasicFunHeader,
+
+                // For Loop
+                ForLoop
             },
             travdata {
                 user symtab_stack_ptr stack
@@ -94,7 +120,6 @@ enum BinOpType {
 };
 
 nodeset Declaration = {FunDec, FunDef, GlobalDec, GlobalDef};
-// nodeset BasicType = {Bool, Num, Float};
 nodeset Expr = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr};
 nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
 
@@ -117,6 +142,8 @@ nodeset Scope = {
 // I have no idea what the above comment wants me to do. Why do I need to reference nodes from my
 // symbol table? Why even care about what node a symbol was originally defined at when we have a
 // symbol table already? -Moritz
+//
+// No idea, that was part of their original demo implementation, i kept it because we didn't have a symbol table yet. I guess you can remove it if you want. -developer01
 nodeset Link = Expr | Stmt;
 
 root node Program {
@@ -162,9 +189,7 @@ node FunDef {
     }
 };
 
-nodeset FunHeader {
-    nodes = {VoidFunHeader, BasicFunHeader}
-};
+nodeset FunHeader = {VoidFunHeader, BasicFunHeader };
 
 node VoidFunHeader {
     children {
@@ -201,13 +226,14 @@ node GlobalDec {
 
 node GlobalDef {
     children {
-        Exprs value_exprs { constructor },
-        Exprs index_exprs { constructor },
-        Id id { constructor }
+        ArrExprs value_exprs { constructor }, // var value
+        Exprs index_exprs { constructor }, // array indexes 
+        Id id { constructor } // var id
     },
     attributes {
         BasicType type { constructor },
-        bool export { constructor }
+        bool export { constructor },
+        bool is_single_expr { constructor }
     }
 };
 
@@ -257,19 +283,30 @@ node VarDecs {
 node VarDec {
     children {
         Exprs arr_dims { constructor },
-        Exprs exprs { constructor },
+        ArrExprs exprs { constructor },
         Id id { constructor }
     },
 
     attributes {
-        BasicType type { constructor }
+        BasicType type { constructor },
+        bool is_single_expr { constructor }
     }
 };
 
+// node for array accesses
 node ArrExpr {
     children {
         Exprs indices { constructor, mandatory },
         Id id { constructor }
+    }
+};
+
+// node for multi-dim arrays
+node ArrExprs {
+    children {
+        ArrExprs dimexprs { constructor }, // for arrexprs on the same "level" e.g [ [],[],[] ] == ArrExprs(NULL, ArrExprs(ArrExprs(NULL,NULL),NULL),NULL)
+        ArrExprs nextdimension { constructor }, // for the next arrexprs "level" e.g. [[[]]] == ArrExprs(NULL, ArrExprs(NULL, ArrExprs(NULL, NULL)))
+        Exprs exprs { constructor } // for expressions
     }
 };
 
@@ -310,7 +347,7 @@ node Exprs {
 node Assign {
     children {
         VarLet let { constructor },
-        Exprs expr { constructor, mandatory }
+        Expr expr { constructor }
     }
 };
 

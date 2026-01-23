@@ -15,10 +15,12 @@ extern int yylex();
 int yyerror(char *errname);
 extern FILE *yyin;
 void AddLocToNode(node_st *node, void *begin_loc, void *end_loc);
+node_st *reverse_vardecs(node_st *vardecs);
 
 char *current_id = NULL;
 node_st *current_forloop_inc_expr = NULL;
 node_st *current_exprs = NULL;
+bool is_single_expr = true;
 %}
 
 %union {
@@ -59,7 +61,7 @@ node_st *current_exprs = NULL;
 %type <node> stmts stmt varlet program declarations
 %type <node> assign procedurecall procedurecalltail conditional conditionalelse whileloop dowhileloop forloop forloopincs return returnprime
 %type <node> declaration globaldec globaldef globaldefprime globaldeflet globaldefletarr headerparams headerparamstail
-%type <node> vardecs vardec vardeclet vardecletexprs
+%type <node> vardecs vardec vardeclet vardecletexprs arrayexpr arrayexprs arrayexprprime
 %type <node> fundef fundefs fundec funheader funbody
 %type <node> parameter parameterarray
 %type <cbasictype> basictype
@@ -131,11 +133,11 @@ globaldec: EXTERN basictype SQUARE_BRACKET_L ID ids SQUARE_BRACKET_R ID SEMICOLO
 
 globaldef: basictype globaldefprime
            {
-             $$ = ASTglobaldef($2, current_exprs, ASTid(current_id), $1, false); // developer note: if there's somehow any unambigous parts (which there shouln't be), this might break...
+             $$ = ASTglobaldef($2, current_exprs, ASTid(current_id), $1, false, is_single_expr); // developer note: if there's somehow any unambigous parts (which there shouln't be), this might break...
            }
          | EXPORT basictype globaldefprime
            {
-             $$ = ASTglobaldef($3, current_exprs, ASTid(current_id), $2, true);
+             $$ = ASTglobaldef($3, current_exprs, ASTid(current_id), $2, true, true);
            }
            ;
 
@@ -153,19 +155,62 @@ globaldefprime: SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R ID globaldefletarr
                 }
                 ;
 
-globaldefletarr: LET SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R SEMICOLON
+globaldefletarr: LET arrayexpr SEMICOLON
                  {
-                   $$ = ASTexprs($3, $4);
+                   is_single_expr = false;
+                   $$ = $2;
+                 }
+               | LET expr SEMICOLON
+                 {
+                   is_single_expr = true;
+                   $$ = ASTarrexprs(NULL, NULL, ASTexprs($2, NULL));
                  }
                | SEMICOLON
                  {
+                   is_single_expr = true;
                    $$ = NULL;
                  }
                  ;
 
+arrayexpr: SQUARE_BRACKET_L arrayexprprime SQUARE_BRACKET_R
+           {
+             $$ = $2;
+           }
+//         | expr        // Developer note: This part was commented out and changed, due to an impossible reduce/reduce conflict caused by the grammar. The case "arrexpr -> expr" was moved a rule up
+//           {           // This doesn't allow for the recursion in arrexpr -> [ arrexprs ] | [ exprs ] | expr
+//                       // For example arrexpr -> [ expr ] could reduce arrexpr -> [exprs] -> [expr] or arrexpr -> [ arrexprs ] -> [expr]
+//                       // This comment is here (for now at least, until we test our implementation on the tests) in case for some weird reason we need to change this back, but we would have an extra reduce/reduce conflict in the end.
+//             $$ = ASTarrexprs(ASTexprs($1, NULL), NULL);
+//           }
+           ;
+
+arrayexprprime: expr exprs
+                {
+                  $$ = ASTarrexprs(NULL, NULL, ASTexprs($1, $2));
+                }
+              | arrayexpr arrayexprs
+                {
+                  $$ = ASTarrexprs($2, $1, NULL);
+                }
+              | 
+                {
+                  $$ = NULL;
+                }
+              ;
+
+arrayexprs: COMMA arrayexpr arrayexprs
+            {
+              $$ = ASTarrexprs($3, $2, NULL);
+            }
+          | 
+            {
+              $$ = NULL;
+            }
+            ;
+
 globaldeflet: LET expr SEMICOLON // not sure if this is a valid rule
               {
-                $$ = ASTexprs($2, NULL);
+                $$ = ASTarrexprs(NULL, NULL, ASTexprs($2, NULL));
               }
             | SEMICOLON
               {
@@ -233,7 +278,7 @@ parameterarray: ID
 
 funbody: vardecs fundefs stmts
          {
-           $$ = ASTfunbody($1, $2, $3); // Developer note: $2 used to be ASTfundefs(NULL, $2, true); and the ASTfundefs in fundefsrule was set to local = false, which is probably an error.
+           $$ = ASTfunbody(reverse_vardecs($1), $2, $3); // Developer note: $2 used to be ASTfundefs(NULL, $2, true); and the ASTfundefs in fundefsrule was set to local = false, which is probably an error.
          }
          ;
 
@@ -259,17 +304,17 @@ vardecs: vardecs vardec
 
 vardec: basictype SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R ID vardecletexprs SEMICOLON
         {
-          $$ = ASTvardec(ASTexprs($3, $4), $7, ASTid($6), $1);
+          $$ = ASTvardec(ASTexprs($3, $4), $7, ASTid($6), $1, is_single_expr);
         }
       | basictype ID vardeclet SEMICOLON
         {
-          $$ = ASTvardec(NULL, $3, ASTid($2), $1);
+          $$ = ASTvardec(NULL, $3, ASTid($2), $1, true);
         }
         ;
 
 vardeclet: LET expr
            {
-             $$ = ASTexprs($2, NULL);
+             $$ = ASTarrexprs(NULL, NULL, ASTexprs($2, NULL));
            }
          | 
            {
@@ -277,12 +322,19 @@ vardeclet: LET expr
            }
            ;
 
-vardecletexprs: LET SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R
-                {
-                  $$ = ASTexprs($3, $4);
-                }
+vardecletexprs: LET arrayexpr
+                 {
+                  is_single_expr = false;
+                   $$ = $2;
+                 }
+               | LET expr
+                 {
+                  is_single_expr = true;
+                   $$ = ASTarrexprs(NULL, NULL, ASTexprs($2, NULL));
+                 }
               | 
                 {
+                  is_single_expr = true;
                   $$ = NULL;
                 }
                 ;
@@ -672,4 +724,21 @@ node_st *SPdoScanParse(node_st *root)
     }
     yyparse();
     return parseresult;
+}
+
+node_st *reverse_vardecs(node_st *list)
+{
+    node_st *prev = NULL;
+    node_st *curr = list;
+    node_st *next;
+
+    while (curr != NULL)
+    {
+        next = VARDECS_NEXT(curr);
+        VARDECS_NEXT(curr) = prev;
+        prev = curr;
+        curr = next;
+    }
+
+    return prev;
 }
