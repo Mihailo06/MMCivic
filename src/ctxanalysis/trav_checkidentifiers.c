@@ -18,9 +18,7 @@ static void checkdef(node_st *node, const char *name) {
     }
 }
 
-void CHECKIDENTIFIERS_init(void) {}
-
-void CHECKIDENTIFIERS_fini(void) {}
+TRAVDATA_STUB(CHECKIDENTIFIERS)
 
 node_st *CHECKIDENTIFIERS_program(node_st *node) {
     CUR_SYMTAB = SYMTABLE_SYMTAB(PROGRAM_SYMTABLE(node));

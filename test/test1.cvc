@@ -1,6 +1,10 @@
-int fun(int[n] b)
+int twos = 0;
+int two ()
 {
-    int[1] a = [1];
-    fun(a, b);
-    return a;
+    int a;
+    int b;
+    int c;
+    int d;
+twos = twos + 1;
+return 2;
 }

@@ -43,10 +43,14 @@ add_executable(civicc
     ${BISON_CivicParser_OUTPUTS}
 
     # context analysis
+    src/ctxanalysis/arrayinitgen.c
     src/ctxanalysis/symtable.c
-    src/ctxanalysis/trav_initsymtables.c
+    src/ctxanalysis/trav_checkarrdims.c
     src/ctxanalysis/trav_checkidentifiers.c
     src/ctxanalysis/trav_freesymtables.c
+    src/ctxanalysis/trav_initglobalvars.c
+    src/ctxanalysis/trav_initlocalvars.c
+    src/ctxanalysis/trav_initsymtables.c
 )
 
 target_compile_options(civicc PRIVATE
