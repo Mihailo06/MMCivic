@@ -1,0 +1,2 @@
+float f = 2.0;
+int b = f;
