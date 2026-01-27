@@ -3,9 +3,21 @@ start phase RootPhase {
 
     actions {
         pass SPdoScanParse;
-
-        ContextAnalysis;
+        TypeChecking;
         Demo;
+        ContextAnalysis;
+    }
+};
+
+phase TypeChecking {
+    actions {
+        traversal TypeCheck {
+            uid = TypeCheck_,
+            travdata {
+                user htable_stptr solver,
+                user htable_stptr parent
+            }
+        };
     }
 };
 
