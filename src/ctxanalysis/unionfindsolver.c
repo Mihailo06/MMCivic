@@ -94,6 +94,14 @@ static void *make_typevar_cb(void *key)
 
 term *typeVariable(htable_st *typeVars, node_st *node)
 {
+    // if(NODE_TYPE(node) == NT_GLOBALDEC)
+    // {
+    //     printf("type %s", ID_ID(GLOBALDEC_ID(node)));
+    // }
+    // else
+    // {
+    //     printf("type else");
+    // }
     return HTcomputeIfAbsent(typeVars, node, make_typevar_cb);
 }
 
@@ -133,7 +141,7 @@ void ufunion(htable_st *parent, term *x, term *y) {
 }
 
 void unify(term *x, term *y, htable_st *parent) {
-    printf("Typechecking: new type constraint");
+    printf("Typechecking: new type constraint ");
     printterms(x, y);
     makeSet(x, parent);
     makeSet(y, parent);
@@ -144,12 +152,14 @@ void unify(term *x, term *y, htable_st *parent) {
             ufunion(parent, x, y);
         } else if (x->type == TERM_TYPEVAR) {
             ufunion(parent, x, y);
+            x->type = y->type;
         } else if (y->type == TERM_TYPEVAR) {
             ufunion(parent, y, x);
+            y->type = x->type;
         } 
         else
         {
-            printf("Type checking error: ");
+            printf("\n Type checking error: ");
             printterms(x, y);
         }
         // else if (x->kind == TERM_FUNCTION &&
@@ -176,6 +186,10 @@ void unify(term *x, term *y, htable_st *parent) {
         //     throw new TypeCheckerException();
         // }
     }
+
+    printf(" = ");
+    printterms(x, y);
+    printf("\n");
 }
 
 void printterm(term *t)
@@ -188,7 +202,7 @@ void printterm(term *t)
             break;
         case TERM_BOOL: printf("bool");
             break;
-        default: printf("default_unknown_type");
+        default: printf("default_unknown_type %s", t->type);
             break;
     }
 }
@@ -198,5 +212,4 @@ void printterms(term *x, term *y)
     printterm(x);
     printf(" = ");
     printterm(y);
-    printf("\n");
 }

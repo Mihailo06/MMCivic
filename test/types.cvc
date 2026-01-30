@@ -1,2 +1,10 @@
-float f = 2.0;
-int b = f;
+extern float f;
+float a = f;
+int fun()
+{
+
+    if(1)
+    {
+
+    }
+}
