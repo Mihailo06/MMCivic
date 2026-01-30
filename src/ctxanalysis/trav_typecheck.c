@@ -42,11 +42,13 @@ void TYPECHECK_fini(void) {
 }
 
 node_st *TYPECHECK_program(node_st *node) {
+    // Do nothing
     TRAVchildren(node);
     return node;
 }
 
 node_st *TYPECHECK_symtable(node_st *node) {
+    // Do nothing
     TRAVchildren(node);
     return node;
 }
@@ -81,19 +83,23 @@ node_st *TYPECHECK_basicfunheader(node_st *node) {
 }
 
 node_st *TYPECHECK_globaldec(node_st *node) {
-    
     TRAVchildren(node);
+    unify(typeVariable(DATA_TYPECHECK__GET()->solver, GLOBALDEC_ID(node)), getBTterm(GLOBALDEC_TYPE(node)), DATA_TYPECHECK__GET()->parent);
+    // unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), typeVariable(DATA_TYPECHECK__GET()->solver, GLOBALDEF_VALUE_EXPRS(node)), DATA_TYPECHECK__GET()->parent);
     return node;
 }
 
-node_st *TYPECHECK_globaldef(node_st *node) { // FIX THIS NEXT, UNIFIY ALL 3
-printf("gassign");
-    unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), getBTterm(GLOBALDEF_TYPE(node)), DATA_TYPECHECK__GET()->parent);
-    unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), typeVariable(DATA_TYPECHECK__GET()->solver, GLOBALDEF_VALUE_EXPRS(node)), DATA_TYPECHECK__GET()->parent);
+node_st *TYPECHECK_globaldef(node_st *node) { 
+    TRAVchildren(node);
+
+    unify(typeVariable(DATA_TYPECHECK__GET()->solver, GLOBALDEF_ID(node)), getBTterm(GLOBALDEF_TYPE(node)), DATA_TYPECHECK__GET()->parent);
+    if(GLOBALDEF_VALUE_EXPRS(node) != NULL)
+    {
+        unify(typeVariable(DATA_TYPECHECK__GET()->solver, GLOBALDEF_ID(node)), typeVariable(DATA_TYPECHECK__GET()->solver, GLOBALDEF_VALUE_EXPRS(node)), DATA_TYPECHECK__GET()->parent);
+    }
 
 
     
-    TRAVchildren(node);
     return node;
 }
 
@@ -115,7 +121,7 @@ node_st *TYPECHECK_parameter(node_st *node) {
 }
 
 node_st *TYPECHECK_funbody(node_st *node) {
-
+    // Do nothing
     TRAVchildren(node);
     return node;
 }
@@ -133,8 +139,10 @@ node_st *TYPECHECK_vardecs(node_st *node) {
 }
 
 node_st *TYPECHECK_vardec(node_st *node) {
-
     TRAVchildren(node);
+    unify(typeVariable(DATA_TYPECHECK__GET()->solver, VARDEC_ID(node)), getBTterm(VARDEC_TYPE(node)), DATA_TYPECHECK__GET()->parent);
+     
+
     return node;
 }
 
@@ -145,19 +153,19 @@ node_st *TYPECHECK_arrexpr(node_st *node) {
 }
 
 node_st *TYPECHECK_id(node_st *node) {
-
+    // Do nothing
     TRAVchildren(node);
     return node;
 }
 
 node_st *TYPECHECK_ids(node_st *node) {
-
+    // Do nothing
     TRAVchildren(node);
     return node;
 }
 
 node_st *TYPECHECK_block(node_st *node) {
-
+    // Do nothing
     TRAVchildren(node);
     return node;
 }
@@ -168,17 +176,17 @@ node_st *TYPECHECK_stmts(node_st *node) {
 }
 
 node_st *TYPECHECK_exprs(node_st *node) {
-
+    // Do nothing
     TRAVchildren(node);
     return node;
 }
 
 node_st *TYPECHECK_assign(node_st *node) {
 printf("assign");
+    TRAVchildren(node);
     unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), typeVariable(DATA_TYPECHECK__GET()->solver, ASSIGN_EXPR(node)), DATA_TYPECHECK__GET()->parent);
     unify(typeVariable(DATA_TYPECHECK__GET()->solver, ASSIGN_LET(node)), typeVariable(DATA_TYPECHECK__GET()->solver, ASSIGN_EXPR(node)), DATA_TYPECHECK__GET()->parent);
 
-    TRAVchildren(node);
     return node;
 }
 
@@ -189,8 +197,13 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
 }
 
 node_st *TYPECHECK_conditional(node_st *node) {
-
     TRAVchildren(node);
+    if(NODE_TYPE(CONDITIONAL_EXPR(node)) == NT_BOOL)
+    {
+        printf("its a bool");
+    }
+    unify(typeVariable(DATA_TYPECHECK__GET()->solver, CONDITIONAL_EXPR(node)), TYPE_BOOL, DATA_TYPECHECK__GET()->parent);
+
     return node;
 }
 
@@ -246,23 +259,23 @@ node_st *TYPECHECK_var(node_st *node) {
 
 node_st *TYPECHECK_num(node_st *node) {
     printf("found int");
+    TRAVchildren(node);
     unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), TYPE_INT, DATA_TYPECHECK__GET()->parent);
     printf("int2");
-    TRAVchildren(node);
     printf("int3");
     return node;
 }
 
 node_st *TYPECHECK_float(node_st *node) {
     printf("found float");
-    unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), TYPE_FLOAT, DATA_TYPECHECK__GET()->parent);
     TRAVchildren(node);
+    unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), TYPE_FLOAT, DATA_TYPECHECK__GET()->parent);
     return node;
 }
 
 node_st *TYPECHECK_bool(node_st *node) {
     printf("found bool");
-    unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), TYPE_BOOL, DATA_TYPECHECK__GET()->parent);
     TRAVchildren(node);
+    unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), TYPE_BOOL, DATA_TYPECHECK__GET()->parent);
     return node;
 }
