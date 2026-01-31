@@ -29,10 +29,23 @@ term *getBTterm(enum BasicType type)
     return NULL;
 }
 
+static bool allow_bool(enum BinOpType type)
+{
+    switch(type)
+    {
+        case BO_or : return true;
+            break;
+        case BO_and : return true;
+            break;
+        default : return false;
+            break;
+    }
+}
+
 void TYPECHECK_init(void) {
     // A prime number of buckets has been chosen to minimize the amount of conflicts.
-    DATA_TYPECHECK__GET()->solver = HTnew_String(256);
-    DATA_TYPECHECK__GET()->parent = HTnew_String(256);
+    DATA_TYPECHECK__GET()->solver = HTnew_Ptr(256);
+    DATA_TYPECHECK__GET()->parent = HTnew_Ptr(256);
 }
 
 void TYPECHECK_fini(void) { 
@@ -182,9 +195,10 @@ node_st *TYPECHECK_exprs(node_st *node) {
 }
 
 node_st *TYPECHECK_assign(node_st *node) {
-printf("assign");
+printf("\nassign");
     TRAVchildren(node);
-    unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), typeVariable(DATA_TYPECHECK__GET()->solver, ASSIGN_EXPR(node)), DATA_TYPECHECK__GET()->parent);
+    printf("assignunify");
+    // unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), typeVariable(DATA_TYPECHECK__GET()->solver, ASSIGN_EXPR(node)), DATA_TYPECHECK__GET()->parent);
     unify(typeVariable(DATA_TYPECHECK__GET()->solver, ASSIGN_LET(node)), typeVariable(DATA_TYPECHECK__GET()->solver, ASSIGN_EXPR(node)), DATA_TYPECHECK__GET()->parent);
 
     return node;
@@ -232,6 +246,24 @@ node_st *TYPECHECK_return(node_st *node) {
 
 node_st *TYPECHECK_binop(node_st *node) {
     TRAVchildren(node);
+    term *t_l = typeVariable(DATA_TYPECHECK__GET()->solver, BINOP_LEFT(node));    
+    unify(t_l, typeVariable(DATA_TYPECHECK__GET()->solver, BINOP_RIGHT(node)), DATA_TYPECHECK__GET()->parent);
+    unify(t_l, typeVariable(DATA_TYPECHECK__GET()->solver, node), DATA_TYPECHECK__GET()->parent);
+
+    if(allow_bool(BINOP_OP(node)))
+    {
+        unify(TYPE_BOOL, typeVariable(DATA_TYPECHECK__GET()->solver, node), DATA_TYPECHECK__GET()->parent);
+    }
+    else if(BINOP_OP(node) == BO_mod)
+    {
+        unify(TYPE_INT, typeVariable(DATA_TYPECHECK__GET()->solver, node), DATA_TYPECHECK__GET()->parent);
+    }
+    else
+    {
+        forbid_bool(t_l, DATA_TYPECHECK__GET()->parent);
+    }
+    
+
     return node;
 }
 
@@ -243,6 +275,8 @@ node_st *TYPECHECK_monop(node_st *node) {
 
 node_st *TYPECHECK_cast(node_st *node) {
     TRAVchildren(node);
+    
+    unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), getBTterm(CAST_TYPE(node)), DATA_TYPECHECK__GET()->parent);
     return node;
 }
 
@@ -261,8 +295,6 @@ node_st *TYPECHECK_num(node_st *node) {
     printf("found int");
     TRAVchildren(node);
     unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), TYPE_INT, DATA_TYPECHECK__GET()->parent);
-    printf("int2");
-    printf("int3");
     return node;
 }
 
