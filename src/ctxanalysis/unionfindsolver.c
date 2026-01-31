@@ -92,16 +92,14 @@ static void *make_typevar_cb(void *key)
     return new_typevar();
 }
 
-term *typeVariable(htable_st *typeVars, node_st *node)
-{
-    // if(NODE_TYPE(node) == NT_GLOBALDEC)
-    // {
-    //     printf("type %s", ID_ID(GLOBALDEC_ID(node)));
-    // }
-    // else
-    // {
-    //     printf("type else");
-    // }
+term *typeVariable(htable_st *typeVars, node_st *node) {
+    printf("Creating/looking up typevar for node %p  type=%d  ", (void*)node, NODE_TYPE(node));
+    if (NODE_TYPE(node) == NT_ID) {
+        printf(" (ID: %s)\n", ID_ID(node));
+    } else {
+        printf(" (not an ID)\n");
+    }
+
     return HTcomputeIfAbsent(typeVars, node, make_typevar_cb);
 }
 
@@ -110,6 +108,8 @@ void *HTputIfAbsent(htable_st *parent, term *key, term *value)
     void *old = HTlookup(parent, key);
     if (old)
     {
+        printf("\nfound old");
+        printterms(key, value);
         return old;
     }
 
@@ -140,26 +140,33 @@ void ufunion(htable_st *parent, term *x, term *y) {
     
 }
 
-void unify(term *x, term *y, htable_st *parent) {
+void unify(term *t1, term *t2, htable_st *parent) {
     printf("Typechecking: new type constraint ");
-    printterms(x, y);
-    makeSet(x, parent);
-    makeSet(y, parent);
-    x = find(x, parent);
-    y = find(y, parent);
+    printterms(t1, t2);
+    makeSet(t1, parent);
+    makeSet(t2, parent);
+    term *x = find(t1, parent);
+    term *y = find(t2, parent);
     if (x != y ) {
+        
         if (x->type == TERM_TYPEVAR && y->type == TERM_TYPEVAR) {
-            ufunion(parent, x, y);
+            HTinsert(parent, x, y);
         } else if (x->type == TERM_TYPEVAR) {
-            ufunion(parent, x, y);
-            x->type = y->type;
+            HTinsert(parent, x, y);
+            // ufunion(parent, x, y);
         } else if (y->type == TERM_TYPEVAR) {
-            ufunion(parent, y, x);
-            y->type = x->type;
-        } 
-        else
+            HTinsert(parent, y, x);
+            // ufunion(parent, y, x);
+        }
+        else if (x->type != y->type)
         {
             printf("\n Type checking error: ");
+            printterms(x, y);
+
+        }
+        else
+        {
+            printf("\n Else branch? ");
             printterms(x, y);
         }
         // else if (x->kind == TERM_FUNCTION &&
@@ -194,15 +201,22 @@ void unify(term *x, term *y, htable_st *parent) {
 
 void printterm(term *t)
 {
+    if (!t) {
+        printf("NULL");
+        return;
+    }
+
     switch(t->type)
     {
-        case TERM_INT: printf("int");
+        case TERM_INT : printf("int");
             break;
-        case TERM_FLOAT: printf("float");
+        case TERM_FLOAT : printf("float");
             break;
-        case TERM_BOOL: printf("bool");
+        case TERM_BOOL : printf("bool");
             break;
-        default: printf("default_unknown_type %s", t->type);
+        case TERM_TYPEVAR : printf("a%d", ((typevar*)t)->id);
+            break;
+        default : printf("?%d", (int)t->type);
             break;
     }
 }
@@ -212,4 +226,15 @@ void printterms(term *x, term *y)
     printterm(x);
     printf(" = ");
     printterm(y);
+}
+
+
+void forbid_bool(term *t, htable_st *parent)
+{
+    t = find(t, parent);
+
+    if (t->type == TERM_BOOL)
+    {
+        printf("Type error: boolean used in arithmetic expression");
+    }
 }

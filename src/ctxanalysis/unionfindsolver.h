@@ -59,3 +59,5 @@ void *HTputIfAbsent(htable_st *parent, term *key, term *value);
 void ufunion(htable_st *parent, term *x, term *y);
 
 void unify(term *x, term *y, htable_st *parent);
+
+void forbid_bool(term *t, htable_st *parent);
