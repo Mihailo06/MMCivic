@@ -1,6 +1,2 @@
-float f = 1.0;
-int a = 1;
-int fun()
-{
-f = (float)a;
-}
+extern int fun(int a);
+int b = fun(1);
