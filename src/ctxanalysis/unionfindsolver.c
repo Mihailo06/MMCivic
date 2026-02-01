@@ -33,6 +33,9 @@ term *TYPE_VOID = &TYPE_VOID_OBJ;
 
 typedef struct term_list {
     term *t;
+    bool is_function;
+    term **params_array;
+    size_t params_count;
     struct term_list *next;
 } term_list;
 
@@ -57,8 +60,13 @@ term *new_typevar(void)
 void free_all_terms(void)
 {
     term_list *n = all_terms;
-    while (n) {
+    while (n)
+    {
         term_list *next = n->next;
+        if (n->is_function)
+        {
+            MEMfree(n->params_array);
+        }
         MEMfree(n->t);
         MEMfree(n);
         n = next;
@@ -74,6 +82,14 @@ term *new_function_type(size_t size, term **params, term *ret)
     ft->size = size;
     ft->params = params;
     ft->ret = ret;
+
+    term_list *n = MEMmalloc(sizeof *n);
+    n->t = (term *)ft;
+    n->is_function = true;
+    n->params_array = params;
+    n->params_count = size;
+    n->next = all_terms;
+    all_terms = n;
 
     return (term *)ft;
 }
@@ -97,25 +113,32 @@ static void *make_typevar_cb(void *key)
     return new_typevar();
 }
 
-term *typeVariable(node_st *node) {
+term *typeVariable(node_st *node)
+{
     printf("Creating/looking up typevar for node %p  type=%d  ", (void*)node, NODE_TYPE(node));
     void *key;
 
-    if (NODE_TYPE(node) == NT_ID) {
+    if (NODE_TYPE(node) == NT_ID)
+    {
         char *name = ID_ID(node);
         node_st *id_node = HTlookup(DATA_TYPECHECK__GET()->ids, name);
 
-        if (id_node == NULL) {
+        if (id_node == NULL)
+        {
             id_node = node;
             HTinsert(DATA_TYPECHECK__GET()->ids, name, id_node);
             printf("New id node for '%s': node %p\n", name, (void*)id_node);
-        } else {
+        }
+        else
+        {
             printf("Reusing old id node for '%s': node %p\n", name, (void*)id_node);
         }
 
         key = id_node;
         // printf(" (ID: %s)\n", ID_ID(node));
-    } else {
+    }
+    else
+    {
         key = (void *)node;
         // printf(" (not an ID)\n");
     }
@@ -137,17 +160,21 @@ void *HTputIfAbsent(htable_st *parent, term *key, term *value)
     return NULL;
 }
 
-void makeSet(term *x, htable_st *parent) {
+void makeSet(term *x, htable_st *parent)
+{
     HTputIfAbsent(parent, x, x);
 }
 
-term *find(term *x, htable_st *parent) {
+term *find(term *x, htable_st *parent)
+{
     term *p = HTlookup(parent, x);
-    if (p == NULL) {
+    if (p == NULL)
+    {
         makeSet(x, parent);
         return x;
     }
-    if (x != p) {
+    if (x != p)
+    {
         term *root = find(p, parent);
         HTinsert(parent, x, root);
         return root;
@@ -155,26 +182,34 @@ term *find(term *x, htable_st *parent) {
     return x;
 }
 
-void ufunion(htable_st *parent, term *x, term *y) {
+void ufunion(htable_st *parent, term *x, term *y)
+{
     HTinsert(parent, x, y);
     
 }
 
-void unify(term *t1, term *t2, htable_st *parent) {
+void unify(term *t1, term *t2, htable_st *parent)
+{
     printf("Typechecking: new type constraint ");
     printterms(t1, t2);
     makeSet(t1, parent);
     makeSet(t2, parent);
     term *x = find(t1, parent);
     term *y = find(t2, parent);
-    if (x != y ) {
+    if (x != y )
+    {
         
-        if (x->type == TERM_TYPEVAR && y->type == TERM_TYPEVAR) {
+        if (x->type == TERM_TYPEVAR && y->type == TERM_TYPEVAR)
+        {
             HTinsert(parent, x, y);
-        } else if (x->type == TERM_TYPEVAR) {
+        }
+        else if (x->type == TERM_TYPEVAR)
+        {
             HTinsert(parent, x, y);
             // ufunion(parent, x, y);
-        } else if (y->type == TERM_TYPEVAR) {
+        }
+        else if (y->type == TERM_TYPEVAR)
+        {
             HTinsert(parent, y, x);
             // ufunion(parent, y, x);
         }
@@ -241,7 +276,8 @@ void unify(term *t1, term *t2, htable_st *parent) {
 
 void printterm(term *t)
 {
-    if (!t) {
+    if (!t)
+    {
         printf("NULL");
         return;
     }
