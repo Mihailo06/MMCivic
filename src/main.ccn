@@ -15,7 +15,8 @@ phase TypeChecking {
             uid = TypeCheck_,
             travdata {
                 user htable_stptr solver,
-                user htable_stptr parent
+                user htable_stptr parent,
+                user htable_stptr ids
             }
         };
     }
@@ -400,6 +401,10 @@ node ForLoop {
         Expr incrementexpr { constructor },
         Block block { constructor, mandatory },
         Id id { constructor }
+    },
+
+    attributes {
+        BasicType type { constructor }
     }
 };
 

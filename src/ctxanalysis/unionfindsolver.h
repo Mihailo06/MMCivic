@@ -11,12 +11,16 @@
 #include "palm/dbug.h"
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
+#include "ccngen/trav_data.h"
+#include "ccn/dynamic_core.h"
+#include "util.h"
 
 typedef enum {
     TERM_TYPEVAR,
     TERM_INT,
     TERM_FLOAT,
     TERM_BOOL,
+    TERM_VOID,
     TERM_FUNCTION,
     TERM_ARRAY
     
@@ -29,6 +33,7 @@ typedef struct {
 extern term *TYPE_INT;
 extern term *TYPE_FLOAT;
 extern term *TYPE_BOOL;
+extern term *TYPE_VOID;
 
 typedef struct {
     term base;
@@ -39,7 +44,7 @@ term *new_typevar(void);
 
 void free_all_terms(void);
 
-term *typeVariable(htable_st *typeVars, node_st *node);
+term *typeVariable(node_st *node);
 
 term *new_function_type(size_t size, term **params, term *ret);
 
@@ -61,3 +66,5 @@ void ufunion(htable_st *parent, term *x, term *y);
 void unify(term *x, term *y, htable_st *parent);
 
 void forbid_bool(term *t, htable_st *parent);
+
+term *find(term *x, htable_st *parent);

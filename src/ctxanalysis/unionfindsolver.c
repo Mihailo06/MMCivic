@@ -7,6 +7,10 @@
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
 #include "assert.h"
+#include "ccngen/trav_data.h"
+#include "ccn/dynamic_core.h"
+#include "util.h"
+
 
 // typedef struct {
 //     term base;
@@ -20,10 +24,12 @@ void printterms(term *x, term *y);
 static term TYPE_INT_OBJ   = { .type = TERM_INT };
 static term TYPE_FLOAT_OBJ = { .type = TERM_FLOAT };
 static term TYPE_BOOL_OBJ  = { .type = TERM_BOOL };
+static term TYPE_VOID_OBJ  = { .type = TERM_VOID };
 
 term *TYPE_INT   = &TYPE_INT_OBJ;
 term *TYPE_FLOAT = &TYPE_FLOAT_OBJ;
 term *TYPE_BOOL  = &TYPE_BOOL_OBJ;
+term *TYPE_VOID = &TYPE_VOID_OBJ;
 
 typedef struct term_list {
     term *t;
@@ -62,8 +68,7 @@ void free_all_terms(void)
 
 term *new_function_type(size_t size, term **params, term *ret)
 {
-    function_type *ft =
-        MEMmalloc(sizeof *ft);
+    function_type *ft = MEMmalloc(sizeof *ft);
 
     ft->base.type = TERM_FUNCTION;
     ft->size = size;
@@ -92,15 +97,30 @@ static void *make_typevar_cb(void *key)
     return new_typevar();
 }
 
-term *typeVariable(htable_st *typeVars, node_st *node) {
+term *typeVariable(node_st *node) {
     printf("Creating/looking up typevar for node %p  type=%d  ", (void*)node, NODE_TYPE(node));
-    if (NODE_TYPE(node) == NT_ID) {
-        printf(" (ID: %s)\n", ID_ID(node));
-    } else {
-        printf(" (not an ID)\n");
-    }
+    void *key;
 
-    return HTcomputeIfAbsent(typeVars, node, make_typevar_cb);
+    if (NODE_TYPE(node) == NT_ID) {
+        char *name = ID_ID(node);
+        node_st *id_node = HTlookup(DATA_TYPECHECK__GET()->ids, name);
+
+        if (id_node == NULL) {
+            id_node = node;
+            HTinsert(DATA_TYPECHECK__GET()->ids, name, id_node);
+            printf("New id node for '%s': node %p\n", name, (void*)id_node);
+        } else {
+            printf("Reusing old id node for '%s': node %p\n", name, (void*)id_node);
+        }
+
+        key = id_node;
+        // printf(" (ID: %s)\n", ID_ID(node));
+    } else {
+        key = (void *)node;
+        // printf(" (not an ID)\n");
+    }
+    
+    return HTcomputeIfAbsent(DATA_TYPECHECK__GET()->solver, key, make_typevar_cb);
 }
 
 void *HTputIfAbsent(htable_st *parent, term *key, term *value)
@@ -108,7 +128,7 @@ void *HTputIfAbsent(htable_st *parent, term *key, term *value)
     void *old = HTlookup(parent, key);
     if (old)
     {
-        printf("\nfound old");
+        // printf("\nfound old");
         printterms(key, value);
         return old;
     }
@@ -121,7 +141,7 @@ void makeSet(term *x, htable_st *parent) {
     HTputIfAbsent(parent, x, x);
 }
 
-static term *find(term *x, htable_st *parent) {
+term *find(term *x, htable_st *parent) {
     term *p = HTlookup(parent, x);
     if (p == NULL) {
         makeSet(x, parent);
@@ -160,30 +180,46 @@ void unify(term *t1, term *t2, htable_st *parent) {
         }
         else if (x->type != y->type)
         {
-            printf("\n Type checking error: ");
+            printf("\n TYPE ERROR: ");
             printterms(x, y);
 
         }
+        else if (x->type == TERM_FUNCTION && y->type == TERM_FUNCTION)
+        {
+            function_type *fun_x = (function_type *) x;
+            function_type *fun_y = (function_type *) y;
+
+            if (fun_x->size != fun_y->size)
+            {
+                printf("TYPE ERROR: function arity mismatch! %zu = %zu", fun_x->size, fun_y->size);
+            }
+            else 
+            {
+                HTinsert(parent, x, y);
+
+                for(int i = 0; i<(int)fun_x->size; i++)
+                {
+                    unify(fun_x->params[i], fun_y->params[i], parent);
+                }
+                
+                unify(fun_x->ret, fun_y->ret, parent);
+                
+                printf(" -> functions unified\n");
+            }
+
+        }
+        // else if (x instanceof ArrayType && y instanceof ArrayType)
+        // {
+        //         ArrayType arrA = (ArrayType) x;
+        //         ArrayType arrB = (ArrayType) y;
+        //         unify(arrA.returnType, arrB.returnType);
+        //         union(x, y);
+        // }
         else
         {
             printf("\n Else branch? ");
             printterms(x, y);
         }
-        // else if (x->kind == TERM_FUNCTION &&
-            //     y->kind == TERM_FUNCTION) {
-            // struct function_type xft = (struct function_type *) x;
-            // struct function_type yft = (struct function_type *) y;
-        //     if( )
-        //     if (xft.parameterTypes.size() == yft.parameterTypes.size()) {
-        //         union(x, y);
-        //         for (var i = 0; i < xft.parameterTypes.size(); i++) {
-        //             unify(xft.parameterTypes.get(i),
-        //                     yft.parameterTypes.get(i));
-        //         }
-        //         unify(xft.returnType, yft.returnType);
-        //     } else {
-        //         throw new TypeCheckerException();
-        //     }
         // } else if (x instanceof ArrayType && y instanceof ArrayType) {
         //     ArrayType arrA = (ArrayType) x;
         //     ArrayType arrB = (ArrayType) y;
@@ -192,6 +228,10 @@ void unify(term *t1, term *t2, htable_st *parent) {
         // } else {
         //     throw new TypeCheckerException();
         // }
+    }
+    else
+    {
+        printf("  ALREADY SAME TERM  ");
     }
 
     printf(" = ");
@@ -235,6 +275,6 @@ void forbid_bool(term *t, htable_st *parent)
 
     if (t->type == TERM_BOOL)
     {
-        printf("Type error: boolean used in arithmetic expression");
+        printf("TYPE ERROR: boolean used in arithmetic expression");
     }
 }
