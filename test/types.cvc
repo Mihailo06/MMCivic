@@ -1,2 +1,6 @@
-extern int fun(int a);
-int b = fun(1);
+int a = 1;
+float b = 1.0;
+int fun()
+{
+return b;
+}
