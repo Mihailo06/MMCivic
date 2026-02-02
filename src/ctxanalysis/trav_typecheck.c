@@ -263,14 +263,14 @@ node_st *TYPECHECK_arrexprs(node_st *node) {
 }
 
 node_st *TYPECHECK_headerparams(node_st *node) {
-
+    // Do nothing
     TRAVchildren(node);
     return node;
 }
 
 node_st *TYPECHECK_parameter(node_st *node) {
-
     TRAVchildren(node);
+    unify(typeVariable(PARAMETER_ID(node)), getBTterm(PARAMETER_TYPE(node)), DATA_TYPECHECK__GET()->parent);
     return node;
 }
 
@@ -296,6 +296,10 @@ node_st *TYPECHECK_vardec(node_st *node) {
     TRAVchildren(node);
     
     unify(typeVariable(VARDEC_ID(node)), getBTterm(VARDEC_TYPE(node)), DATA_TYPECHECK__GET()->parent);
+    if(VARDEC_EXPRS(node) != NULL)
+    {
+        unify(typeVariable(VARDEC_ID(node)), typeVariable(EXPRS_EXPR(ARREXPRS_EXPRS(VARDEC_EXPRS(node)))), DATA_TYPECHECK__GET()->parent);
+    }
     return node;
 }
 
