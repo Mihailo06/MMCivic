@@ -1,5 +1,5 @@
 
-int fun(float a)
+int fun(int [n]a)
 {
-    int f = a;
+    
 }

@@ -42,6 +42,39 @@ static bool allow_bool(enum BinOpType type)
     }
 }
 
+static void unify_arrexprs(node_st *arr, term *type)
+{
+    
+    node_st *exprs = NULL;
+    if(ARREXPRS_EXPRS(arr) != NULL)
+    {
+        exprs = ARREXPRS_EXPRS(arr);
+        while(exprs)
+        {
+            if(EXPRS_EXPR(exprs) != NULL)
+            {
+                unify(typeVariable(EXPRS_EXPR(exprs)), type, DATA_TYPECHECK__GET()->parent);
+                exprs = EXPRS_NEXT(exprs);
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+
+    if(ARREXPRS_DIMEXPRS(arr) != NULL)
+    {
+        unify_arrexprs(ARREXPRS_DIMEXPRS(arr), type);
+    }
+
+    if(ARREXPRS_NEXTDIMENSION(arr) != NULL)
+    {
+        unify_arrexprs(ARREXPRS_NEXTDIMENSION(arr), type);
+    }
+
+}
+
 void TYPECHECK_init(void) {
     // A prime number of buckets has been chosen to minimize the amount of conflicts.
     DATA_TYPECHECK__GET()->solver = HTnew_Ptr(257);
@@ -238,6 +271,16 @@ node_st *TYPECHECK_globaldec(node_st *node) {
     TRAVchildren(node);
     unify(typeVariable(GLOBALDEC_ID(node)), getBTterm(GLOBALDEC_TYPE(node)), DATA_TYPECHECK__GET()->parent);
     // unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), typeVariable(DATA_TYPECHECK__GET()->solver, GLOBALDEF_VALUE_EXPRS(node)), DATA_TYPECHECK__GET()->parent);
+
+    if(GLOBALDEC_IDS(node) != NULL)
+    {
+        node_st *ids = GLOBALDEC_IDS(node);
+        while(ids)
+        {
+            unify(typeVariable(IDS_ID(ids)), getBTterm(GLOBALDEC_TYPE(node)), DATA_TYPECHECK__GET()->parent);
+            ids = IDS_NEXT(ids);
+        }
+    }
     return node;
 }
 
@@ -246,13 +289,25 @@ node_st *TYPECHECK_globaldef(node_st *node) {
 
     // printf("\n\nGLOBALDEF TYPECHECKING  ");
     unify(typeVariable(GLOBALDEF_ID(node)), getBTterm(GLOBALDEF_TYPE(node)), DATA_TYPECHECK__GET()->parent);
-    if(GLOBALDEF_VALUE_EXPRS(node) != NULL)
+    if(GLOBALDEF_VALUE_EXPRS(node) != NULL && GLOBALDEF_IS_SINGLE_EXPR(node))
     {
-        unify(typeVariable(GLOBALDEF_ID(node)), typeVariable(EXPRS_EXPR(ARREXPRS_EXPRS(GLOBALDEF_VALUE_EXPRS(node)))), DATA_TYPECHECK__GET()->parent);
-    
+        unify(typeVariable(GLOBALDEF_ID(node)), typeVariable(EXPRS_EXPR(ARREXPRS_EXPRS(GLOBALDEF_VALUE_EXPRS(node)))), DATA_TYPECHECK__GET()->parent);    
     }
 
-
+    // array typechecking
+    if(GLOBALDEF_INDEX_EXPRS(node) != NULL && !GLOBALDEF_IS_SINGLE_EXPR(node))
+    {
+        node_st *ids = GLOBALDEF_INDEX_EXPRS(node);
+        while(ids)
+        {
+            unify(typeVariable(EXPRS_EXPR(ids)), getBTterm(GLOBALDEF_TYPE(node)), DATA_TYPECHECK__GET()->parent);
+            ids = EXPRS_NEXT(ids);
+        }
+        if(GLOBALDEF_VALUE_EXPRS(node) != NULL)
+        {
+            unify_arrexprs(GLOBALDEF_VALUE_EXPRS(node), getBTterm(VARDEC_TYPE(node)));
+        }
+    }
     
     return node;
 }
@@ -270,7 +325,19 @@ node_st *TYPECHECK_headerparams(node_st *node) {
 
 node_st *TYPECHECK_parameter(node_st *node) {
     TRAVchildren(node);
+    // regular typechecking
     unify(typeVariable(PARAMETER_ID(node)), getBTterm(PARAMETER_TYPE(node)), DATA_TYPECHECK__GET()->parent);
+    
+    // array typechecking
+    if(PARAMETER_PARAMID(node) != NULL)
+    {
+        node_st *ids = PARAMETER_PARAMID(node);
+        while(ids)
+        {
+            unify(typeVariable(IDS_ID(ids)), TYPE_INT, DATA_TYPECHECK__GET()->parent);
+            ids = IDS_NEXT(ids);
+        }
+    }
     return node;
 }
 
@@ -281,7 +348,7 @@ node_st *TYPECHECK_funbody(node_st *node) {
 }
 
 node_st *TYPECHECK_fundefs(node_st *node) {
-
+    // Do nothing
     TRAVchildren(node);
     return node;
 }
@@ -295,17 +362,45 @@ node_st *TYPECHECK_vardecs(node_st *node) {
 node_st *TYPECHECK_vardec(node_st *node) {
     TRAVchildren(node);
     
+    // regular var declaration typechecking
     unify(typeVariable(VARDEC_ID(node)), getBTterm(VARDEC_TYPE(node)), DATA_TYPECHECK__GET()->parent);
-    if(VARDEC_EXPRS(node) != NULL)
+    if(VARDEC_EXPRS(node) != NULL && VARDEC_IS_SINGLE_EXPR(node))
     {
         unify(typeVariable(VARDEC_ID(node)), typeVariable(EXPRS_EXPR(ARREXPRS_EXPRS(VARDEC_EXPRS(node)))), DATA_TYPECHECK__GET()->parent);
     }
+
+    // array typechecking
+    if(VARDEC_ARR_DIMS(node) != NULL && !VARDEC_IS_SINGLE_EXPR(node))
+    {
+        node_st *ids = VARDEC_ARR_DIMS(node);
+        while(ids)
+        {
+            unify(typeVariable(EXPRS_EXPR(ids)), getBTterm(VARDEC_TYPE(node)), DATA_TYPECHECK__GET()->parent);
+            ids = EXPRS_NEXT(ids);
+        }
+        if(VARDEC_EXPRS(node) != NULL)
+        {
+            unify_arrexprs(VARDEC_EXPRS(node), getBTterm(VARDEC_TYPE(node)));
+        }
+    }
+
     return node;
 }
 
 node_st *TYPECHECK_arrexpr(node_st *node) {
- 
     TRAVchildren(node);
+    // typecheck array accesses
+
+    unify(typeVariable(node), typeVariable(ARREXPR_ID(node)), DATA_TYPECHECK__GET()->parent);
+    if(EXPRS_EXPR(ARREXPR_INDICES(node)) != NULL)
+    {
+        node_st *ids = ARREXPR_INDICES(node);
+        while(ids)
+        {
+            unify(typeVariable(ARREXPR_ID(node)), typeVariable(EXPRS_EXPR(ids)), DATA_TYPECHECK__GET()->parent);
+            ids = EXPRS_NEXT(ids);
+        }
+    }
     return node;
 }
 
@@ -419,6 +514,7 @@ node_st *TYPECHECK_forloop(node_st *node) {
 }
 
 node_st *TYPECHECK_return(node_st *node) {
+    // already typechecked in fundef
     TRAVchildren(node);
     return node;
 }
@@ -449,6 +545,14 @@ node_st *TYPECHECK_binop(node_st *node) {
 
 node_st *TYPECHECK_monop(node_st *node) {
     TRAVchildren(node);
+    if(MONOP_OP(node) == MO_neg)
+    {
+        forbid_bool(typeVariable(MONOP_EXPR(node)), DATA_TYPECHECK__GET()->parent);
+    }
+    else
+    {
+        unify(typeVariable(MONOP_EXPR(node)), TYPE_BOOL, DATA_TYPECHECK__GET()->parent);
+    }
     return node;
 }
 

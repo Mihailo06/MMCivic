@@ -219,7 +219,7 @@ void unify(term *t1, term *t2, htable_st *parent)
         }
         else if (x->type != y->type)
         {
-            printf("\n TYPE ERROR: ");
+            printf("\n\n TYPE ERROR: ");
             printterms(x, y);
 
         }
@@ -230,7 +230,7 @@ void unify(term *t1, term *t2, htable_st *parent)
 
             if (fun_x->size != fun_y->size)
             {
-                printf("TYPE ERROR: function arity mismatch! %zu = %zu", fun_x->size, fun_y->size);
+                printf("\n\nTYPE ERROR: function arity mismatch! %zu = %zu\n\n", fun_x->size, fun_y->size);
             }
             else 
             {
@@ -315,6 +315,6 @@ void forbid_bool(term *t, htable_st *parent)
 
     if (t->type == TERM_BOOL)
     {
-        printf("TYPE ERROR: boolean used in arithmetic expression");
+        printf("\n\nTYPE ERROR: boolean used in arithmetic expression\n\n");
     }
 }
