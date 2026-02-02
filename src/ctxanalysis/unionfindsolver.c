@@ -45,12 +45,13 @@ term *new_typevar(void)
 {
     static int next_id = 0;
     
-    typevar *tv = MEMmalloc(sizeof *tv);
+    typevar *tv = malloc(sizeof *tv);
     tv->base.type = TERM_TYPEVAR;
     tv->id = next_id++;
     
-    term_list *n = MEMmalloc(sizeof *n);
+    term_list *n = malloc(sizeof *n);
     n->t = (term *)tv;
+    n->is_function = false;
     n->next = all_terms;
     all_terms = n;
 
@@ -60,15 +61,18 @@ term *new_typevar(void)
 void free_all_terms(void)
 {
     term_list *n = all_terms;
-    while (n)
+    while (n != NULL)
     {
         term_list *next = n->next;
         if (n->is_function)
         {
-            MEMfree(n->params_array);
+            if(n->params_array)
+            {
+                free(n->params_array);
+            }
         }
-        MEMfree(n->t);
-        MEMfree(n);
+        free(n->t);
+        free(n); 
         n = next;
     }
     all_terms = NULL;
@@ -76,14 +80,14 @@ void free_all_terms(void)
 
 term *new_function_type(size_t size, term **params, term *ret)
 {
-    function_type *ft = MEMmalloc(sizeof *ft);
+    function_type *ft = malloc(sizeof *ft);
 
     ft->base.type = TERM_FUNCTION;
     ft->size = size;
     ft->params = params;
     ft->ret = ret;
 
-    term_list *n = MEMmalloc(sizeof *n);
+    term_list *n = malloc(sizeof *n);
     n->t = (term *)ft;
     n->is_function = true;
     n->params_array = params;

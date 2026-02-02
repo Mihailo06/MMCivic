@@ -94,7 +94,7 @@ node_st *TYPECHECK_fundec(node_st *node) {
         current_param = HEADERPARAMS_NEXT(current_param);
     }
 
-    term **param_types = MEMmalloc(params_count * sizeof(term*));
+    term **param_types = malloc(params_count * sizeof(term*));
     size_t i = 0;
     
     if(NODE_TYPE(header) == NT_VOIDFUNHEADER)
@@ -145,7 +145,6 @@ node_st *TYPECHECK_fundec(node_st *node) {
 
 node_st *TYPECHECK_fundef(node_st *node) {
     TRAVchildren(node);
-
     size_t params_count = 0;
     node_st *header = FUNDEF_FUNHEADER(node);
     node_st *current_param = NULL; 
@@ -157,14 +156,14 @@ node_st *TYPECHECK_fundef(node_st *node) {
     {
         current_param = BASICFUNHEADER_PARAMS(header);
     }
-
+    
     while(current_param)
     {
         params_count++;
         current_param = HEADERPARAMS_NEXT(current_param);
     }
-
-    term **param_types = MEMmalloc(params_count * sizeof(term*));
+    
+    term **param_types = malloc(params_count * sizeof(term*));
     size_t i = 0;
     
     if(NODE_TYPE(header) == NT_VOIDFUNHEADER)
@@ -175,16 +174,16 @@ node_st *TYPECHECK_fundef(node_st *node) {
     {
         current_param = BASICFUNHEADER_PARAMS(header);
     }
-
+    
     while(current_param)
     {
         node_st *param_id = PARAMETER_ID(HEADERPARAMS_PARAM(current_param));
-
+        
         param_types[i] = typeVariable(param_id);
         i++;
         current_param = HEADERPARAMS_NEXT(current_param);
     }
-
+    
     term *return_type;
     if(NODE_TYPE(header) == NT_VOIDFUNHEADER)
     {
@@ -194,11 +193,11 @@ node_st *TYPECHECK_fundef(node_st *node) {
     {
         return_type = getBTterm(BASICFUNHEADER_TYPE(header));
     }
-
+    
     term *fun_type = new_function_type(params_count, param_types, return_type);
-
+    
     node_st *fun_id;
-
+    
     if(NODE_TYPE(header) == NT_VOIDFUNHEADER)
     {
         fun_id = VOIDFUNHEADER_ID(header);
@@ -207,14 +206,24 @@ node_st *TYPECHECK_fundef(node_st *node) {
     {
         fun_id = BASICFUNHEADER_ID(header);
     }
-
+    
     unify(typeVariable(fun_id), fun_type, DATA_TYPECHECK__GET()->parent);
+    
+    node_st *stmts = FUNBODY_STMTS(FUNDEF_FUNBODY(node));
+    while(stmts)
+    {
+        if(NODE_TYPE(STMTS_STMT(stmts)) == NT_RETURN)
+        {
+            unify(typeVariable(RETURN_EXPR(STMTS_STMT(stmts))), return_type, DATA_TYPECHECK__GET()->parent);
+        }
+        stmts = STMTS_NEXT(stmts);
+    }
 
     return node;
 }
 
 node_st *TYPECHECK_voidfunheader(node_st *node) {
-
+    
     TRAVchildren(node);
     return node;
 }
@@ -327,9 +336,7 @@ node_st *TYPECHECK_exprs(node_st *node) {
 }
 
 node_st *TYPECHECK_assign(node_st *node) {
-printf("\nassign");
     TRAVchildren(node);
-    printf("assignunify");
     // unify(typeVariable(DATA_TYPECHECK__GET()->solver, node), typeVariable(DATA_TYPECHECK__GET()->solver, ASSIGN_EXPR(node)), DATA_TYPECHECK__GET()->parent);
     unify(typeVariable(ASSIGN_LET(node)), typeVariable(ASSIGN_EXPR(node)), DATA_TYPECHECK__GET()->parent);
 
@@ -450,6 +457,8 @@ node_st *TYPECHECK_cast(node_st *node) {
 
 node_st *TYPECHECK_varlet(node_st *node) {
     TRAVchildren(node);
+    unify(typeVariable(VARLET_ID(node)), typeVariable(node), DATA_TYPECHECK__GET()->parent);
+
     return node;
 }
 
