@@ -190,7 +190,7 @@ term *uf_find(term *x, htable_st *parent)
 
 void uf_unify(term *t1, term *t2, htable_st *parent)
 {
-    printf("Typechecking: new type constraint ");
+    // printf("Typechecking: new type constraint ");
     printterms(t1, t2);
     uf_makeSet(t1, parent);
     uf_makeSet(t2, parent);
@@ -213,7 +213,7 @@ void uf_unify(term *t1, term *t2, htable_st *parent)
         }
         else if (x->type != y->type)
         {
-            printf("\n\n TYPE ERROR: ");
+            // printf("\n\n TYPE ERROR: ");
             printterms(x, y);
         }
         else if (x->type == TERM_FUNCTION && y->type == TERM_FUNCTION)
@@ -223,7 +223,7 @@ void uf_unify(term *t1, term *t2, htable_st *parent)
 
             if (fun_x->size != fun_y->size)
             {
-                printf("\n\nTYPE ERROR: function arity mismatch! %zu = %zu\n\n", fun_x->size, fun_y->size);
+                // printf("\n\nTYPE ERROR: function arity mismatch! %zu = %zu\n\n", fun_x->size, fun_y->size);
             }
             else 
             {
@@ -236,53 +236,53 @@ void uf_unify(term *t1, term *t2, htable_st *parent)
                 
                 uf_unify(fun_x->ret, fun_y->ret, parent);
                 
-                printf(" -> functions unified\n");
+                // printf(" -> functions unified\n");
             }
 
         }
         else
         {
-            printf("\n Else branch? ");
+            // printf("\n Else branch? ");
             printterms(x, y);
         }
     }
     else
     {
-        printf("  ALREADY SAME TERM  ");
+        // printf("  ALREADY SAME TERM  ");
     }
 
-    printf(" = ");
+    // printf(" = ");
     printterms(x, y);
-    printf("\n");
+    // printf("\n");
 }
 
 void printterm(term *t)
 {
     if (!t)
     {
-        printf("NULL");
+        // printf("NULL");
         return;
     }
 
-    switch(t->type)
-    {
-        case TERM_INT : printf("int");
-            break;
-        case TERM_FLOAT : printf("float");
-            break;
-        case TERM_BOOL : printf("bool");
-            break;
-        case TERM_TYPEVAR : printf("a%d", ((typevar*)t)->id);
-            break;
-        default : printf("?%d", (int)t->type);
-            break;
-    }
+    // switch(t->type)
+    // {
+        // case TERM_INT : printf("int");
+        //     break;
+        // case TERM_FLOAT : printf("float");
+        //     break;
+        // case TERM_BOOL : printf("bool");
+        //     break;
+        // case TERM_TYPEVAR : printf("a%d", ((typevar*)t)->id);
+        //     break;
+        // default : printf("?%d", (int)t->type);
+        //     break;
+    // }
 }
 
 void printterms(term *x, term *y)
 {
     printterm(x);
-    printf(" = ");
+    // printf(" = ");
     printterm(y);
 }
 
@@ -293,6 +293,6 @@ void forbid_bool(term *t, htable_st *parent)
 
     if (t->type == TERM_BOOL)
     {
-        printf("\n\nTYPE ERROR: boolean used in arithmetic expression\n\n");
+        // printf("\n\nTYPE ERROR: boolean used in arithmetic expression\n\n");
     }
 }

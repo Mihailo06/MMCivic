@@ -265,7 +265,7 @@ node_st *TYPECHECK_globaldec(node_st *node) {
         node_st *ids = GLOBALDEC_IDS(node);
         while(ids)
         {
-            uf_unify(typeVariable(IDS_ID(ids)), getBTterm(GLOBALDEC_TYPE(node)), DATA_TYPECHECK__GET()->parent);
+            uf_unify(typeVariable(IDS_ID(ids)), TYPE_INT, DATA_TYPECHECK__GET()->parent);
             ids = IDS_NEXT(ids);
         }
     }
@@ -282,17 +282,17 @@ node_st *TYPECHECK_globaldef(node_st *node) {
     }
 
     // array typechecking
-    if(GLOBALDEF_INDEX_EXPRS(node) != NULL && !GLOBALDEF_IS_SINGLE_EXPR(node))
+    if(GLOBALDEF_INDEX_EXPRS(node) != NULL)
     {
         node_st *ids = GLOBALDEF_INDEX_EXPRS(node);
         while(ids)
         {
-            uf_unify(typeVariable(EXPRS_EXPR(ids)), getBTterm(GLOBALDEF_TYPE(node)), DATA_TYPECHECK__GET()->parent);
+            uf_unify(typeVariable(EXPRS_EXPR(ids)), TYPE_INT, DATA_TYPECHECK__GET()->parent);
             ids = EXPRS_NEXT(ids);
         }
-        if(GLOBALDEF_VALUE_EXPRS(node) != NULL)
+        if(GLOBALDEF_VALUE_EXPRS(node) != NULL && !GLOBALDEF_IS_SINGLE_EXPR(node))
         {
-            unify_arrexprs(GLOBALDEF_VALUE_EXPRS(node), getBTterm(VARDEC_TYPE(node)));
+            unify_arrexprs(GLOBALDEF_VALUE_EXPRS(node), getBTterm(GLOBALDEF_TYPE(node)));
         }
     }
     
@@ -437,7 +437,7 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
 
     if(calle_type->type != TERM_FUNCTION)
     {
-        printf("ERROR: CALLED PROCEDURECALL \"%s\" IS NOT A FUNCTION ", ID_ID(calle_id));
+        // printf("ERROR: CALLED PROCEDURECALL \"%s\" IS NOT A FUNCTION ", ID_ID(calle_id));
         return node;
     }
 
@@ -454,7 +454,7 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
 
     if(arg_count != ft->size)
     {
-        printf("ERROR: Wrong number of arguments! expected %zu, got %zu", ft->size, arg_count);
+        // printf("ERROR: Wrong number of arguments! expected %zu, got %zu", ft->size, arg_count);
         return node;
     }
 
@@ -493,7 +493,10 @@ node_st *TYPECHECK_dowhileloop(node_st *node) {
 node_st *TYPECHECK_forloop(node_st *node) {
     TRAVchildren(node);
     
-    uf_unify(TYPE_INT, getBTterm(FORLOOP_TYPE(node)), DATA_TYPECHECK__GET()->parent); // Developer note: not sure if the rest of the exprs in a loopheader need to be typechecked, they probably do
+    uf_unify(TYPE_INT, getBTterm(FORLOOP_TYPE(node)), DATA_TYPECHECK__GET()->parent);
+    uf_unify(TYPE_INT, typeVariable(FORLOOP_ASSIGNEXPR(node)), DATA_TYPECHECK__GET()->parent);
+    uf_unify(TYPE_INT, typeVariable(FORLOOP_INCREMENTEXPR(node)), DATA_TYPECHECK__GET()->parent);
+    uf_unify(TYPE_INT, typeVariable(FORLOOP_WHILEEXPR(node)), DATA_TYPECHECK__GET()->parent);
     return node;
 }
 
