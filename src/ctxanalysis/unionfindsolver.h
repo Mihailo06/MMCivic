@@ -35,20 +35,11 @@ extern term *TYPE_FLOAT;
 extern term *TYPE_BOOL;
 extern term *TYPE_VOID;
 
-typedef struct {
-    term base;
-    int id;
-} typevar;
-
-term *new_typevar(void);
-
 void free_all_terms(void);
 
 term *typeVariable(node_st *node);
 
 term *new_function_type(size_t size, term **params, term *ret);
-
-void *HTcomputeIfAbsent(htable_st *table, void *key, void *(*compute)(void *key));
 
 typedef struct {
     term base;
@@ -57,14 +48,8 @@ typedef struct {
     term *ret;       // return type
 } function_type;
 
-void makeSet(term *x, htable_st *parent);
-
-void *HTputIfAbsent(htable_st *parent, term *key, term *value);
-
-void ufunion(htable_st *parent, term *x, term *y);
-
-void unify(term *x, term *y, htable_st *parent);
+void uf_unify(term *x, term *y, htable_st *parent);
 
 void forbid_bool(term *t, htable_st *parent);
 
-term *find(term *x, htable_st *parent);
+term *uf_find(term *x, htable_st *parent);
