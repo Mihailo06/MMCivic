@@ -137,7 +137,7 @@ globaldef: basictype globaldefprime
            }
          | EXPORT basictype globaldefprime
            {
-             $$ = ASTglobaldef($3, current_exprs, ASTid(current_id), $2, true, true);
+             $$ = ASTglobaldef($3, current_exprs, ASTid(current_id), $2, true, is_single_expr);
            }
            ;
 
