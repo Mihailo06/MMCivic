@@ -31,6 +31,11 @@ term *TYPE_FLOAT = &TYPE_FLOAT_OBJ;
 term *TYPE_BOOL  = &TYPE_BOOL_OBJ;
 term *TYPE_VOID = &TYPE_VOID_OBJ;
 
+typedef struct {
+    term base;
+    int id;
+} typevar;
+
 typedef struct term_list {
     term *t;
     bool is_function;
@@ -119,7 +124,7 @@ static void *make_typevar_cb(void *key)
 
 term *typeVariable(node_st *node)
 {
-    printf("Creating/looking up typevar for node %p  type=%d  ", (void*)node, NODE_TYPE(node));
+    // printf("Creating/looking up typevar for node %p  type=%d  ", (void*)node, NODE_TYPE(node));
     void *key;
 
     if (NODE_TYPE(node) == NT_ID)
@@ -131,20 +136,18 @@ term *typeVariable(node_st *node)
         {
             id_node = node;
             HTinsert(DATA_TYPECHECK__GET()->ids, name, id_node);
-            printf("New id node for '%s': node %p\n", name, (void*)id_node);
+            // printf("New id node for '%s': node %p\n", name, (void*)id_node);
         }
         else
         {
-            printf("Reusing old id node for '%s': node %p\n", name, (void*)id_node);
+            // printf("Reusing old id node for '%s': node %p\n", name, (void*)id_node);
         }
 
         key = id_node;
-        // printf(" (ID: %s)\n", ID_ID(node));
     }
     else
     {
         key = (void *)node;
-        // printf(" (not an ID)\n");
     }
     
     return HTcomputeIfAbsent(DATA_TYPECHECK__GET()->solver, key, make_typevar_cb);
@@ -155,7 +158,6 @@ void *HTputIfAbsent(htable_st *parent, term *key, term *value)
     void *old = HTlookup(parent, key);
     if (old)
     {
-        // printf("\nfound old");
         printterms(key, value);
         return old;
     }
@@ -164,42 +166,36 @@ void *HTputIfAbsent(htable_st *parent, term *key, term *value)
     return NULL;
 }
 
-void makeSet(term *x, htable_st *parent)
+void uf_makeSet(term *x, htable_st *parent)
 {
     HTputIfAbsent(parent, x, x);
 }
 
-term *find(term *x, htable_st *parent)
+term *uf_find(term *x, htable_st *parent)
 {
     term *p = HTlookup(parent, x);
     if (p == NULL)
     {
-        makeSet(x, parent);
+        uf_makeSet(x, parent);
         return x;
     }
     if (x != p)
     {
-        term *root = find(p, parent);
+        term *root = uf_find(p, parent);
         HTinsert(parent, x, root);
         return root;
     }
     return x;
 }
 
-void ufunion(htable_st *parent, term *x, term *y)
-{
-    HTinsert(parent, x, y);
-    
-}
-
-void unify(term *t1, term *t2, htable_st *parent)
+void uf_unify(term *t1, term *t2, htable_st *parent)
 {
     printf("Typechecking: new type constraint ");
     printterms(t1, t2);
-    makeSet(t1, parent);
-    makeSet(t2, parent);
-    term *x = find(t1, parent);
-    term *y = find(t2, parent);
+    uf_makeSet(t1, parent);
+    uf_makeSet(t2, parent);
+    term *x = uf_find(t1, parent);
+    term *y = uf_find(t2, parent);
     if (x != y )
     {
         
@@ -210,18 +206,15 @@ void unify(term *t1, term *t2, htable_st *parent)
         else if (x->type == TERM_TYPEVAR)
         {
             HTinsert(parent, x, y);
-            // ufunion(parent, x, y);
         }
         else if (y->type == TERM_TYPEVAR)
         {
             HTinsert(parent, y, x);
-            // ufunion(parent, y, x);
         }
         else if (x->type != y->type)
         {
             printf("\n\n TYPE ERROR: ");
             printterms(x, y);
-
         }
         else if (x->type == TERM_FUNCTION && y->type == TERM_FUNCTION)
         {
@@ -238,35 +231,20 @@ void unify(term *t1, term *t2, htable_st *parent)
 
                 for(int i = 0; i<(int)fun_x->size; i++)
                 {
-                    unify(fun_x->params[i], fun_y->params[i], parent);
+                    uf_unify(fun_x->params[i], fun_y->params[i], parent);
                 }
                 
-                unify(fun_x->ret, fun_y->ret, parent);
+                uf_unify(fun_x->ret, fun_y->ret, parent);
                 
                 printf(" -> functions unified\n");
             }
 
         }
-        // else if (x instanceof ArrayType && y instanceof ArrayType)
-        // {
-        //         ArrayType arrA = (ArrayType) x;
-        //         ArrayType arrB = (ArrayType) y;
-        //         unify(arrA.returnType, arrB.returnType);
-        //         union(x, y);
-        // }
         else
         {
             printf("\n Else branch? ");
             printterms(x, y);
         }
-        // } else if (x instanceof ArrayType && y instanceof ArrayType) {
-        //     ArrayType arrA = (ArrayType) x;
-        //     ArrayType arrB = (ArrayType) y;
-        //     unify(arrA.returnType, arrB.returnType);
-        //     union(x, y);
-        // } else {
-        //     throw new TypeCheckerException();
-        // }
     }
     else
     {
@@ -311,7 +289,7 @@ void printterms(term *x, term *y)
 
 void forbid_bool(term *t, htable_st *parent)
 {
-    t = find(t, parent);
+    t = uf_find(t, parent);
 
     if (t->type == TERM_BOOL)
     {

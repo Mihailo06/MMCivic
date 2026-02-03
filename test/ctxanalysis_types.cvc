@@ -1,0 +1,6 @@
+extern int fun1(int a);
+
+int fun(int a)
+{
+    int b = fun(1);
+}
