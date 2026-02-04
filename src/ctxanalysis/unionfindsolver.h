@@ -21,9 +21,7 @@ typedef enum {
     TERM_FLOAT,
     TERM_BOOL,
     TERM_VOID,
-    TERM_FUNCTION,
-    TERM_ARRAY
-    
+    TERM_FUNCTION
 } term_type_t;
 
 typedef struct {

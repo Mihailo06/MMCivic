@@ -29,6 +29,26 @@ term *getBTterm(enum BasicType type)
     return NULL;
 }
 
+enum BasicType gettermBT(term *t)
+{
+    function_type *f;
+    switch(t->type)
+    {
+        case TERM_INT: return BT_int;
+            break;
+        case TERM_BOOL: return BT_bool;
+            break;
+        case TERM_FLOAT: return BT_float;
+            break;
+        case TERM_FUNCTION: f = (function_type *)t; return gettermBT(f->ret);
+            break;
+        case TERM_TYPEVAR: return gettermBT(uf_find(t, DATA_TYPECHECK__GET()->parent));
+            break;
+        default: printf("\nTypechecking error, couldn't find type for term type %d", t->type); return BT_NULL;
+            break;
+    }
+}
+
 static void unify_arrexprs(node_st *arr, term *type)
 {
     
@@ -388,6 +408,7 @@ node_st *TYPECHECK_arrexpr(node_st *node) {
             ids = EXPRS_NEXT(ids);
         }
     }
+    ARREXPR_TYPE(node) = gettermBT(typeVariable(node));
     return node;
 }
 
@@ -434,15 +455,15 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
 
     node_st *calle_id = PROCEDURECALL_ID(node);
     term *calle_type = uf_find(typeVariable(calle_id), DATA_TYPECHECK__GET()->parent);
-
+    
     if(calle_type->type != TERM_FUNCTION)
     {
         // printf("ERROR: CALLED PROCEDURECALL \"%s\" IS NOT A FUNCTION ", ID_ID(calle_id));
         return node;
     }
-
+    
     function_type *ft = (function_type *)calle_type;
-
+    
     size_t arg_count = 0;
     node_st *current_arg = PROCEDURECALL_EXPRS(node);
     
@@ -451,20 +472,21 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
         arg_count++;
         current_arg = EXPRS_NEXT(current_arg);
     }
-
+    
     if(arg_count != ft->size)
     {
         // printf("ERROR: Wrong number of arguments! expected %zu, got %zu", ft->size, arg_count);
         return node;
     }
-
+    
     current_arg = PROCEDURECALL_EXPRS(node);
     for (size_t i = 0; i < ft->size; i++) {
         uf_unify(typeVariable(EXPRS_EXPR(current_arg)), ft->params[i], DATA_TYPECHECK__GET()->parent);
         current_arg = EXPRS_NEXT(current_arg);
     }
-
+    
     uf_unify(typeVariable(node), ft->ret, DATA_TYPECHECK__GET()->parent);
+    PROCEDURECALL_TYPE(node) = gettermBT(ft->ret);
     return node;
 }
 
@@ -515,25 +537,37 @@ node_st *TYPECHECK_binop(node_st *node) {
     {
         uf_unify(TYPE_BOOL, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         uf_unify(t_l, typeVariable(node), DATA_TYPECHECK__GET()->parent);
+        BINOP_TYPE(node) = BT_bool;
     }
     else if(BINOP_OP(node) == BO_mod)
     {
         uf_unify(TYPE_INT, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         uf_unify(t_l, typeVariable(node), DATA_TYPECHECK__GET()->parent);
+        BINOP_TYPE(node) = BT_int;
     }
     else if(BINOP_OP(node) == BO_eq || BINOP_OP(node) == BO_ne)
     {
         uf_unify(TYPE_BOOL, typeVariable(node), DATA_TYPECHECK__GET()->parent);
+        BINOP_TYPE(node) = BT_bool;
     }
     else if(BINOP_OP(node) == BO_ge || BINOP_OP(node) == BO_gt || BINOP_OP(node) == BO_le || BINOP_OP(node) == BO_lt)
     {
         forbid_bool(t_l, DATA_TYPECHECK__GET()->parent);
         uf_unify(TYPE_BOOL, typeVariable(node), DATA_TYPECHECK__GET()->parent);
+        BINOP_TYPE(node) = BT_bool;
     }
     else
     {
         forbid_bool(t_l, DATA_TYPECHECK__GET()->parent);
         uf_unify(t_l, typeVariable(node), DATA_TYPECHECK__GET()->parent);
+        if(t_l->type == TERM_INT)
+        {
+            BINOP_TYPE(node) = BT_int;
+        }
+        else
+        {
+            BINOP_TYPE(node) = BT_float;
+        }
     }
     
 
@@ -543,13 +577,23 @@ node_st *TYPECHECK_binop(node_st *node) {
 
 node_st *TYPECHECK_monop(node_st *node) {
     TRAVchildren(node);
+    term *t = typeVariable(MONOP_EXPR(node));
     if(MONOP_OP(node) == MO_neg)
     {
-        forbid_bool(typeVariable(MONOP_EXPR(node)), DATA_TYPECHECK__GET()->parent);
+        forbid_bool(t, DATA_TYPECHECK__GET()->parent);
+        if(t->type == TERM_INT)
+        {
+            MONOP_TYPE(node) = BT_int;
+        }
+        else
+        {
+            MONOP_TYPE(node) = BT_float;
+        }
     }
     else
     {
         uf_unify(typeVariable(MONOP_EXPR(node)), TYPE_BOOL, DATA_TYPECHECK__GET()->parent);
+        MONOP_TYPE(node) = BT_bool;
     }
     return node;
 }
@@ -558,6 +602,7 @@ node_st *TYPECHECK_cast(node_st *node) {
     TRAVchildren(node);
     
     uf_unify(typeVariable(node), getBTterm(CAST_TYPE(node)), DATA_TYPECHECK__GET()->parent);
+    CAST_TYPE(node) = CAST_TYPE(node);
     return node;
 }
 
@@ -571,24 +616,28 @@ node_st *TYPECHECK_varlet(node_st *node) {
 node_st *TYPECHECK_var(node_st *node) {
     TRAVchildren(node);
     uf_unify(typeVariable(node), typeVariable(VAR_ID(node)), DATA_TYPECHECK__GET()->parent);
-
+    term *var = typeVariable(node);
+    VAR_TYPE(node) = gettermBT(var);
     return node;
 }
 
 node_st *TYPECHECK_num(node_st *node) {
     TRAVchildren(node);
     uf_unify(typeVariable(node), TYPE_INT, DATA_TYPECHECK__GET()->parent);
+    NUM_TYPE(node) = BT_int;
     return node;
 }
 
 node_st *TYPECHECK_float(node_st *node) {
     TRAVchildren(node);
     uf_unify(typeVariable(node), TYPE_FLOAT, DATA_TYPECHECK__GET()->parent);
+    FLOAT_TYPE(node) = BT_float;
     return node;
 }
 
 node_st *TYPECHECK_bool(node_st *node) {
     TRAVchildren(node);
     uf_unify(typeVariable(node), TYPE_BOOL, DATA_TYPECHECK__GET()->parent);
+    BOOL_TYPE(node) = BT_bool;
     return node;
 }
