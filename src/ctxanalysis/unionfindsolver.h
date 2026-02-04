@@ -1,18 +1,17 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
-#include "ccngen/enum.h"
-#include <stddef.h>
-#include "palm/hash_table.h"
-#include "palm/memory.h"
-#include "palm/str.h"
-#include "palm/dbug.h"
+#include "ccn/dynamic_core.h"
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
 #include "ccngen/trav_data.h"
-#include "ccn/dynamic_core.h"
+#include "palm/dbug.h"
+#include "palm/hash_table.h"
+#include "palm/memory.h"
+#include "palm/str.h"
 #include "util.h"
 
 typedef enum {
@@ -40,10 +39,10 @@ term *typeVariable(node_st *node);
 term *new_function_type(size_t size, term **params, term *ret);
 
 typedef struct {
-    term base;
-    size_t size;            // size
-    term **params;   // array of Term*
-    term *ret;       // return type
+    term   base;
+    size_t size;   // size
+    term **params; // array of Term*
+    term  *ret;    // return type
 } function_type;
 
 void uf_unify(term *x, term *y, htable_st *parent);
