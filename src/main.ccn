@@ -140,7 +140,6 @@ nodeset Expr{
     attributes {
         BasicType type
     }
-
 };
 
 // Nodes that reference an identifier, but not nodes that define one.
