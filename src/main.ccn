@@ -3,9 +3,22 @@ start phase RootPhase {
 
     actions {
         pass SPdoScanParse;
-
-        ContextAnalysis;
+        TypeChecking;
         Demo;
+        ContextAnalysis;
+    }
+};
+
+phase TypeChecking {
+    actions {
+        traversal TypeCheck {
+            uid = TypeCheck_,
+            travdata {
+                user htable_stptr solver,
+                user htable_stptr parent,
+                user htable_stptr ids
+            }
+        };
     }
 };
 
@@ -120,8 +133,14 @@ enum BinOpType {
 };
 
 nodeset Declaration = {FunDec, FunDef, GlobalDec, GlobalDef};
-nodeset Expr = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr};
 nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
+nodeset Expr{
+    nodes = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr},
+
+    attributes {
+        BasicType type
+    }
+};
 
 // Nodes that reference an identifier, but not nodes that define one.
 nodeset WithSymbolReferences = {
@@ -388,6 +407,10 @@ node ForLoop {
         Expr incrementexpr { constructor },
         Block block { constructor, mandatory },
         Id id { constructor }
+    },
+
+    attributes {
+        BasicType type { constructor }
     }
 };
 
