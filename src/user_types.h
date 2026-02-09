@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+#include "codegen/state.h"
 #include "ctxanalysis/symtable.h"
 #include "palm/hash_table.h"
 
@@ -14,6 +15,11 @@ typedef struct {
 } symtab_stack;
 
 typedef symtab_stack *symtab_stack_ptr;
+
+typedef enum SymtableEntryLinkage symtable_entry_linkage;
+
+// Codegen
+typedef codegen_state *codegen_stateptr;
 
 // misc
 typedef htable_st *htable_stptr;

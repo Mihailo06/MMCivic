@@ -69,3 +69,11 @@ symtable_entry *symtable_lookup(symtable *tab, const char *sym) {
 }
 
 symtable *symtable_get_parent(symtable *tab) { return tab->parent; }
+
+size_t symtable_elemcount(symtable *tab) {
+    return HTelementCount(tab->tab);
+}
+
+ htable_iter_st *symtable_iterate(symtable *tab) {
+    return HTiterate(tab->tab);
+}

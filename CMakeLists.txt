@@ -32,6 +32,7 @@ add_executable(civicc
     src/main.c
     src/util.c
     src/global/globals.c
+    src/bytevec.c
 
     # printing
     src/print/count_identifiers.c
@@ -47,7 +48,6 @@ add_executable(civicc
     src/ctxanalysis/symtable.c
     src/ctxanalysis/trav_checkarrdims.c
     src/ctxanalysis/trav_checkidentifiers.c
-    src/ctxanalysis/trav_freesymtables.c
     src/ctxanalysis/trav_initglobalvars.c
     src/ctxanalysis/trav_initlocalvars.c
     src/ctxanalysis/trav_initsymtables.c
@@ -55,6 +55,13 @@ add_executable(civicc
     # type checking
     src/ctxanalysis/unionfindsolver.c
     src/ctxanalysis/trav_typecheck.c
+
+    # codegen
+    src/codegen/state.c
+    src/codegen/trav_codegen.c
+
+    # cleanup
+    src/cleanup/trav_freesymtables.c
 )
 
 target_compile_options(civicc PRIVATE
