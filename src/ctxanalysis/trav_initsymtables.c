@@ -67,8 +67,9 @@ node_st *INITSYMTABLES_globaldec(node_st *node) {
     if (checkdupSym(node, idId(GLOBALDEC_ID(node)))) return node; // error
 
     symtable_entry ent = {
-        .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
-        .type = GLOBALDEC_TYPE(node),
+        .kind    = SYMTABLE_ENTRY_KIND_VARIABLE,
+        .type    = GLOBALDEC_TYPE(node),
+        .linkage = SYMTABLE_ENTRY_LINKAGE_EXTERN,
     };
 
     symtable_insert(peekSymtab(), idId(GLOBALDEC_ID(node)), ent);
@@ -79,8 +80,10 @@ node_st *INITSYMTABLES_globaldef(node_st *node) {
     if (checkdupSym(node, idId(GLOBALDEF_ID(node)))) return node; // error
 
     symtable_entry ent = {
-        .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
-        .type = GLOBALDEF_TYPE(node),
+        .kind    = SYMTABLE_ENTRY_KIND_VARIABLE,
+        .type    = GLOBALDEF_TYPE(node),
+        .linkage = GLOBALDEF_EXPORT(node) ? SYMTABLE_ENTRY_LINKAGE_EXPORT
+                                          : SYMTABLE_ENTRY_LINKAGE_INTERNAL,
     };
 
     symtable_insert(peekSymtab(), idId(GLOBALDEF_ID(node)), ent);
@@ -88,13 +91,16 @@ node_st *INITSYMTABLES_globaldef(node_st *node) {
 }
 
 node_st *INITSYMTABLES_fundec(node_st *node) {
-    FUNDEC_SYMTABLE(node) = ASTsymtable(pushNewSymtab());
+    DATA_INITSYMTABLES__GET()->cur_link = SYMTABLE_ENTRY_LINKAGE_EXTERN;
+    FUNDEC_SYMTABLE(node)               = ASTsymtable(pushNewSymtab());
     TRAVchildren(node);
     popSymtab();
     return node;
 }
 
 node_st *INITSYMTABLES_fundef(node_st *node) {
+    DATA_INITSYMTABLES__GET()->cur_link =
+        FUNDEF_EXPORT(node) ? SYMTABLE_ENTRY_LINKAGE_EXPORT : SYMTABLE_ENTRY_LINKAGE_INTERNAL;
     FUNDEF_SYMTABLE(node) = ASTsymtable(pushNewSymtab());
     TRAVchildren(node);
     popSymtab();
@@ -134,6 +140,7 @@ node_st *INITSYMTABLES_voidfunheader(node_st *node) {
         .type     = BT_NULL,
         .arity    = param_count,
         .argtypes = argtypes,
+        .linkage  = DATA_INITSYMTABLES__GET()->cur_link,
     };
 
     symtable_insert(peekSymtab(), idId(VOIDFUNHEADER_ID(node)), ent);
@@ -179,6 +186,7 @@ node_st *INITSYMTABLES_basicfunheader(node_st *node) {
         .type     = BASICFUNHEADER_TYPE(node),
         .arity    = param_count,
         .argtypes = argtypes,
+        .linkage  = DATA_INITSYMTABLES__GET()->cur_link,
     };
 
     symtable_insert(peekSymtab(), idId(BASICFUNHEADER_ID(node)), ent);

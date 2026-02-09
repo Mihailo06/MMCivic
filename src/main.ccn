@@ -6,7 +6,9 @@ start phase RootPhase {
         PrimaryNameMangling;
         TypeChecking;
         ContextAnalysis;
+        CodegenPhase;
         Demo;
+        Cleanup_;
     }
 };
 
@@ -94,7 +96,8 @@ phase ContextAnalysis {
                 ForLoop
             },
             travdata {
-                user symtab_stack_ptr stack
+                user symtab_stack_ptr stack,
+                user symtable_entry_linkage cur_link
             }
         };
 
@@ -118,7 +121,23 @@ phase ContextAnalysis {
                 user symtable_ptr current_symtab
             }
         };
+    }
+};
 
+phase CodegenPhase {
+    actions {
+        traversal Codegen {
+            uid = Codegen_,
+            travdata {
+                user codegen_stateptr state
+            }
+        };
+    }
+};
+
+// Can't call this "Cleanup", that makes CCN generate invalid code.
+phase Cleanup_ {
+    actions {
         traversal FreeSymtables {
             uid = FreeSymtables_,
             nodes = { Symtable }
@@ -216,7 +235,7 @@ node Symtable {
         user symtable_ptr symtab { constructor }
     },
     lifetime {
-        allowed (ContextAnalysis.InitSymtables -> ContextAnalysis.FreeSymtables]
+        allowed (ContextAnalysis.InitSymtables -> Cleanup_.FreeSymtables]
     }
 };
 
