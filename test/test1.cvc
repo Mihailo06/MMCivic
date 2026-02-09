@@ -1,10 +1,8 @@
-int twos = 0;
-int two ()
-{
-    int a;
-    int b;
-    int c;
-    int d;
-twos = twos + 1;
-return 2;
+export int x = 1;
+extern int y;
+
+extern int bar(int x, int y);
+
+export int foo() {
+    return bar(x, y);
 }

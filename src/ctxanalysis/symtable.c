@@ -77,3 +77,5 @@ htable_st *symtable_swap_map(symtable *tab, htable_st *new) {
     tab->tab       = new;
     return old;
 }
+
+size_t symtable_elemcount(symtable *tab) { return HTelementCount(tab->tab); }
