@@ -3,12 +3,22 @@ start phase RootPhase {
 
     actions {
         pass SPdoScanParse;
+        ParseCleanup;
         PrimaryNameMangling;
         TypeChecking;
         ContextAnalysis;
         CodegenPhase;
         Demo;
         Cleanup_;
+    }
+};
+
+phase ParseCleanup {
+    actions {
+        traversal ReverseParams {
+            uid = ReverseParams_,
+            nodes = { HeaderParams }
+        };
     }
 };
 
