@@ -118,8 +118,9 @@ node_st *INITSYMTABLES_voidfunheader(node_st *node) {
         if (checkdupSym(node, idId(PARAMETER_ID(param)))) continue; // error
 
         symtable_entry ent = {
-            .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
-            .type = PARAMETER_TYPE(param),
+            .kind    = SYMTABLE_ENTRY_KIND_VARIABLE,
+            .type    = PARAMETER_TYPE(param),
+            .linkage = SYMTABLE_ENTRY_LINKAGE_LOCAL,
         };
 
         symtable_insert(peekSymtab(), idId(PARAMETER_ID(param)), ent);
@@ -163,8 +164,9 @@ node_st *INITSYMTABLES_basicfunheader(node_st *node) {
         if (checkdupSym(node, idId(PARAMETER_ID(param)))) continue;
 
         symtable_entry ent = {
-            .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
-            .type = PARAMETER_TYPE(param),
+            .kind    = SYMTABLE_ENTRY_KIND_VARIABLE,
+            .type    = PARAMETER_TYPE(param),
+            .linkage = SYMTABLE_ENTRY_LINKAGE_LOCAL,
         };
 
         symtable_insert(peekSymtab(), idId(PARAMETER_ID(param)), ent);
@@ -203,8 +205,9 @@ node_st *INITSYMTABLES_funbody(node_st *node) {
         if (checkdupSym(node, idId(VARDEC_ID(vardec)))) continue; // error
 
         symtable_entry ent = {
-            .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
-            .type = VARDEC_TYPE(vardec),
+            .kind    = SYMTABLE_ENTRY_KIND_VARIABLE,
+            .type    = VARDEC_TYPE(vardec),
+            .linkage = SYMTABLE_ENTRY_LINKAGE_LOCAL,
         };
 
         symtable_insert(peekSymtab(), idId(VARDEC_ID(vardec)), ent);
@@ -216,7 +219,11 @@ node_st *INITSYMTABLES_funbody(node_st *node) {
 }
 
 node_st *INITSYMTABLES_forloop(node_st *node) {
-    symtable_entry ent = { .kind = SYMTABLE_ENTRY_KIND_VARIABLE, .type = BT_int };
+    symtable_entry ent = {
+        .kind    = SYMTABLE_ENTRY_KIND_VARIABLE,
+        .type    = BT_int,
+        .linkage = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+    };
     symtable_insert(peekSymtab(), idId(FORLOOP_ID(node)), ent);
 
     TRAVchildren(node);

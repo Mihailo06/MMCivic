@@ -6,8 +6,8 @@
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
 #include "ccngen/trav_data.h"
-#include "palm/dbug.h"
 #include "palm/memory.h"
+#include "util.h"
 
 static void indent(void) { DATA_PRT_GET()->indent_depth++; }
 
@@ -36,17 +36,6 @@ static const char *padstr(void) {
     DATA_PRT_GET()->indent_buf[depth] = 0;
 
     return DATA_PRT_GET()->indent_buf;
-}
-
-static const char *typename(enum BasicType type) {
-    switch (type) {
-        case BT_NULL:  return "NULL";
-        case BT_bool:  return "bool";
-        case BT_int:   return "int";
-        case BT_float: return "float";
-    }
-    DBUG_ASSERT(false, "Missing typename definition!");
-    return NULL; // unreachable
 }
 
 void PRTinit(void) {
@@ -94,7 +83,7 @@ node_st *PRTvoidfunheader(node_st *node) {
 }
 
 node_st *PRTbasicfunheader(node_st *node) {
-    printf("%s %s(", typename(BASICFUNHEADER_TYPE(node)), ID_ID(BASICFUNHEADER_ID(node)));
+    printf("%s %s(", typeName(BASICFUNHEADER_TYPE(node)), ID_ID(BASICFUNHEADER_ID(node)));
     TRAVchildren(node);
     printf(")");
     return node;
@@ -106,12 +95,12 @@ node_st *PRTglobaldec(node_st *node) {
         printf(
             "%sextern %s %s;\n",
             padstr(),
-            typename(GLOBALDEC_TYPE(node)),
+            typeName(GLOBALDEC_TYPE(node)),
             ID_ID(GLOBALDEC_ID(node))
         );
     } else {
         // N-D array
-        printf("%sextern %s[", padstr(), typename(GLOBALDEC_TYPE(node)));
+        printf("%sextern %s[", padstr(), typeName(GLOBALDEC_TYPE(node)));
         TRAVchildren(node);
         printf("] %s;\n", ID_ID(GLOBALDEC_ID(node)));
     }
@@ -125,7 +114,7 @@ node_st *PRTglobaldef(node_st *node) {
         printf("%s", padstr());
     }
 
-    printf("%s", typename(GLOBALDEF_TYPE(node)));
+    printf("%s", typeName(GLOBALDEF_TYPE(node)));
 
     if (GLOBALDEF_INDEX_EXPRS(node)) {
         printf("[");
@@ -163,7 +152,7 @@ node_st *PRTheaderparams(node_st *node) {
 }
 
 node_st *PRTparameter(node_st *node) {
-    printf("%s", typename(PARAMETER_TYPE(node)));
+    printf("%s", typeName(PARAMETER_TYPE(node)));
     if (PARAMETER_PARAMID(node)) {
         printf("[");
         TRAVopt(PARAMETER_PARAMID(node));
@@ -193,7 +182,7 @@ node_st *PRTvardecs(node_st *node) {
 }
 
 node_st *PRTvardec(node_st *node) {
-    printf("%s%s", padstr(), typename(VARDEC_TYPE(node)));
+    printf("%s%s", padstr(), typeName(VARDEC_TYPE(node)));
     if (VARDEC_ARR_DIMS(node)) {
         printf("[");
         EXPRPOS({ TRAVopt(VARDEC_ARR_DIMS(node)); })
@@ -326,7 +315,7 @@ node_st *PRTdowhileloop(node_st *node) {
 }
 
 node_st *PRTforloop(node_st *node) {
-    printf("%sfor (%s %s = ", padstr(), typename(FORLOOP_TYPE(node)), ID_ID(FORLOOP_ID(node)));
+    printf("%sfor (%s %s = ", padstr(), typeName(FORLOOP_TYPE(node)), ID_ID(FORLOOP_ID(node)));
     EXPRPOS({ TRAVopt(FORLOOP_ASSIGNEXPR(node)); })
     printf(", ");
     EXPRPOS({ TRAVopt(FORLOOP_WHILEEXPR(node)); })
@@ -400,7 +389,7 @@ node_st *PRTmonop(node_st *node) {
 }
 
 node_st *PRTcast(node_st *node) {
-    printf("(%s) ", typename(CAST_TYPE(node)));
+    printf("(%s) ", typeName(CAST_TYPE(node)));
     TRAVopt(CAST_EXPR(node));
     return node;
 }

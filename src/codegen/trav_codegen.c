@@ -1,17 +1,37 @@
 #include <stdio.h>
 
+#include "bytevec.h"
 #include "ccn/dynamic_core.h"
 #include "ccngen/ast.h"
 #include "ccngen/trav_data.h"
 #include "codegen/state.h"
 #include "ctxanalysis/symtable.h"
+#include "palm/dbug.h"
 #include "palm/hash_table.h"
 #include "palm/memory.h"
+#include "palm/str.h"
+#include "util.h"
 
 #define STATE DATA_CODEGEN__GET()->state
 
+static char *functionLabelName(const char *function_name) {
+    return STRfmt("mmcivicc_func_%s", function_name);
+}
+
+static void appendFuncSignature(bytevec *bv, symtable_entry *ent) {
+    DBUG_ASSERT(ent->kind == SYMTABLE_ENTRY_KIND_FUNCTION, "can't append signature of variable");
+
+    bv_strappend(bv, typeName(ent->type));
+
+    for (size_t i = 0; i < ent->arity; i++) {
+        bv_push(bv, ' ');
+        bv_strappend(bv, typeName(ent->argtypes[i]));
+    }
+}
+
 void CODEGEN_init(void) {
     STATE            = MEMmalloc(sizeof(codegen_state));
+    STATE->header    = bv_init();
     STATE->functions = NULL;
 }
 
@@ -25,33 +45,71 @@ void CODEGEN_fini(void) {
         curfunc = next;
     }
 
-    MEMfree(STATE->globals.entries);
+    bv_deinit(STATE->header);
 
     MEMfree(STATE);
 }
 
 node_st *CODEGEN_program(node_st *node) {
-    // initialize globals
-    size_t totalcount = symtable_elemcount(SYMTABLE_SYMTAB(PROGRAM_SYMTABLE(node)));
-
-    // This generally allocates more elements than we actually need, but it's probably the fastest
-    // approach anyways.
-    STATE->globals.entries = MEMmalloc(totalcount * sizeof(symtable_entry *));
-
-    size_t i = 0;
+    // emit globals to header
+    size_t global_i = 0, importfun_i = 0, importvar_i = 0;
     for (htable_iter_st *iter = symtable_iterate(SYMTABLE_SYMTAB(PROGRAM_SYMTABLE(node))); iter;
          iter                 = HTiterateNext(iter)) {
-        symtable_entry *ent = HTiterValue(iter);
+        char           *name = HTiterKey(iter);
+        symtable_entry *ent  = HTiterValue(iter);
 
-        if (ent->kind != SYMTABLE_ENTRY_KIND_VARIABLE
-            || ent->linkage == SYMTABLE_ENTRY_LINKAGE_EXTERN)
-            continue;
+        switch (ent->kind) {
+            case SYMTABLE_ENTRY_KIND_VARIABLE: {
+                switch (ent->linkage) {
+                    case SYMTABLE_ENTRY_LINKAGE_LOCAL:
+                        DBUG_ASSERT(false, "variable with local linkage in global symtable!!");
+                        break;
 
-        (STATE->globals.entries[i] = ent)->codegen_index = i;
-        i++;
+                    case SYMTABLE_ENTRY_LINKAGE_EXPORT:
+                        bv_printf(&STATE->header, ".exportvar \"%s\" %zu\n", name, global_i);
+                        __attribute__((fallthrough));
+                    case SYMTABLE_ENTRY_LINKAGE_INTERNAL:
+                        bv_printf(&STATE->header, ".global %s\n", typeName(ent->type));
+                        ent->codegen_index = global_i++;
+                        break;
+
+                    case SYMTABLE_ENTRY_LINKAGE_EXTERN:
+                        bv_printf(
+                            &STATE->header,
+                            ".importvar \"%s\" %s\n",
+                            name,
+                            typeName(ent->type)
+                        );
+                        ent->codegen_index = importvar_i++;
+                        break;
+                }
+            } break;
+
+            case SYMTABLE_ENTRY_KIND_FUNCTION: {
+                char *label_name = functionLabelName(name);
+                switch (ent->linkage) {
+                    case SYMTABLE_ENTRY_LINKAGE_LOCAL:
+                        DBUG_ASSERT(false, "function with local linkage in global symtable!!");
+                        break;
+
+                    case SYMTABLE_ENTRY_LINKAGE_EXPORT:
+                        bv_printf(&STATE->header, ".exportfun \"%s\" ", name);
+                        appendFuncSignature(&STATE->header, ent);
+                        bv_printf(&STATE->header, " %s\n", label_name);
+                        break;
+                    case SYMTABLE_ENTRY_LINKAGE_EXTERN:
+                        bv_printf(&STATE->header, ".importfun \"%s\" ", name);
+                        appendFuncSignature(&STATE->header, ent);
+                        bv_push(&STATE->header, '\n');
+                        ent->codegen_index = importfun_i++;
+                        break;
+                    case SYMTABLE_ENTRY_LINKAGE_INTERNAL: break;
+                }
+
+                MEMfree(label_name);
+            } break;
+        }
     }
-
-    STATE->globals.count = i;
 
     TRAVchildren(node);
 

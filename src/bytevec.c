@@ -1,4 +1,7 @@
 #include "bytevec.h"
+
+#include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "palm/memory.h"
@@ -11,16 +14,12 @@ static void ensureCapacity(bytevec *self, size_t min) {
 
     size_t newcap = self->capacity;
 
-    while (newcap < min) {
-        newcap += newcap >> 1;
-    }
+    while (newcap < min) { newcap += newcap >> 1; }
 
     self->ptr = MEMrealloc(self->ptr, newcap);
 }
 
-bytevec bv_init(void) {
-    return bv_init_capacity(DEFAULT_CAPACITY);
-}
+bytevec bv_init(void) { return bv_init_capacity(DEFAULT_CAPACITY); }
 
 bytevec bv_init_capacity(size_t capacity) {
     char *ptr = MEMmalloc(capacity);
@@ -45,10 +44,22 @@ void bv_append(bytevec *self, const char *ptr, size_t len) {
     self->len += len;
 }
 
-void bv_push(bytevec *self, char x) {
-    bv_append(self, &x, 1);
-}
+void bv_push(bytevec *self, char x) { bv_append(self, &x, 1); }
 
-void bv_strappend(bytevec *self, const char *str) {
-    bv_append(self, str, STRlen(str));
+void bv_strappend(bytevec *self, const char *str) { bv_append(self, str, STRlen(str)); }
+
+void bv_printf(bytevec *self, const char *fmt, ...) {
+    va_list args;
+
+    va_start(args, fmt);
+    size_t len = vsnprintf(NULL, 0, fmt, args);
+    va_end(args);
+
+    ensureCapacity(self, self->len + len + 1); // +1 for null sentinel
+
+    va_start(args, fmt);
+    vsnprintf(self->ptr + self->len, len + 1, fmt, args);
+    va_end(args);
+
+    self->len += len;
 }
