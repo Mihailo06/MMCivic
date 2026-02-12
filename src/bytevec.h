@@ -17,3 +17,4 @@ void    bv_deinit(bytevec self);
 void    bv_append(bytevec *self, const char *ptr, size_t len);
 void    bv_push(bytevec *self, char x);
 void    bv_strappend(bytevec *self, const char *str);
+void    bv_printf(bytevec *self, const char *fmt, ...);

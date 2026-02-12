@@ -24,3 +24,13 @@ node_st *genidNode(void);
  * Counts the length of an `Exprs` node.
  */
 size_t EXPRS_count(node_st *exprs);
+
+/**
+ * Writes all given data to the given file, potentially calling `fwrite` multiple times.
+ */
+void fwrite_all(FILE *f, const char *data, size_t len);
+
+/**
+ * The name of a type as in source code.
+ */
+const char *typeName(enum BasicType type);
