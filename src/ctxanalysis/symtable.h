@@ -70,19 +70,32 @@ typedef struct {
      */
     size_t codegen_index;
 
+    /**
+     * If this symbol is a function argument.
+     * Only defined if linkage == SYMTABLE_ENTRY_LINKAGE_LOCAL.
+     */
+    bool is_param;
+
     // TODO: array types
 } symtable_entry;
 
-void symtable_entry_deinit(symtable_entry ent);
-
+void            symtable_entry_deinit(symtable_entry ent);
 symtable       *symtable_init(symtable *parent);
 void            symtable_deinit(symtable *tab);
 bool            symtable_contains(symtable *tab, const char *sym);
 bool            symtable_isdefined(symtable *tab, const char *sym);
-symtable_entry *symtable_lookup(symtable *tab, const char *sym);
 symtable       *symtable_get_parent(symtable *tab);
 size_t          symtable_elemcount(symtable *tab);
 htable_iter_st *symtable_iterate(symtable *tab);
+
+/**
+ * Look up a symbol by name.
+ * @param tab The symbol table
+ * @param sym The name of the symbol
+ * @param out_up A pointer to an integer that will be incremented each time we travel up a symbol
+ *               table. This will be useful for nested functions. May be `NULL`.
+ */
+symtable_entry *symtable_lookup(symtable *tab, const char *sym, unsigned int *out_up);
 
 /**
  * Adds a new entry to the symbol table. Caller asserts that an entry with the given name

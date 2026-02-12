@@ -118,9 +118,10 @@ node_st *INITSYMTABLES_voidfunheader(node_st *node) {
         if (checkdupSym(node, ID_ID(PARAMETER_ID(param)))) continue; // error
 
         symtable_entry ent = {
-            .kind    = SYMTABLE_ENTRY_KIND_VARIABLE,
-            .type    = PARAMETER_TYPE(param),
-            .linkage = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+            .kind     = SYMTABLE_ENTRY_KIND_VARIABLE,
+            .type     = PARAMETER_TYPE(param),
+            .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+            .is_param = true,
         };
 
         symtable_insert(peekSymtab(), ID_ID(PARAMETER_ID(param)), ent);
@@ -164,9 +165,10 @@ node_st *INITSYMTABLES_basicfunheader(node_st *node) {
         if (checkdupSym(node, ID_ID(PARAMETER_ID(param)))) continue;
 
         symtable_entry ent = {
-            .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
-            .type = PARAMETER_TYPE(param),
-            .linkage = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+            .kind     = SYMTABLE_ENTRY_KIND_VARIABLE,
+            .type     = PARAMETER_TYPE(param),
+            .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+            .is_param = true,
         };
 
         symtable_insert(peekSymtab(), ID_ID(PARAMETER_ID(param)), ent);
@@ -205,9 +207,10 @@ node_st *INITSYMTABLES_funbody(node_st *node) {
         if (checkdupSym(node, ID_ID(VARDEC_ID(vardec)))) continue; // error
 
         symtable_entry ent = {
-            .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
-            .type = VARDEC_TYPE(vardec),
-            .linkage = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+            .kind     = SYMTABLE_ENTRY_KIND_VARIABLE,
+            .type     = VARDEC_TYPE(vardec),
+            .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+            .is_param = false,
         };
 
         symtable_insert(peekSymtab(), ID_ID(VARDEC_ID(vardec)), ent);
@@ -220,9 +223,10 @@ node_st *INITSYMTABLES_funbody(node_st *node) {
 
 node_st *INITSYMTABLES_forloop(node_st *node) {
     symtable_entry ent = {
-        .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
-        .type = BT_int,
-        .linkage = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+        .kind     = SYMTABLE_ENTRY_KIND_VARIABLE,
+        .type     = BT_int,
+        .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+        .is_param = false,
     };
     symtable_insert(peekSymtab(), ID_ID(FORLOOP_ID(node)), ent);
 

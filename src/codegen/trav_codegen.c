@@ -12,7 +12,14 @@
 #include "palm/str.h"
 #include "util.h"
 
-#define STATE DATA_CODEGEN__GET()->state
+#define STATE      DATA_CODEGEN__GET()->state
+#define CUR_SYMTAB SYMTABLE_SYMTAB(DATA_CODEGEN__GET()->cur_symtab)
+
+#define NOOP_TRAVFUNC(node)               \
+    node_st *CODEGEN_##node(node_st *n) { \
+        TRAVchildren(n);                  \
+        return n;                         \
+    }
 
 static char *functionLabelName(const char *function_name) {
     return STRfmt("mmcivicc_func_%s", function_name);
@@ -29,6 +36,55 @@ static void appendFuncSignature(bytevec *bv, symtable_entry *ent) {
     }
 }
 
+static const char *typePrefix(enum BasicType type) {
+    switch (type) {
+        case BT_NULL:  return "";
+        case BT_bool:  return "b";
+        case BT_int:   return "i";
+        case BT_float: return "f";
+    }
+    return NULL; // unreachable
+}
+
+static void nextFunction(
+    const char    *id,
+    enum BasicType return_type,
+    node_st       *headerparams,
+    symtable      *symtab
+) {
+    size_t arity = 0;
+    for (node_st *params = headerparams; params; params = HEADERPARAMS_NEXT(params)) { arity++; }
+
+    enum BasicType *argtypes = MEMmalloc(arity * sizeof(enum BasicType));
+    size_t          i        = 0;
+    for (node_st *params = headerparams; params; params = HEADERPARAMS_NEXT(params)) {
+        node_st        *param = HEADERPARAMS_PARAM(params);
+        symtable_entry *ent   = symtable_lookup(symtab, ID_ID(PARAMETER_ID(param)), NULL);
+        argtypes[ent->codegen_index = i++] = PARAMETER_TYPE(param);
+    }
+
+    codegen_func *func = MEMmalloc(sizeof(codegen_func));
+    func->next         = STATE->functions;
+    func->label_name   = functionLabelName(id);
+    func->content      = bv_init();
+    func->argtypes     = argtypes;
+    func->arity        = arity;
+    func->return_type  = return_type;
+
+    i = 0;
+    for (htable_iter_st *iter = symtable_iterate(symtab); iter; iter = HTiterateNext(iter)) {
+        symtable_entry *ent = HTiterValue(iter);
+        DBUG_ASSERT(
+            ent->linkage == SYMTABLE_ENTRY_LINKAGE_LOCAL,
+            "found non-local in function symtable"
+        );
+        if (ent->kind != SYMTABLE_ENTRY_KIND_VARIABLE || ent->is_param) continue;
+        ent->codegen_index = i++;
+    }
+    func->n_locals   = i;
+    STATE->functions = func;
+}
+
 void CODEGEN_init(void) {
     STATE            = MEMmalloc(sizeof(codegen_state));
     STATE->header    = bv_init();
@@ -40,6 +96,9 @@ void CODEGEN_fini(void) {
     while (curfunc) {
         codegen_func *next = curfunc->next;
 
+        MEMfree(curfunc->label_name);
+        MEMfree(curfunc->argtypes);
+        bv_deinit(curfunc->content);
         MEMfree(curfunc);
 
         curfunc = next;
@@ -117,108 +176,48 @@ node_st *CODEGEN_program(node_st *node) {
     return node;
 }
 
-node_st *CODEGEN_symtable(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_declarations(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
+NOOP_TRAVFUNC(symtable)
+NOOP_TRAVFUNC(declarations)
+NOOP_TRAVFUNC(globaldec)
+NOOP_TRAVFUNC(globaldef)
+NOOP_TRAVFUNC(headerparams)
+NOOP_TRAVFUNC(parameter)
+NOOP_TRAVFUNC(funbody)
+NOOP_TRAVFUNC(fundefs)
+NOOP_TRAVFUNC(vardecs)
+NOOP_TRAVFUNC(vardec)
+NOOP_TRAVFUNC(arrexpr)
+NOOP_TRAVFUNC(arrexprs)
+NOOP_TRAVFUNC(id)
+NOOP_TRAVFUNC(ids)
+NOOP_TRAVFUNC(block)
+NOOP_TRAVFUNC(stmts)
+NOOP_TRAVFUNC(exprs)
 
 node_st *CODEGEN_fundec(node_st *node) {
-    TRAVchildren(node);
+    // No need to do anything here because all we need to do is declare a .importfun, which we've
+    // already done.
     return node;
 }
 
 node_st *CODEGEN_fundef(node_st *node) {
+    DATA_CODEGEN__GET()->cur_symtab = FUNDEF_SYMTABLE(node);
     TRAVchildren(node);
     return node;
 }
 
 node_st *CODEGEN_voidfunheader(node_st *node) {
-    TRAVchildren(node);
+    nextFunction(ID_ID(VOIDFUNHEADER_ID(node)), BT_NULL, VOIDFUNHEADER_PARAMS(node), CUR_SYMTAB);
     return node;
 }
 
 node_st *CODEGEN_basicfunheader(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_globaldec(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_globaldef(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_headerparams(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_parameter(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_funbody(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_fundefs(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_vardecs(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_vardec(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_arrexpr(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_arrexprs(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_id(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_ids(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_block(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_stmts(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
-node_st *CODEGEN_exprs(node_st *node) {
-    TRAVchildren(node);
+    nextFunction(
+        ID_ID(BASICFUNHEADER_ID(node)),
+        BASICFUNHEADER_TYPE(node),
+        BASICFUNHEADER_PARAMS(node),
+        CUR_SYMTAB
+    );
     return node;
 }
 
@@ -278,7 +277,53 @@ node_st *CODEGEN_varlet(node_st *node) {
 }
 
 node_st *CODEGEN_var(node_st *node) {
-    TRAVchildren(node);
+    codegen_func *func = STATE->functions;
+
+    unsigned int    up;
+    symtable_entry *ent = symtable_lookup(CUR_SYMTAB, ID_ID(VAR_ID(node)), &up);
+
+    printf("%s %zu\n", ID_ID(VAR_ID(node)), ent->codegen_index);
+
+    switch (ent->linkage) {
+        case SYMTABLE_ENTRY_LINKAGE_LOCAL: { // variable defined in function or parameter
+            if (up == 0) {
+                bv_printf(
+                    &func->content,
+                    CODEGEN_INDENT "%sload %zu\n",
+                    typePrefix(ent->type),
+                    ent->codegen_index
+                );
+            } else {
+                // inner function accessing variable from outer
+                bv_printf(
+                    &func->content,
+                    CODEGEN_INDENT "%sloadn %zu %u\n",
+                    typePrefix(ent->type),
+                    ent->codegen_index,
+                    up
+                );
+            }
+        } break;
+
+        case SYMTABLE_ENTRY_LINKAGE_EXPORT:
+        case SYMTABLE_ENTRY_LINKAGE_INTERNAL: { // our global variable
+            bv_printf(
+                &func->content,
+                CODEGEN_INDENT "%sloadg %zu\n",
+                typePrefix(ent->type),
+                ent->codegen_index
+            );
+        } break;
+        case SYMTABLE_ENTRY_LINKAGE_EXTERN: { // someone else's global variable
+            bv_printf(
+                &func->content,
+                CODEGEN_INDENT "%sloade %zu\n",
+                typePrefix(ent->type),
+                ent->codegen_index
+            );
+        } break;
+    }
+
     return node;
 }
 

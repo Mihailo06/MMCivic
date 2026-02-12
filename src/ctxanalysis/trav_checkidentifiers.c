@@ -66,7 +66,7 @@ node_st *CHECKIDENTIFIERS_arrexpr(node_st *node) {
 }
 
 node_st *CHECKIDENTIFIERS_procedurecall(node_st *node) {
-    symtable_entry *ent = symtable_lookup(CUR_SYMTAB, ID_ID(PROCEDURECALL_ID(node)));
+    symtable_entry *ent = symtable_lookup(CUR_SYMTAB, ID_ID(PROCEDURECALL_ID(node)), NULL);
 
     if (!ent || ent->kind != SYMTABLE_ENTRY_KIND_FUNCTION) {
         CTI(CTI_ERROR, true, "call to undefined function '%s'", ID_ID(PROCEDURECALL_ID(node)));
