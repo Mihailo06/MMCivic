@@ -22,7 +22,7 @@ static char *mangle(const char *prev, symtable_entry *ent) {
 
 node_st *SYMTABLEMANGLINGIDS_id(node_st *node) {
     symtable_entry *ent =
-        symtable_lookup(CUR_SYMTAB, ID_LOGICAL(node) ? ID_LOGICAL(node) : ID_USERID(node));
+        symtable_lookup(CUR_SYMTAB, ID_LOGICAL(node) ? ID_LOGICAL(node) : ID_USERID(node), NULL);
     if (ID_LOGICAL(node)) {
         char *new = mangle(ID_LOGICAL(node), ent);
         MEMfree(ID_LOGICAL(node));

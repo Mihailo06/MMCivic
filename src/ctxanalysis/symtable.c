@@ -59,10 +59,11 @@ void symtable_insert(symtable *tab, const char *sym, symtable_entry ent) {
     HTinsert(tab->tab, sym_dup, entptr);
 }
 
-symtable_entry *symtable_lookup(symtable *tab, const char *sym) {
+symtable_entry *symtable_lookup(symtable *tab, const char *sym, unsigned int *out_up) {
     for (; tab; tab = tab->parent) {
         symtable_entry *ent = HTlookup(tab->tab, (void *) sym);
         if (ent) return ent;
+        if (out_up) (*out_up)++;
     }
 
     return NULL;
