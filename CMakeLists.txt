@@ -42,6 +42,7 @@ add_executable(civicc
     src/print/print.c
 
     # parsing
+    src/parse_cleanup/trav_reverseparams.c
     src/scanparse/scanParse.c
     ${FLEX_CivicLexer_OUTPUTS}
     ${BISON_CivicParser_OUTPUTS}
