@@ -6,3 +6,7 @@ extern int bar(int x, int y);
 export int foo() {
     return bar(x, y);
 }
+
+export int baz(float x, float y) {
+    return (int)(x + y);
+}

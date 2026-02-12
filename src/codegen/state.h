@@ -4,14 +4,8 @@
 #include <stdio.h>
 
 #include "bytevec.h"
-#include "ctxanalysis/symtable.h"
 
 #define CODEGEN_INDENT "    "
-
-typedef struct {
-    symtable_entry **entries;
-    size_t           count;
-} codegen_globals;
 
 typedef struct codegen_func {
     struct codegen_func *next;
@@ -19,8 +13,8 @@ typedef struct codegen_func {
 } codegen_func;
 
 typedef struct {
-    codegen_globals globals;
-    codegen_func   *functions;
+    codegen_func *functions;
+    bytevec       header;
 } codegen_state;
 
 void codegen_emit(codegen_state *state, FILE *to);

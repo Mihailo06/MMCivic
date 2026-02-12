@@ -19,6 +19,11 @@ enum SymtableEntryKind {
  */
 enum SymtableEntryLinkage {
     /**
+     * This symbol is not global.
+     */
+    SYMTABLE_ENTRY_LINKAGE_LOCAL,
+
+    /**
      * This symbol is defined in the current compilation unit and not exported.
      */
     SYMTABLE_ENTRY_LINKAGE_INTERNAL,
@@ -57,7 +62,6 @@ typedef struct {
 
     /**
      * Refer to docs of `enum SymtableEntryLinkage`.
-     * Only defined on global symbols.
      */
     enum SymtableEntryLinkage linkage;
 
