@@ -139,7 +139,8 @@ phase CodegenPhase {
         traversal Codegen {
             uid = Codegen_,
             travdata {
-                user codegen_stateptr state
+                user codegen_stateptr state,
+                Symtable cur_symtab
             }
         };
     }

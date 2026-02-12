@@ -8,5 +8,6 @@ export int foo() {
 }
 
 export int baz(float x, float y) {
+    int z;
     return (int)(x + y);
 }
