@@ -7,6 +7,7 @@ start phase RootPhase {
         PrimaryNameMangling;
         TypeChecking;
         ContextAnalysis;
+        Demo;
         CodegenPhase;
         Demo;
         Cleanup_;
@@ -86,7 +87,7 @@ phase ContextAnalysis {
 
         traversal InitLocalVars {
             uid = InitLocalVars_,
-            nodes = { FunBody, VarDec },
+            nodes = { FunBody, VarDec, VarDecs },
             travdata {
                 Stmts fun_stmts,
                 VarDecs fun_vardecs

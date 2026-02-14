@@ -48,3 +48,10 @@ node_st *INITLOCALVARS_vardec(node_st *node) {
 
     return node;
 }
+
+node_st *INITLOCALVARS_vardecs(node_st *node) {
+    // reverse traversal order
+    TRAVopt(VARDECS_NEXT(node));
+    TRAVdo(VARDECS_VARDEC(node));
+    return node;
+}
