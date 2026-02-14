@@ -3,6 +3,8 @@
 #include <stdio.h>
 
 #include "bytevec.h"
+#include "ctxanalysis/symtable.h"
+#include "palm/hash_table.h"
 #include "palm/memory.h"
 #include "util.h"
 
@@ -31,11 +33,22 @@ void codegen_state_free(codegen_state *state) {
     bv_deinit(state->header);
 }
 
+static void emitSymtableInfo(codegen_func *func, FILE *to) {
+    for (htable_iter_st *iter = symtable_iterate(func->symtab); iter; iter = HTiterateNext(iter)) {
+        char *name = HTiterKey(iter);
+        symtable_entry *ent = HTiterValue(iter);
+        if (ent->kind != SYMTABLE_ENTRY_KIND_VARIABLE) continue;
+
+        fprintf(to, ";; %zu: %s %s\n", ent->codegen_index, typeName(ent->type), name);
+    }
+}
+
 void codegen_emit(codegen_state *state, FILE *to) {
     fwrite_all(to, state->header.ptr, state->header.len);
     fputc('\n', to);
 
     for (codegen_func *func = state->functions; func; func = func->next) {
+        emitSymtableInfo(func, to);
         fprintf(to, "%s:\n", func->label_name);
         fprintf(to, CODEGEN_INDENT "esr %zu\n", func->n_locals);
         fwrite_all(to, func->content.ptr, func->content.len);
