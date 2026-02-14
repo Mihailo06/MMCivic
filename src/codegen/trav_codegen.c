@@ -239,8 +239,30 @@ node_st *CODEGEN_basicfunheader(node_st *node) {
     return node;
 }
 
+// TODO: arrays
 node_st *CODEGEN_assign(node_st *node) {
-    TRAVchildren(node);
+    // push right side onto stack
+    TRAVdo(ASSIGN_EXPR(node));
+
+    char           *id = ID_ID(VARLET_ID(ASSIGN_LET(node)));
+    unsigned int    up;
+    symtable_entry *ent = symtable_lookup(CUR_SYMTAB, id, &up);
+
+    switch (ent->linkage) {
+        case SYMTABLE_ENTRY_LINKAGE_LOCAL: { // function-level variable
+            if (up == 0) {
+                bv_printf()
+            } else {}
+        } break;
+        case SYMTABLE_ENTRY_LINKAGE_EXTERN: { // someone else's global variable
+
+        } break;
+        case SYMTABLE_ENTRY_LINKAGE_EXPORT:
+        case SYMTABLE_ENTRY_LINKAGE_INTERNAL: { // our global variable
+
+        } break;
+    }
+
     return node;
 }
 
@@ -398,9 +420,9 @@ node_st *CODEGEN_var(node_st *node) {
                 // inner function accessing variable from outer
                 bv_printf(
                     &func->content,
-                    CODEGEN_INDENT "%sloadn %zu %u ;; <- %s\n",
-                    typePrefix(ent->type),
+                    CODEGEN_INDENT "%sloadn %u %zu ;; <- %s\n",
                     ent->codegen_index,
+                    typePrefix(ent->type),
                     up,
                     id
                 );
