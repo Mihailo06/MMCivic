@@ -35,8 +35,8 @@ void codegen_state_free(codegen_state *state) {
 
 static void emitSymtableInfo(codegen_func *func, FILE *to) {
     for (htable_iter_st *iter = symtable_iterate(func->symtab); iter; iter = HTiterateNext(iter)) {
-        char *name = HTiterKey(iter);
-        symtable_entry *ent = HTiterValue(iter);
+        char           *name = HTiterKey(iter);
+        symtable_entry *ent  = HTiterValue(iter);
         if (ent->kind != SYMTABLE_ENTRY_KIND_VARIABLE) continue;
 
         fprintf(to, ";; %zu: %s %s\n", ent->codegen_index, typeName(ent->type), name);
