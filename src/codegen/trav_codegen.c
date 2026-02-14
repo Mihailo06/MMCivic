@@ -101,6 +101,7 @@ void CODEGEN_init(void) {
     STATE            = MEMmalloc(sizeof(codegen_state));
     STATE->header    = bv_init();
     STATE->functions = NULL;
+    STATE->constants = NULL;
 }
 
 void CODEGEN_fini(void) {
@@ -114,6 +115,15 @@ void CODEGEN_fini(void) {
         MEMfree(curfunc);
 
         curfunc = next;
+    }
+
+    codegen_const *curconst = STATE->constants;
+    while (curconst) {
+        codegen_const *next = curconst->next;
+
+        MEMfree(curconst);
+
+        curconst = next;
     }
 
     bv_deinit(STATE->header);
@@ -359,17 +369,26 @@ node_st *CODEGEN_var(node_st *node) {
     return node;
 }
 
+////////// CONSTANTS //////////
+
 node_st *CODEGEN_num(node_st *node) {
-    TRAVchildren(node);
+    size_t id = codegen_regintconst(STATE, NUM_VAL(node));
+    bv_printf(&STATE->functions->content, CODEGEN_INDENT "iloadc %zu\n", id);
+
     return node;
 }
 
 node_st *CODEGEN_float(node_st *node) {
-    TRAVchildren(node);
+    size_t id = codegen_regfloatconst(STATE, FLOAT_VAL(node));
+    bv_printf(&STATE->functions->content, CODEGEN_INDENT "floadc %zu\n", id);
+
     return node;
 }
 
 node_st *CODEGEN_bool(node_st *node) {
-    TRAVchildren(node);
+    char inst_suffix = BOOL_VAL(node) ? 't' : 'f';
+
+    bv_printf(&STATE->functions->content, CODEGEN_INDENT "bloadc_%c\n", inst_suffix);
+
     return node;
 }

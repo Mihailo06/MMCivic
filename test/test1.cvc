@@ -1,10 +1,11 @@
-export int x = 1;
+export int x1 = 1;
+export float x2 = 1.0;
 extern int y;
 
 extern int bar(int x, int y);
 
 export int foo() {
-    return bar(x, y);
+    return bar(x1, y);
 }
 
 export int baz(float x, float y) {
