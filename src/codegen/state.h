@@ -34,6 +34,7 @@ typedef struct {
     bytevec        header;
 } codegen_state;
 
+void codegen_state_free(codegen_state *state);
 void codegen_emit(codegen_state *state, FILE *to);
 
 size_t codegen_regintconst(codegen_state *state, int val);

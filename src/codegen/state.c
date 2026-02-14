@@ -6,6 +6,31 @@
 #include "palm/memory.h"
 #include "util.h"
 
+void codegen_state_free(codegen_state *state) {
+    codegen_func *curfunc = state->functions;
+    while (curfunc) {
+        codegen_func *next = curfunc->next;
+
+        MEMfree(curfunc->label_name);
+        MEMfree(curfunc->argtypes);
+        bv_deinit(curfunc->content);
+        MEMfree(curfunc);
+
+        curfunc = next;
+    }
+
+    codegen_const *curconst = state->constants;
+    while (curconst) {
+        codegen_const *next = curconst->next;
+
+        MEMfree(curconst);
+
+        curconst = next;
+    }
+
+    bv_deinit(state->header);
+}
+
 void codegen_emit(codegen_state *state, FILE *to) {
     fwrite_all(to, state->header.ptr, state->header.len);
     fputc('\n', to);
