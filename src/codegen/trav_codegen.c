@@ -105,29 +105,7 @@ void CODEGEN_init(void) {
 }
 
 void CODEGEN_fini(void) {
-    codegen_func *curfunc = STATE->functions;
-    while (curfunc) {
-        codegen_func *next = curfunc->next;
-
-        MEMfree(curfunc->label_name);
-        MEMfree(curfunc->argtypes);
-        bv_deinit(curfunc->content);
-        MEMfree(curfunc);
-
-        curfunc = next;
-    }
-
-    codegen_const *curconst = STATE->constants;
-    while (curconst) {
-        codegen_const *next = curconst->next;
-
-        MEMfree(curconst);
-
-        curconst = next;
-    }
-
-    bv_deinit(STATE->header);
-
+    codegen_state_free(STATE);
     MEMfree(STATE);
 }
 
