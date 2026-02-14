@@ -78,7 +78,7 @@ static void nextFunction(
     func->return_type  = return_type;
     func->symtab       = symtab;
 
-    i = 0;
+    i = arity; // indices of locals start where arguments end
     for (htable_iter_st *iter = symtable_iterate(symtab); iter; iter = HTiterateNext(iter)) {
         symtable_entry *ent = HTiterValue(iter);
         DBUG_ASSERT(
