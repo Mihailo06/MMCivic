@@ -76,6 +76,7 @@ static void nextFunction(
     func->argtypes     = argtypes;
     func->arity        = arity;
     func->return_type  = return_type;
+    func->symtab       = symtab;
 
     i = 0;
     for (htable_iter_st *iter = symtable_iterate(symtab); iter; iter = HTiterateNext(iter)) {

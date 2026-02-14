@@ -5,6 +5,7 @@
 
 #include "bytevec.h"
 #include "ccngen/enum.h"
+#include "ctxanalysis/symtable.h"
 
 #define CODEGEN_INDENT "    "
 
@@ -16,6 +17,7 @@ typedef struct codegen_func {
     size_t               n_locals;
     enum BasicType       return_type;
     bytevec              content;
+    symtable            *symtab;
 } codegen_func;
 
 typedef struct codegen_const {
