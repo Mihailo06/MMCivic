@@ -63,6 +63,7 @@ add_executable(civicc
 
     # codegen
     src/codegen/state.c
+    src/codegen/trav_boolcasts.c
     src/codegen/trav_codegen.c
 
     # cleanup

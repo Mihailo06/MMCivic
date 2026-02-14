@@ -26,6 +26,11 @@ static char *functionLabelName(const char *function_name) {
     return STRfmt("mmcivicc_func_%s", function_name);
 }
 
+static char *genLabel(const char *hint) {
+    static size_t labelidx = 0;
+    return STRfmt("mmcivicc_gen%zu_%s", labelidx++, hint);
+}
+
 static void appendFuncSignature(bytevec *bv, symtable_entry *ent) {
     DBUG_ASSERT(ent->kind == SYMTABLE_ENTRY_KIND_FUNCTION, "can't append signature of variable");
 
@@ -287,7 +292,86 @@ node_st *CODEGEN_monop(node_st *node) {
 }
 
 node_st *CODEGEN_cast(node_st *node) {
-    TRAVchildren(node);
+    DBUG_ASSERT(
+        CAST_TYPE(node) == EXPR_TYPE(node),
+        "deduced type of cast does not match declared type. Bug in typechecking!"
+    );
+    codegen_func *func = STATE->functions;
+
+    enum BasicType source = EXPR_TYPE(CAST_EXPR(node)), target = CAST_TYPE(node);
+
+    TRAVdo(CAST_EXPR(node));
+
+    switch (source) {
+        case BT_int:
+            switch (target) {
+                case BT_int:   return node; // no-op
+                case BT_float: bv_strappend(&func->content, CODEGEN_INDENT "i2f\n"); break;
+
+                case BT_bool: // this should've been removed in trav_boolcasts
+                default:      DBUG_ASSERT(false, "invalid cast target type"); return node;
+            }
+            break;
+        case BT_float:
+            switch (target) {
+                case BT_float: return node; // no-op
+                case BT_int:   bv_strappend(&func->content, CODEGEN_INDENT "f2i\n"); break;
+
+                case BT_bool: // this should've been removed in trav_boolcasts
+                default:      DBUG_ASSERT(false, "invalid cast target type"); return node;
+            }
+            break;
+        case BT_bool:;
+            const char *true_inst, *false_inst, *true_hint, *end_hint;
+            switch (target) {
+                case BT_bool: return node; // no-op
+
+                case BT_int:
+                    true_inst  = "iloadc_1";
+                    false_inst = "iloadc_0";
+                    true_hint  = "b2i_true";
+                    end_hint   = "b2i_end";
+                    break;
+                case BT_float:
+                    true_inst  = "floadc_1";
+                    false_inst = "floadc_0";
+                    true_hint  = "b2f_true";
+                    end_hint   = "b2f_end";
+                    break;
+
+                default: DBUG_ASSERT(false, "invalid cast target type"); return node;
+            }
+
+            char *true_label = genLabel(true_hint), *end_label = genLabel(end_hint);
+
+            // clang-format off
+            const char *fmt =
+                CODEGEN_INDENT "branch_t %s\n" // jump to true label
+                CODEGEN_INDENT "%s\n"          // load 0
+                CODEGEN_INDENT "jump %s\n"     // jump to end label
+                "%s:\n"                        // true label
+                CODEGEN_INDENT "%s\n"          // load 1
+                "%s:\n"                        // end label
+            ;
+            // clang-format on
+
+            bv_printf(
+                &func->content,
+                fmt,
+                true_label,
+                false_inst,
+                end_label,
+                true_label,
+                true_inst,
+                end_label
+            );
+
+            MEMfree(end_label);
+            MEMfree(true_label);
+            break;
+        default: DBUG_ASSERT(false, "invalid cast source type"); return node;
+    }
+
     return node;
 }
 

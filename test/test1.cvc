@@ -12,3 +12,21 @@ export int baz(float x, float y) {
     int z;
     return (int)(x + y);
 }
+
+export void castTests() {
+    int srcInt = 42;
+    float srcFloat = 42.5;
+    bool srcBool = true;
+
+    int int2Int = (int) srcInt;
+    int float2Int = (int) srcFloat;
+    int bool2Int = (int) srcBool;
+
+    float int2Float = (float) srcInt;
+    float float2Float = (float) srcFloat;
+    float bool2Float = (float) srcBool;
+
+    bool int2Bool = (bool) srcInt;
+    bool float2Bool = (bool) srcFloat;
+    bool bool2Bool = (bool) srcBool;
+}
