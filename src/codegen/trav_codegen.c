@@ -198,6 +198,7 @@ NOOP_TRAVFUNC(ids)
 NOOP_TRAVFUNC(block)
 NOOP_TRAVFUNC(stmts)
 NOOP_TRAVFUNC(exprs)
+NOOP_TRAVFUNC(varlet)
 
 node_st *CODEGEN_fundec(node_st *node) {
     // No need to do anything here because all we need to do is declare a .importfun, which we've
@@ -375,36 +376,33 @@ node_st *CODEGEN_cast(node_st *node) {
     return node;
 }
 
-node_st *CODEGEN_varlet(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
 node_st *CODEGEN_var(node_st *node) {
     codegen_func *func = STATE->functions;
 
     unsigned int    up;
     symtable_entry *ent = symtable_lookup(CUR_SYMTAB, ID_LOGICAL(VAR_ID(node)), &up);
 
-    printf("%s %zu\n", ID_LOGICAL(VAR_ID(node)), ent->codegen_index);
+    char *id = ID_LOGICAL(VAR_ID(node));
 
     switch (ent->linkage) {
         case SYMTABLE_ENTRY_LINKAGE_LOCAL: { // variable defined in function or parameter
             if (up == 0) {
                 bv_printf(
                     &func->content,
-                    CODEGEN_INDENT "%sload %zu\n",
+                    CODEGEN_INDENT "%sload %zu ;; <- %s\n",
                     typePrefix(ent->type),
-                    ent->codegen_index
+                    ent->codegen_index,
+                    id
                 );
             } else {
                 // inner function accessing variable from outer
                 bv_printf(
                     &func->content,
-                    CODEGEN_INDENT "%sloadn %zu %u\n",
+                    CODEGEN_INDENT "%sloadn %zu %u ;; <- %s\n",
                     typePrefix(ent->type),
                     ent->codegen_index,
-                    up
+                    up,
+                    id
                 );
             }
         } break;
@@ -413,17 +411,19 @@ node_st *CODEGEN_var(node_st *node) {
         case SYMTABLE_ENTRY_LINKAGE_INTERNAL: { // our global variable
             bv_printf(
                 &func->content,
-                CODEGEN_INDENT "%sloadg %zu\n",
+                CODEGEN_INDENT "%sloadg %zu ;; <- %s\n",
                 typePrefix(ent->type),
-                ent->codegen_index
+                ent->codegen_index,
+                id
             );
         } break;
         case SYMTABLE_ENTRY_LINKAGE_EXTERN: { // someone else's global variable
             bv_printf(
                 &func->content,
-                CODEGEN_INDENT "%sloade %zu\n",
+                CODEGEN_INDENT "%sloade %zu ;; <- %s\n",
                 typePrefix(ent->type),
-                ent->codegen_index
+                ent->codegen_index,
+                id
             );
         } break;
     }
