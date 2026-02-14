@@ -3,6 +3,7 @@
 #include "bytevec.h"
 #include "ccn/dynamic_core.h"
 #include "ccngen/ast.h"
+#include "ccngen/enum.h"
 #include "ccngen/trav_data.h"
 #include "codegen/state.h"
 #include "ctxanalysis/symtable.h"
@@ -83,6 +84,17 @@ static void nextFunction(
     }
     func->n_locals   = i;
     STATE->functions = func;
+}
+
+static const char *returnInstruction(enum BasicType type) {
+    switch (type) {
+        case BT_NULL:  return "return";
+        case BT_bool:  return "breturn";
+        case BT_int:   return "ireturn";
+        case BT_float: return "freturn";
+    }
+
+    return NULL; // unreachable
 }
 
 void CODEGEN_init(void) {
@@ -203,6 +215,13 @@ node_st *CODEGEN_fundec(node_st *node) {
 node_st *CODEGEN_fundef(node_st *node) {
     DATA_CODEGEN__GET()->cur_symtab = FUNDEF_SYMTABLE(node);
     TRAVchildren(node);
+
+    if (NODE_TYPE(FUNDEF_FUNHEADER(node)) == NT_VOIDFUNHEADER) {
+        // If this is a void function, we don't necessarily have a trailing return statement in the
+        // body. Emit one.
+        bv_strappend(&STATE->functions->content, CODEGEN_INDENT "return\n");
+    }
+
     return node;
 }
 
@@ -257,7 +276,15 @@ node_st *CODEGEN_forloop(node_st *node) {
 }
 
 node_st *CODEGEN_return(node_st *node) {
-    TRAVchildren(node);
+    TRAVopt(RETURN_EXPR(node)); // push expr
+
+    // emit return instruction
+    bv_printf(
+        &STATE->functions->content,
+        CODEGEN_INDENT "%s\n",
+        returnInstruction(EXPR_TYPE(RETURN_EXPR(node)))
+    );
+
     return node;
 }
 
