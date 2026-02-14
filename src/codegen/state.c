@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+#include "bytevec.h"
+#include "palm/memory.h"
 #include "util.h"
 
 void codegen_emit(codegen_state *state, FILE *to) {
@@ -13,4 +15,58 @@ void codegen_emit(codegen_state *state, FILE *to) {
         fprintf(to, CODEGEN_INDENT "esr %zu\n", func->n_locals);
         fwrite_all(to, func->content.ptr, func->content.len);
     }
+}
+
+size_t codegen_regintconst(codegen_state *state, int val) {
+    size_t n = 0;
+
+    codegen_const *curconst = state->constants, *prevconst = NULL;
+    while (curconst) {
+        if (curconst->type == BT_int && curconst->int_val == val) return n;
+        n++;
+        prevconst = curconst;
+        curconst  = curconst->next;
+    }
+
+    codegen_const *newconst = MEMmalloc(sizeof(codegen_const));
+    newconst->next          = NULL;
+    newconst->type          = BT_int;
+    newconst->int_val       = val;
+
+    if (prevconst) {
+        prevconst->next = newconst;
+    } else {
+        state->constants = newconst;
+    }
+
+    bv_printf(&state->header, ".const int %d\n", val);
+
+    return n;
+}
+
+size_t codegen_regfloatconst(codegen_state *state, float val) {
+    size_t n = 0;
+
+    codegen_const *curconst = state->constants, *prevconst = NULL;
+    while (curconst) {
+        if (curconst->type == BT_float && curconst->float_val == val) return n;
+        n++;
+        prevconst = curconst;
+        curconst  = curconst->next;
+    }
+
+    codegen_const *newconst = MEMmalloc(sizeof(codegen_const));
+    newconst->next          = NULL;
+    newconst->type          = BT_float;
+    newconst->float_val     = val;
+
+    if (prevconst) {
+        prevconst->next = newconst;
+    } else {
+        state->constants = newconst;
+    }
+
+    bv_printf(&state->header, ".const float %f\n", val);
+
+    return n;
 }
