@@ -18,9 +18,23 @@ typedef struct codegen_func {
     bytevec              content;
 } codegen_func;
 
+typedef struct codegen_const {
+    struct codegen_const *next;
+    enum BasicType        type; // must be BT_int or BT_float
+
+    union {
+        int   int_val;
+        float float_val;
+    };
+} codegen_const;
+
 typedef struct {
-    codegen_func *functions;
-    bytevec       header;
+    codegen_func  *functions;
+    codegen_const *constants;
+    bytevec        header;
 } codegen_state;
 
 void codegen_emit(codegen_state *state, FILE *to);
+
+size_t codegen_regintconst(codegen_state *state, int val);
+size_t codegen_regfloatconst(codegen_state *state, float val);
