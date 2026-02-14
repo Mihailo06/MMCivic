@@ -246,20 +246,48 @@ node_st *CODEGEN_assign(node_st *node) {
 
     char           *id = ID_ID(VARLET_ID(ASSIGN_LET(node)));
     unsigned int    up;
-    symtable_entry *ent = symtable_lookup(CUR_SYMTAB, id, &up);
+    symtable_entry *ent  = symtable_lookup(CUR_SYMTAB, id, &up);
+    codegen_func   *func = STATE->functions;
 
     switch (ent->linkage) {
         case SYMTABLE_ENTRY_LINKAGE_LOCAL: { // function-level variable
             if (up == 0) {
-                bv_printf()
-            } else {}
+                bv_printf(
+                    &func->content,
+                    CODEGEN_INDENT "%sstore %zu ;; -> %s\n",
+                    typePrefix(ent->type),
+                    ent->codegen_index,
+                    id
+                );
+            } else {
+                bv_printf(
+                    &func->content,
+                    CODEGEN_INDENT "%sstoren %u %zu ;; -> %s\n",
+                    typePrefix(ent->type),
+                    up,
+                    ent->codegen_index,
+                    id
+                );
+            }
         } break;
         case SYMTABLE_ENTRY_LINKAGE_EXTERN: { // someone else's global variable
-
+            bv_printf(
+                &func->content,
+                CODEGEN_INDENT "%sstoree %zu ;; -> %s\n",
+                typePrefix(ent->type),
+                ent->codegen_index,
+                id
+            );
         } break;
         case SYMTABLE_ENTRY_LINKAGE_EXPORT:
         case SYMTABLE_ENTRY_LINKAGE_INTERNAL: { // our global variable
-
+            bv_printf(
+                &func->content,
+                CODEGEN_INDENT "%sstoreg %zu ;; -> %s\n",
+                typePrefix(ent->type),
+                ent->codegen_index,
+                id
+            );
         } break;
     }
 
