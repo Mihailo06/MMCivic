@@ -136,6 +136,11 @@ phase ContextAnalysis {
 
 phase CodegenPhase {
     actions {
+        traversal Boolcasts {
+            uid = Boolcasts_,
+            nodes = { Cast }
+        };
+
         traversal Codegen {
             uid = Codegen_,
             travdata {
