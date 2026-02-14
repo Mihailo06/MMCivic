@@ -39,6 +39,7 @@ void codegen_emit(codegen_state *state, FILE *to) {
         fprintf(to, "%s:\n", func->label_name);
         fprintf(to, CODEGEN_INDENT "esr %zu\n", func->n_locals);
         fwrite_all(to, func->content.ptr, func->content.len);
+        fputc('\n', to);
     }
 }
 
