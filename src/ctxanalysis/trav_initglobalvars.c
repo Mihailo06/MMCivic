@@ -14,6 +14,22 @@ static void prependInit(node_st *id, node_st *expr) {
         ASTstmts(assign, DATA_INITGLOBALVARS__GET()->init_stmts);
 }
 
+static void reduceArray(node_st *node) {
+    node_st *red = NULL;
+    if(GLOBALDEF_INDEX_EXPRS(node) != NULL) {
+        if(EXPRS_NEXT(GLOBALDEF_INDEX_EXPRS(node)) != NULL) {
+            red = ASTbinop(EXPRS_EXPR(GLOBALDEF_INDEX_EXPRS(node)), EXPRS_EXPR(EXPRS_NEXT(GLOBALDEF_INDEX_EXPRS(node))), BO_mul);
+            
+            node_st *next = EXPRS_NEXT(EXPRS_NEXT(GLOBALDEF_INDEX_EXPRS(node)));
+            while(next) {
+                red = ASTbinop(red, EXPRS_EXPR(next), BO_mul);
+                next = EXPRS_NEXT(next);
+            }
+            GLOBALDEF_INDEX_EXPRS(node) = ASTexprs(red, NULL);
+        }
+    }
+}
+
 TRAVDATA_STUB(INITGLOBALVARS)
 
 node_st *INITGLOBALVARS_program(node_st *node) {
@@ -45,9 +61,9 @@ node_st *INITGLOBALVARS_declarations(node_st *node) {
 }
 
 node_st *INITGLOBALVARS_globaldef(node_st *node) {
+    reduceArray(node);
     // If we already have a node without initializer, return
     if (!GLOBALDEF_VALUE_EXPRS(node)) return node;
-
     node_st *exprs1d = ARREXPRS_EXPRS(GLOBALDEF_VALUE_EXPRS(node));
     if (exprs1d && !GLOBALDEF_INDEX_EXPRS(node)) {
         // single value

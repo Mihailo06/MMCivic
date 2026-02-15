@@ -4,8 +4,8 @@ start phase RootPhase {
     actions {
         pass SPdoScanParse;
         TypeChecking;
-        Demo;
         ContextAnalysis;
+        Demo;
     }
 };
 
@@ -38,14 +38,6 @@ phase ContextAnalysis {
             }
         };
 
-        traversal InitLocalVars {
-            uid = InitLocalVars_,
-            nodes = { FunBody, VarDec },
-            travdata {
-                Stmts fun_stmts,
-                VarDecs fun_vardecs
-            }
-        };
 
         traversal InitSymtables {
             uid = InitSymtables_,
@@ -71,6 +63,22 @@ phase ContextAnalysis {
                 user symtable_ptr current_symtab
             }
         };
+
+        traversal InitLocalVars {
+            uid = InitLocalVars_,
+            nodes = { FunBody, VarDec, FunDef },
+            travdata {
+                Stmts fun_stmts,
+                VarDecs fun_vardecs
+            }
+        };
+        // traversal ReduceArrays {
+        //     uid = ReduceArrays_,
+        //     nodes = {GlobalDef, GlobalDec},
+        //     travdata {
+        //         user symtable_ptr current_symtab
+        //     }
+        // };
 
         traversal FreeSymtables {
             uid = FreeSymtables_,
