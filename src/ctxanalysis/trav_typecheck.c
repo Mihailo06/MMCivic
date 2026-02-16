@@ -524,9 +524,13 @@ node_st *TYPECHECK_forloop(node_st *node) {
     uf_unify(TYPE_INT, getBTterm(FORLOOP_TYPE(node)), DATA_TYPECHECK__GET()->parent);
     uf_unify(TYPE_INT, typeVariable(FORLOOP_ASSIGNEXPR(node)), DATA_TYPECHECK__GET()->parent);
     uf_unify(TYPE_INT, typeVariable(FORLOOP_ID(node)), DATA_TYPECHECK__GET()->parent);
-    
-    if(FORLOOP_INCREMENTEXPR(node) != NULL) {
-        uf_unify(TYPE_INT, typeVariable(FORLOOP_INCREMENTEXPR(node)), DATA_TYPECHECK__GET()->parent);
+
+    if (FORLOOP_INCREMENTEXPR(node) != NULL) {
+        uf_unify(
+            TYPE_INT,
+            typeVariable(FORLOOP_INCREMENTEXPR(node)),
+            DATA_TYPECHECK__GET()->parent
+        );
     }
     uf_unify(TYPE_INT, typeVariable(FORLOOP_WHILEEXPR(node)), DATA_TYPECHECK__GET()->parent);
     TRAVchildren(node);
