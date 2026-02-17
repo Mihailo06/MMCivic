@@ -324,7 +324,18 @@ node_st *CODEGEN_conditional(node_st *node) {
 }
 
 node_st *CODEGEN_whileloop(node_st *node) {
-    TRAVchildren(node);
+    codegen_func *func = STATE->functions;
+
+    char *startlabel = genLabel("while_start"), *endlabel = genLabel("while_end");
+
+    TRAVdo(WHILELOOP_EXPR(node));
+    bv_printf(&func->content, CODEGEN_INDENT "branch_f %s\n%s:\n", endlabel, startlabel);
+    TRAVdo(WHILELOOP_BLOCK(node));
+    TRAVdo(WHILELOOP_EXPR(node));
+    bv_printf(&func->content, CODEGEN_INDENT "branch_t %s\n%s:\n", startlabel, endlabel);
+
+    MEMfree(endlabel);
+    MEMfree(startlabel);
     return node;
 }
 
