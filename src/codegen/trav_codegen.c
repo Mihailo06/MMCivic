@@ -296,7 +296,30 @@ node_st *CODEGEN_procedurecall(node_st *node) {
 }
 
 node_st *CODEGEN_conditional(node_st *node) {
-    TRAVchildren(node);
+    codegen_func *func = STATE->functions;
+
+    TRAVdo(CONDITIONAL_EXPR(node));
+    if (CONDITIONAL_ELSEBLOCK(node)) {
+        char *elselabel = genLabel("ifelse_else"), *endlabel = genLabel("ifelse_end");
+
+        bv_printf(&func->content, CODEGEN_INDENT "branch_f %s\n", elselabel);
+        TRAVdo(CONDITIONAL_THENBLOCK(node));
+        bv_printf(&func->content, CODEGEN_INDENT "jump %s\n%s:\n", endlabel, elselabel);
+        TRAVdo(CONDITIONAL_ELSEBLOCK(node));
+        bv_printf(&func->content, "%s:\n", endlabel);
+
+        MEMfree(endlabel);
+        MEMfree(elselabel);
+    } else {
+        char *endlabel = genLabel("if_end");
+
+        bv_printf(&func->content, CODEGEN_INDENT "branch_f %s\n", endlabel);
+        TRAVdo(CONDITIONAL_THENBLOCK(node));
+        bv_printf(&func->content, "%s:\n", endlabel);
+
+        MEMfree(endlabel);
+    }
+
     return node;
 }
 
