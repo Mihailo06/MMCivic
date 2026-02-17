@@ -1,3 +1,4 @@
+extern void printInt(int x);
 export int x1 = 1;
 export float x2 = 1.0;
 extern int y;
@@ -59,4 +60,21 @@ export void doWhileTest() {
     do {
         y = y + 1;
     } while (y < 42);
+}
+
+export void procedurecallTest() {
+    int x = 0;
+    void innerFunc1() {
+        innerFunc2(42); // should be isr
+    }
+    void innerFunc2(int y) {
+        void innerFunc3() {
+            innerFunc1(); // should be isrn 1
+        }
+        x = y;
+    }
+
+    innerFunc1(); // should be isrl
+    doWhileTest(); // should be isrg
+    printInt(42); // should be jsre
 }

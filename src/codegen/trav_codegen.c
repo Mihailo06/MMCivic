@@ -188,7 +188,6 @@ NOOP_TRAVFUNC(globaldec)
 NOOP_TRAVFUNC(globaldef)
 NOOP_TRAVFUNC(headerparams)
 NOOP_TRAVFUNC(parameter)
-NOOP_TRAVFUNC(funbody)
 NOOP_TRAVFUNC(fundefs)
 NOOP_TRAVFUNC(vardecs)
 NOOP_TRAVFUNC(vardec)
@@ -201,6 +200,11 @@ NOOP_TRAVFUNC(stmts)
 NOOP_TRAVFUNC(exprs)
 NOOP_TRAVFUNC(varlet)
 
+node_st *CODEGEN_funbody(node_st *node) {
+    // stop traversal here, we already managed all the children from `CODEGEN_fundef`
+    return node;
+}
+
 node_st *CODEGEN_fundec(node_st *node) {
     // No need to do anything here because all we need to do is declare a .importfun, which we've
     // already done.
@@ -208,8 +212,13 @@ node_st *CODEGEN_fundec(node_st *node) {
 }
 
 node_st *CODEGEN_fundef(node_st *node) {
+    // First, do codegen for all local functions.  Otherwise, we would run into issues since we'd
+    // call `nextFunction` in a nested fashion, which we don't handle right.
+    TRAVopt(FUNBODY_LOCALFUNDEFS(FUNDEF_FUNBODY(node)));
+
     DATA_CODEGEN__GET()->cur_symtab = FUNDEF_SYMTABLE(node);
-    TRAVchildren(node);
+    TRAVdo(FUNDEF_FUNHEADER(node));
+    TRAVopt(FUNBODY_STMTS(FUNDEF_FUNBODY(node)));
 
     if (NODE_TYPE(FUNDEF_FUNHEADER(node)) == NT_VOIDFUNHEADER) {
         // If this is a void function, we don't necessarily have a trailing return statement in the
@@ -245,8 +254,8 @@ node_st *CODEGEN_assign(node_st *node) {
     // push right side onto stack
     TRAVdo(ASSIGN_EXPR(node));
 
-    char           *id = ID_ID(VARLET_ID(ASSIGN_LET(node)));
-    unsigned int    up;
+    char           *id   = ID_LOGICAL(VARLET_ID(ASSIGN_LET(node)));
+    unsigned int    up   = 0;
     symtable_entry *ent  = symtable_lookup(CUR_SYMTAB, id, &up);
     codegen_func   *func = STATE->functions;
 
@@ -296,7 +305,52 @@ node_st *CODEGEN_assign(node_st *node) {
 }
 
 node_st *CODEGEN_procedurecall(node_st *node) {
-    TRAVchildren(node);
+    codegen_func   *func = STATE->functions;
+    unsigned int    up   = 0;
+    symtable_entry *ent  = symtable_lookup(CUR_SYMTAB, ID_LOGICAL(PROCEDURECALL_ID(node)), &up);
+
+    DBUG_ASSERT(
+        ent->kind == SYMTABLE_ENTRY_KIND_FUNCTION,
+        "Attempt to call variable in codegen! This should have been caught earlier!"
+    );
+
+    bool is_extern = false;
+    switch (ent->linkage) {
+        case SYMTABLE_ENTRY_LINKAGE_EXTERN: is_extern = true; __attribute__((fallthrough));
+        case SYMTABLE_ENTRY_LINKAGE_INTERNAL:
+        case SYMTABLE_ENTRY_LINKAGE_EXPORT:
+            bv_strappend(&func->content, CODEGEN_INDENT "isrg\n");
+            break;
+        case SYMTABLE_ENTRY_LINKAGE_LOCAL: {
+            if (up == 0) {
+                bv_strappend(&func->content, CODEGEN_INDENT "isrl\n");
+            } else if (up == 1) {
+                bv_strappend(&func->content, CODEGEN_INDENT "isr\n");
+            } else {
+                bv_printf(&func->content, CODEGEN_INDENT "isrn%u\n", up - 1);
+            }
+        } break;
+    }
+
+    size_t arity = 0;
+    for (node_st *cur_param = PROCEDURECALL_EXPRS(node); cur_param;
+         cur_param          = EXPRS_NEXT(cur_param)) {
+        TRAVdo(EXPRS_EXPR(cur_param));
+        arity++;
+    }
+
+    if (is_extern) {
+        DBUG_ASSERT(
+            arity == ent->arity,
+            "Arity of function in symtable doesn't match actual argument count"
+        );
+        bv_printf(&func->content, CODEGEN_INDENT "jsre %zu\n", ent->codegen_index);
+    } else {
+        char *label = functionLabelName(ID_LOGICAL(PROCEDURECALL_ID(node)));
+        bv_printf(&func->content, CODEGEN_INDENT "jsr %zu %s\n", arity, label);
+        MEMfree(label);
+    }
+
     return node;
 }
 
@@ -472,7 +526,7 @@ node_st *CODEGEN_cast(node_st *node) {
 node_st *CODEGEN_var(node_st *node) {
     codegen_func *func = STATE->functions;
 
-    unsigned int    up;
+    unsigned int    up  = 0;
     symtable_entry *ent = symtable_lookup(CUR_SYMTAB, ID_LOGICAL(VAR_ID(node)), &up);
 
     char *id = ID_LOGICAL(VAR_ID(node));
