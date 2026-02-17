@@ -1,32 +1,10 @@
-export int x1 = 1;
-export float x2 = 1.0;
-extern int y;
-
-extern int bar(int x, int y);
-
-export int foo() {
-    return bar(x1, y);
-}
-
-export int baz(float x, float y) {
-    int z;
-    return (int)(x + y);
-}
-
-export void castTests() {
-    int srcInt = 42;
-    float srcFloat = 42.5;
-    bool srcBool = true;
-
-    int int2Int = (int) srcInt;
-    int float2Int = (int) srcFloat;
-    int bool2Int = (int) srcBool;
-
-    float int2Float = (float) srcInt;
-    float float2Float = (float) srcFloat;
-    float bool2Float = (float) srcBool;
-
-    bool int2Bool = (bool) srcInt;
-    bool float2Bool = (bool) srcFloat;
-    bool bool2Bool = (bool) srcBool;
+int twos = 0;
+int two ()
+{
+    int a;
+    int b;
+    int c;
+    int d;
+twos = twos + 1;
+return 2;
 }
