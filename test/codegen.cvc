@@ -53,3 +53,10 @@ export void whileTest(bool x) {
         y = y + 1;
     }
 }
+
+export void doWhileTest() {
+    int y = 0;
+    do {
+        y = y + 1;
+    } while (y < 42);
+}

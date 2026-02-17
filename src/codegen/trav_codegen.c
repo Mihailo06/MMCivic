@@ -345,7 +345,15 @@ node_st *CODEGEN_whileloop(node_st *node) {
 }
 
 node_st *CODEGEN_dowhileloop(node_st *node) {
-    TRAVchildren(node);
+    codegen_func *func       = STATE->functions;
+    char         *startlabel = genLabel("do_while_start");
+
+    bv_printf(&func->content, "%s:\n", startlabel);
+    TRAVdo(DOWHILELOOP_BLOCK(node));
+    TRAVdo(DOWHILELOOP_EXPR(node));
+    bv_printf(&func->content, CODEGEN_INDENT "branch_t %s\n", startlabel);
+
+    MEMfree(startlabel);
     return node;
 }
 
