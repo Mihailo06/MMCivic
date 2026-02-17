@@ -30,3 +30,19 @@ export void castTests() {
     bool float2Bool = (bool) srcFloat;
     bool bool2Bool = (bool) srcBool;
 }
+
+export int ifTest(bool x) {
+    if (x) {
+        return 42;
+    }
+
+    return 0;
+}
+
+export int ifElseTest(bool x) {
+    if (x) {
+        return 42;
+    } else {
+        return 0;
+    }
+}
