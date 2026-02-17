@@ -99,11 +99,15 @@ node_st *INITSYMTABLES_fundec(node_st *node) {
 }
 
 node_st *INITSYMTABLES_fundef(node_st *node) {
+    bool is_nested = DATA_INITSYMTABLES__GET()->func_depth++ > 0;
     DATA_INITSYMTABLES__GET()->cur_link =
-        FUNDEF_EXPORT(node) ? SYMTABLE_ENTRY_LINKAGE_EXPORT : SYMTABLE_ENTRY_LINKAGE_INTERNAL;
+        is_nested ? SYMTABLE_ENTRY_LINKAGE_LOCAL
+                  : (FUNDEF_EXPORT(node) ? SYMTABLE_ENTRY_LINKAGE_EXPORT
+                                         : SYMTABLE_ENTRY_LINKAGE_INTERNAL);
     FUNDEF_SYMTABLE(node) = ASTsymtable(pushNewSymtab());
     TRAVchildren(node);
     popSymtab();
+    DATA_INITSYMTABLES__GET()->func_depth--;
     return node;
 }
 

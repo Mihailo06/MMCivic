@@ -356,6 +356,7 @@ stmt: assign
     | procedurecall
       {
         $$ = $1;
+        PROCEDURECALL_IN_STMT_POS($$) = true;
       }
     | conditional
       {

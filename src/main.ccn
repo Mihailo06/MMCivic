@@ -73,7 +73,8 @@ phase ContextAnalysis {
             },
             travdata {
                 user symtab_stack_ptr stack,
-                user symtable_entry_linkage cur_link
+                user symtable_entry_linkage cur_link,
+                uint32 func_depth
             }
         };
 
@@ -410,6 +411,11 @@ node ProcedureCall {
     children {
         Exprs exprs { constructor },
         Id id { constructor }
+    },
+    attributes {
+        // true if this call is in statement position inside a block rather than in expression
+        // position.
+        bool in_stmt_pos
     }
 };
 
