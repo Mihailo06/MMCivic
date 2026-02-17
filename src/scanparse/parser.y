@@ -646,7 +646,7 @@ block: CURLY_BRACKET_L stmts CURLY_BRACKET_R
        }
      | stmt
        {
-         $$ = ASTblock($1);
+         $$ = ASTblock(ASTstmts($1, NULL));
        }
        ;
 
