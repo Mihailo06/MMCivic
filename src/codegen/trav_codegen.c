@@ -88,7 +88,7 @@ static void nextFunction(
         if (ent->kind != SYMTABLE_ENTRY_KIND_VARIABLE || ent->is_param) continue;
         ent->codegen_index = i++;
     }
-    func->n_locals   = i;
+    func->n_locals   = i - arity;
     STATE->functions = func;
 }
 
