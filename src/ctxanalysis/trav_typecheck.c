@@ -1,11 +1,11 @@
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "ccn/dynamic_core.h"
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
 #include "ccngen/trav_data.h"
 #include "ctxanalysis/unionfindsolver.h"
-#include "palm/str.h"
 #include "util.h"
 
 // static void prependInit(node_st *id, node_st *expr) {
@@ -19,7 +19,9 @@ term *getBTterm(enum BasicType type) {
         case BT_int:   return TYPE_INT; break;
         case BT_float: return TYPE_FLOAT; break;
         case BT_bool:  return TYPE_BOOL; break;
-        default:       printf("Error:Node doesn't have a BasicType. This shouldn't happen"); break;
+        default:
+            fprintf(stderr, "Error:Node doesn't have a BasicType. This shouldn't happen\n");
+            break;
     }
     return NULL;
 }
@@ -36,7 +38,7 @@ enum BasicType gettermBT(term *t) {
             break;
         case TERM_TYPEVAR: return gettermBT(uf_find(t, DATA_TYPECHECK__GET()->parent)); break;
         default:
-            printf("\nTypechecking error, couldn't find type for term type %d", t->type);
+            fprintf(stderr, "Typechecking error, couldn't find type for term type %d\n", t->type);
             return BT_NULL;
             break;
     }
@@ -464,7 +466,8 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
     term    *calle_type = uf_find(typeVariable(calle_id), DATA_TYPECHECK__GET()->parent);
 
     if (calle_type->type != TERM_FUNCTION) {
-        // printf("ERROR: CALLED PROCEDURECALL \"%s\" IS NOT A FUNCTION ", ID_ID(calle_id));
+        // fprintf(stderr, "ERROR: CALLED PROCEDURECALL \"%s\" IS NOT A FUNCTION\n",
+        // ID_ID(calle_id));
         return node;
     }
 
@@ -479,7 +482,8 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
     }
 
     if (arg_count != ft->size) {
-        // printf("ERROR: Wrong number of arguments! expected %zu, got %zu", ft->size, arg_count);
+        // fprintf(stderr, "ERROR: Wrong number of arguments! expected %zu, got %zu\n", ft->size,
+        // arg_count);
         return node;
     }
 
