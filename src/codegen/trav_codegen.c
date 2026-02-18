@@ -430,7 +430,28 @@ node_st *CODEGEN_binop(node_st *node) {
 }
 
 node_st *CODEGEN_monop(node_st *node) {
-    TRAVchildren(node);
+    codegen_func *func = STATE->functions;
+
+    TRAVdo(MONOP_EXPR(node));
+    switch (MONOP_OP(node)) {
+        case MO_not:
+            DBUG_ASSERT(
+                EXPR_TYPE(MONOP_EXPR(node)) == BT_bool,
+                "attempt to NOT non-boolean expression!"
+            );
+            bv_strappend(&func->content, CODEGEN_INDENT "bnot\n");
+            break;
+        case MO_neg:
+            switch (EXPR_TYPE(MONOP_EXPR(node))) {
+                case BT_int:   bv_strappend(&func->content, CODEGEN_INDENT "ineg\n"); break;
+                case BT_float: bv_strappend(&func->content, CODEGEN_INDENT "fneg\n"); break;
+                default:
+                    DBUG_ASSERT(false, "attempt to negate non-number expression!");
+                    return node;
+            }
+            break;
+        default: DBUG_ASSERT(false, "attempt to codegen monop with invalid type!"); return node;
+    }
     return node;
 }
 
