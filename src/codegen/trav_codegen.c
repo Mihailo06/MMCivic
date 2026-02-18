@@ -52,6 +52,23 @@ static const char *typePrefix(enum BasicType type) {
     return NULL; // unreachable
 }
 
+static const char *binopInst(enum BinOpType type) {
+    switch (type) {
+        case BO_add: return "add";
+        case BO_sub: return "sub";
+        case BO_mul: return "mul";
+        case BO_div: return "div";
+        case BO_mod: return "mod";
+        case BO_lt:  return "lt";
+        case BO_le:  return "le";
+        case BO_gt:  return "gt";
+        case BO_ge:  return "ge";
+        case BO_eq:  return "eq";
+        case BO_ne:  return "ne";
+        default:     return NULL;
+    }
+}
+
 static void nextFunction(
     const char    *id,
     enum BasicType return_type,
@@ -435,7 +452,85 @@ node_st *CODEGEN_return(node_st *node) {
 }
 
 node_st *CODEGEN_binop(node_st *node) {
-    TRAVchildren(node);
+    codegen_func  *func  = STATE->functions;
+    enum BasicType ltype = EXPR_TYPE(BINOP_LEFT(node)), rtype = EXPR_TYPE(BINOP_RIGHT(node));
+
+    switch (BINOP_OP(node)) {
+        // integer and float ops
+        case BO_add:
+        case BO_sub:
+        case BO_mul:
+        case BO_div:
+        case BO_lt:
+        case BO_le:
+        case BO_gt:
+        case BO_ge:
+            DBUG_ASSERT(ltype == BT_int || ltype == BT_float, "invalid types on int/float binop");
+            __attribute__((fallthrough));
+
+        // any type ops
+        case BO_eq:
+        case BO_ne:
+            DBUG_ASSERT(ltype == rtype, "unequal types on binop");
+            TRAVdo(BINOP_LEFT(node));
+            TRAVdo(BINOP_RIGHT(node));
+            bv_printf(
+                &func->content,
+                CODEGEN_INDENT "%s%s\n",
+                typePrefix(ltype),
+                binopInst(BINOP_OP(node))
+            );
+            break;
+
+        // integer ops
+        case BO_mod:
+            DBUG_ASSERT(ltype == BT_int && rtype == BT_int, "invalid types on int binop");
+            break;
+
+        // short-circuiting boolean ops
+        case BO_and:;
+            char *andendlabel = genLabel("and_end"), *flabel = genLabel("and_f");
+            TRAVdo(BINOP_LEFT(node));
+            bv_printf(&func->content, CODEGEN_INDENT "branch_f %s\n", flabel);
+            TRAVdo(BINOP_RIGHT(node));
+            bv_printf(
+                &func->content,
+                // clang-format off
+                CODEGEN_INDENT "jump %s\n"
+                "%s:\n"
+                CODEGEN_INDENT "bconst_f\n"
+                "%s:\n",
+                // clang-format on
+                andendlabel,
+                flabel,
+                andendlabel
+            );
+            MEMfree(flabel);
+            MEMfree(andendlabel);
+            break;
+        case BO_or:;
+            char *orendlabel = genLabel("or_end"), *tlabel = genLabel("or_t");
+            TRAVdo(BINOP_LEFT(node));
+            bv_printf(&func->content, CODEGEN_INDENT "branch_t %s\n", tlabel);
+            TRAVdo(BINOP_RIGHT(node));
+            bv_printf(
+                &func->content,
+                // clang-format off
+                CODEGEN_INDENT "jump %s\n"
+                "%s:\n"
+                CODEGEN_INDENT "bconst_t\n"
+                "%s:\n",
+                // clang-format on
+                orendlabel,
+                tlabel,
+                orendlabel
+            );
+            MEMfree(tlabel);
+            MEMfree(orendlabel);
+            break;
+
+        default: DBUG_ASSERT(false, "binop has invalid operator type"); return node;
+    }
     return node;
 }
 

@@ -7,9 +7,11 @@ node_st *BOOLCASTS_cast(node_st *node) {
     enum BasicType source = EXPR_TYPE(CAST_EXPR(node)), target = CAST_TYPE(node);
     if (target != BT_bool || source == BT_bool) return node;
 
-    node_st *zero_node = source == BT_float ? ASTfloat(0.0) : ASTnum(0);
+    node_st *zero_node   = source == BT_float ? ASTfloat(0.0) : ASTnum(0);
+    EXPR_TYPE(zero_node) = source;
 
-    node_st *new = ASTbinop(CAST_EXPR(node), zero_node, BO_ne);
+    node_st *new   = ASTbinop(CAST_EXPR(node), zero_node, BO_ne);
+    EXPR_TYPE(new) = BT_bool;
 
     CAST_EXPR(node) = NULL;
     CCNfree(node);
