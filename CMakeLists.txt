@@ -61,6 +61,7 @@ add_executable(civicc
     src/codegen/state.c
     src/codegen/trav_boolcasts.c
     src/codegen/trav_codegen.c
+    src/codegen/trav_for2while.c
 
     # cleanup
     src/cleanup/trav_freesymtables.c

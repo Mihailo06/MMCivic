@@ -6,8 +6,8 @@ start phase RootPhase {
         ParseCleanup;
         TypeChecking;
         ContextAnalysis;
-        Demo;
         CodegenPhase;
+        Demo;
         Cleanup_;
     }
 };
@@ -90,9 +90,20 @@ phase ContextAnalysis {
 
 phase CodegenPhase {
     actions {
+        // Convert casts to booleans to != operators
         traversal Boolcasts {
             uid = Boolcasts_,
             nodes = { Cast }
+        };
+
+        // Convert for loops to while loops
+        traversal For2While {
+            uid = For2While_,
+            nodes = { ForLoop, FunDef },
+            travdata {
+                FunBody cur_func,
+                Symtable cur_symtab
+            }
         };
 
         traversal Codegen {
@@ -452,6 +463,9 @@ node ForLoop {
 
     attributes {
         BasicType type { constructor }
+    },
+    lifetime {
+        allowed (-> CodegenPhase.For2While]
     }
 };
 

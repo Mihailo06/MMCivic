@@ -374,6 +374,17 @@ node_st *CODEGEN_procedurecall(node_st *node) {
 node_st *CODEGEN_conditional(node_st *node) {
     codegen_func *func = STATE->functions;
 
+    // "if (true)" and "if (false)"
+    // This is a common case because we generate these in previous steps for grouping statements.
+    if (NODE_TYPE(CONDITIONAL_EXPR(node)) == NT_BOOL) {
+        if (BOOL_VAL(CONDITIONAL_EXPR(node))) {
+            TRAVdo(CONDITIONAL_THENBLOCK(node));
+        } else {
+            TRAVopt(CONDITIONAL_ELSEBLOCK(node));
+        }
+        return node;
+    }
+
     TRAVdo(CONDITIONAL_EXPR(node));
     if (CONDITIONAL_ELSEBLOCK(node)) {
         char *elselabel = genLabel("ifelse_else"), *endlabel = genLabel("ifelse_end");

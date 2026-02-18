@@ -124,3 +124,8 @@ export void boolBinopTest() {
     z = x && y;
     z = x || y;
 }
+
+export void forLoopTest() {
+    for (int i1 = 0, 10) { foo(); }
+    for (int i2 = 0, 5 * 2, 4 + 1) { foo(); }
+}
