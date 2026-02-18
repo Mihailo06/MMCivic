@@ -64,8 +64,9 @@ export void doWhileTest() {
 
 export void procedurecallTest() {
     int x = 0;
-    void innerFunc1() {
+    int innerFunc1() {
         innerFunc2(42); // should be isr
+        return 42;
     }
     void innerFunc2(int y) {
         void innerFunc3() {
@@ -74,7 +75,7 @@ export void procedurecallTest() {
         x = y;
     }
 
-    innerFunc1(); // should be isrl
+    innerFunc1(); // should be isrl with ipop
     doWhileTest(); // should be isrg
     printInt(42); // should be jsre
 }
