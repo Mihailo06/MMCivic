@@ -346,6 +346,11 @@ node_st *CODEGEN_procedurecall(node_st *node) {
         MEMfree(label);
     }
 
+    // We have a return value on the stack that we don't want because we're in statement position.
+    if (PROCEDURECALL_IN_STMT_POS(node) && ent->type != BT_NULL) {
+        bv_printf(&func->content, CODEGEN_INDENT "%spop\n", typePrefix(ent->type));
+    }
+
     return node;
 }
 
