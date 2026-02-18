@@ -78,3 +78,9 @@ export void procedurecallTest() {
     doWhileTest(); // should be isrg
     printInt(42); // should be jsre
 }
+
+export void monopTest() {
+    int x = -42;
+    float y = -42.0;
+    bool z = !false;
+}
