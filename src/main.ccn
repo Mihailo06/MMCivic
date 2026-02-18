@@ -366,7 +366,7 @@ node Exprs {
 node Assign {
     children {
         VarLet let { constructor },
-        Expr expr { constructor }
+        Expr expr { constructor, mandatory }
     }
 };
 
