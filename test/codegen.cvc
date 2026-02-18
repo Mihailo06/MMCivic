@@ -85,3 +85,42 @@ export void monopTest() {
     float y = -42.0;
     bool z = !false;
 }
+
+export void arithBinopTest() {
+    int ix; int iy; int iz;
+    float fx; float fy; float fz;
+    bool bx; bool by; bool bz;
+
+    iz = ix +  iy;
+    iz = ix -  iy;
+    iz = ix *  iy;
+    iz = ix /  iy;
+    bz = ix <  iy;
+    bz = ix <= iy;
+    bz = ix >  iy;
+    bz = ix >= iy;
+    bz = ix == iy;
+    bz = ix != iy;
+
+    fz = fx +  fy;
+    fz = fx -  fy;
+    fz = fx *  fy;
+    fz = fx /  fy;
+    bz = fx <  fy;
+    bz = fx <= fy;
+    bz = fx >  fy;
+    bz = fx >= fy;
+    bz = fx == fy;
+    bz = fx != fy;
+
+    iz = ix %  iy;
+
+    bz = bx == by;
+    bz = bx != by;
+}
+
+export void boolBinopTest() {
+    bool x; bool y; bool z;
+    z = x && y;
+    z = x || y;
+}
