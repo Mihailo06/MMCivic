@@ -577,7 +577,7 @@ node_st *TYPECHECK_binop(node_st *node) {
         } else if (t_l->type == TERM_FLOAT || t_r->type == TERM_FLOAT) {
             BINOP_TYPE(node) = BT_float;
         } else {
-            printf("\nWARNING: binop type still unknown, this shouldn't happen\n");
+            fprintf(stderr, "WARNING: binop type still unknown, this shouldn't happen\n");
         }
     }
 
