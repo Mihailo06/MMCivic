@@ -178,7 +178,10 @@ node_st *TYPECHECK_fundef(node_st *node) {
     while (stmts) {
         if (NODE_TYPE(STMTS_STMT(stmts)) == NT_RETURN) {
             uf_unify(
-                uf_find(typeVariable(RETURN_EXPR(STMTS_STMT(stmts))), DATA_TYPECHECK__GET()->parent),
+                uf_find(
+                    typeVariable(RETURN_EXPR(STMTS_STMT(stmts))),
+                    DATA_TYPECHECK__GET()->parent
+                ),
                 return_type,
                 DATA_TYPECHECK__GET()->parent
             );
