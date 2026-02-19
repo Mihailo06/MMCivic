@@ -8,7 +8,7 @@ start phase RootPhase {
         TypeChecking;
         ContextAnalysis;
         CodegenPhase;
-        Demo;
+        //Demo;
         Cleanup_;
     }
 };
@@ -155,6 +155,33 @@ phase CodegenPhase {
 
         traversal Codegen {
             uid = Codegen_,
+            nodes = {
+                // Structure
+                Program,
+                FunBody,
+                FunDec,
+                FunDef,
+                VoidFunHeader,
+                BasicFunHeader,
+
+                // Statements
+                Assign,
+                ProcedureCall,
+                Conditional,
+                WhileLoop,
+                DoWhileLoop,
+                Return,
+                // No ForLoop, those were removed by For2While
+
+                // Expressions
+                Binop,
+                Monop,
+                Cast,
+                Var,
+                Num,
+                Float,
+                Bool
+            },
             travdata {
                 user codegen_stateptr state,
                 Symtable cur_symtab

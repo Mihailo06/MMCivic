@@ -16,12 +16,6 @@
 #define STATE      DATA_CODEGEN__GET()->state
 #define CUR_SYMTAB SYMTABLE_SYMTAB(DATA_CODEGEN__GET()->cur_symtab)
 
-#define NOOP_TRAVFUNC(node)               \
-    node_st *CODEGEN_##node(node_st *n) { \
-        TRAVchildren(n);                  \
-        return n;                         \
-    }
-
 static char *functionLabelName(const char *function_name) {
     return STRfmt("mmcivicc_func_%s", function_name);
 }
@@ -132,6 +126,8 @@ void CODEGEN_fini(void) {
     MEMfree(STATE);
 }
 
+////////// STRUCTURE //////////
+
 node_st *CODEGEN_program(node_st *node) {
     // emit globals to header
     size_t global_i = 0, importfun_i = 0, importvar_i = 0;
@@ -199,24 +195,6 @@ node_st *CODEGEN_program(node_st *node) {
     return node;
 }
 
-NOOP_TRAVFUNC(symtable)
-NOOP_TRAVFUNC(declarations)
-NOOP_TRAVFUNC(globaldec)
-NOOP_TRAVFUNC(globaldef)
-NOOP_TRAVFUNC(headerparams)
-NOOP_TRAVFUNC(parameter)
-NOOP_TRAVFUNC(fundefs)
-NOOP_TRAVFUNC(vardecs)
-NOOP_TRAVFUNC(vardec)
-NOOP_TRAVFUNC(arrexpr)
-NOOP_TRAVFUNC(arrexprs)
-NOOP_TRAVFUNC(id)
-NOOP_TRAVFUNC(ids)
-NOOP_TRAVFUNC(block)
-NOOP_TRAVFUNC(stmts)
-NOOP_TRAVFUNC(exprs)
-NOOP_TRAVFUNC(varlet)
-
 node_st *CODEGEN_funbody(node_st *node) {
     // stop traversal here, we already managed all the children from `CODEGEN_fundef`
     return node;
@@ -265,6 +243,8 @@ node_st *CODEGEN_basicfunheader(node_st *node) {
     );
     return node;
 }
+
+////////// STATEMENTS //////////
 
 // TODO: arrays
 node_st *CODEGEN_assign(node_st *node) {
@@ -444,11 +424,6 @@ node_st *CODEGEN_dowhileloop(node_st *node) {
     return node;
 }
 
-node_st *CODEGEN_forloop(node_st *node) {
-    TRAVchildren(node);
-    return node;
-}
-
 node_st *CODEGEN_return(node_st *node) {
     TRAVopt(RETURN_EXPR(node)); // push expr
 
@@ -461,6 +436,8 @@ node_st *CODEGEN_return(node_st *node) {
 
     return node;
 }
+
+////////// EXPRESSIONS //////////
 
 node_st *CODEGEN_binop(node_st *node) {
     codegen_func  *func  = STATE->functions;
@@ -709,8 +686,6 @@ node_st *CODEGEN_var(node_st *node) {
 
     return node;
 }
-
-////////// CONSTANTS //////////
 
 node_st *CODEGEN_num(node_st *node) {
     size_t id = codegen_regintconst(STATE, NUM_VAL(node));
