@@ -178,7 +178,7 @@ node_st *TYPECHECK_fundef(node_st *node) {
     while (stmts) {
         if (NODE_TYPE(STMTS_STMT(stmts)) == NT_RETURN) {
             uf_unify(
-                typeVariable(RETURN_EXPR(STMTS_STMT(stmts))),
+                uf_find(typeVariable(RETURN_EXPR(STMTS_STMT(stmts))), DATA_TYPECHECK__GET()->parent),
                 return_type,
                 DATA_TYPECHECK__GET()->parent
             );
@@ -549,7 +549,8 @@ node_st *TYPECHECK_return(node_st *node) {
 
 node_st *TYPECHECK_binop(node_st *node) {
     TRAVchildren(node);
-    term *t_l = typeVariable(BINOP_LEFT(node));
+    term *t_l = uf_find(typeVariable(BINOP_LEFT(node)), DATA_TYPECHECK__GET()->parent);
+    term *t_r = uf_find(typeVariable(BINOP_RIGHT(node)), DATA_TYPECHECK__GET()->parent);
     uf_unify(t_l, typeVariable(BINOP_RIGHT(node)), DATA_TYPECHECK__GET()->parent);
 
     if (BINOP_OP(node) == BO_and || BINOP_OP(node) == BO_or) {
@@ -571,10 +572,12 @@ node_st *TYPECHECK_binop(node_st *node) {
     } else {
         forbid_bool(t_l, DATA_TYPECHECK__GET()->parent);
         uf_unify(t_l, typeVariable(node), DATA_TYPECHECK__GET()->parent);
-        if (t_l->type == TERM_INT) {
+        if (t_l->type == TERM_INT || t_r->type == TERM_INT) {
             BINOP_TYPE(node) = BT_int;
-        } else {
+        } else if (t_l->type == TERM_FLOAT || t_r->type == TERM_FLOAT) {
             BINOP_TYPE(node) = BT_float;
+        } else {
+            printf("\nWARNING: binop type still unknown, this shouldn't happen\n");
         }
     }
 
@@ -583,7 +586,7 @@ node_st *TYPECHECK_binop(node_st *node) {
 
 node_st *TYPECHECK_monop(node_st *node) {
     TRAVchildren(node);
-    term *t = typeVariable(MONOP_EXPR(node));
+    term *t = uf_find(typeVariable(MONOP_EXPR(node)), DATA_TYPECHECK__GET()->parent);
     if (MONOP_OP(node) == MO_neg) {
         forbid_bool(t, DATA_TYPECHECK__GET()->parent);
         if (t->type == TERM_INT) {
@@ -616,7 +619,7 @@ node_st *TYPECHECK_varlet(node_st *node) {
 node_st *TYPECHECK_var(node_st *node) {
     TRAVchildren(node);
     uf_unify(typeVariable(node), typeVariable(VAR_ID(node)), DATA_TYPECHECK__GET()->parent);
-    term *var      = typeVariable(node);
+    term *var      = uf_find(typeVariable(node), DATA_TYPECHECK__GET()->parent);
     VAR_TYPE(node) = gettermBT(var);
     return node;
 }
