@@ -1,0 +1,16 @@
+extern int scanInt();
+extern void printInt(int val);
+extern void printNewlines(int n);
+
+int fib(int n) {
+    if (n <= 0) return 1;
+    return fib(n - 1) + fib(n - 2);
+}
+
+export int main() {
+    int n = scanInt();
+
+    printInt(fib(n));
+    printNewlines(1);
+    return 0;
+}

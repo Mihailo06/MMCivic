@@ -324,7 +324,7 @@ node_st *CODEGEN_procedurecall(node_st *node) {
             } else if (up == 1) {
                 bv_strappend(&func->content, CODEGEN_INDENT "isr\n");
             } else {
-                bv_printf(&func->content, CODEGEN_INDENT "isrn%u\n", up - 1);
+                bv_printf(&func->content, CODEGEN_INDENT "isrn %u\n", up - 1);
             }
         } break;
     }
@@ -486,7 +486,7 @@ node_st *CODEGEN_binop(node_st *node) {
                 // clang-format off
                 CODEGEN_INDENT "jump %s\n"
                 "%s:\n"
-                CODEGEN_INDENT "bconst_f\n"
+                CODEGEN_INDENT "bloadc_f\n"
                 "%s:\n",
                 // clang-format on
                 andendlabel,
@@ -506,7 +506,7 @@ node_st *CODEGEN_binop(node_st *node) {
                 // clang-format off
                 CODEGEN_INDENT "jump %s\n"
                 "%s:\n"
-                CODEGEN_INDENT "bconst_t\n"
+                CODEGEN_INDENT "bloadc_t\n"
                 "%s:\n",
                 // clang-format on
                 orendlabel,
