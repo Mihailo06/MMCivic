@@ -81,7 +81,13 @@ node_st *INITSYMTABLES_globaldef(node_st *node) {
     symtable_entry ent = {
         .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
         .type = GLOBALDEF_TYPE(node),
+        .exprs = NULL,
     };
+
+    if(GLOBALDEF_INDEX_EXPRS(node) != NULL)
+    {
+        ent.exprs = GLOBALDEF_INDEX_EXPRS(node);
+    }
 
     symtable_insert(peekSymtab(), ID_ID(GLOBALDEF_ID(node)), ent);
     return node;
@@ -197,7 +203,13 @@ node_st *INITSYMTABLES_funbody(node_st *node) {
         symtable_entry ent = {
             .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
             .type = VARDEC_TYPE(vardec),
+            .exprs = NULL,
         };
+        
+        if(VARDEC_ARR_DIMS(vardec) != NULL)
+        {
+            ent.exprs = VARDEC_ARR_DIMS(vardec);
+        }
 
         symtable_insert(peekSymtab(), ID_ID(VARDEC_ID(vardec)), ent);
     }

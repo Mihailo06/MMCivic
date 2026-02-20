@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "ccngen/enum.h"
+#include "ccngen/ast.h"
 
 typedef struct symtable symtable;
 
@@ -33,6 +34,10 @@ typedef struct {
      */
     enum BasicType *argtypes;
 
+    /**
+     * Array exprs for array declarations. 
+     */
+    node_st *exprs;
     // TODO: array types
 } symtable_entry;
 

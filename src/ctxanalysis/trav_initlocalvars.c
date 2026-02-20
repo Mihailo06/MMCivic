@@ -1,12 +1,31 @@
+#include "ccn/phase_driver.h"
 #include "ccn/dynamic_core.h"
 #include "ccngen/ast.h"
 #include "ccngen/trav_data.h"
 #include "ctxanalysis/arrayinitgen.h"
+#include "ctxanalysis/symtable.h"
 #include "util.h"
+#include "stdio.h"
+#include "palm/dbug.h"
+#include "palm/ctinfo.h"
+
+#define CUR_SYMTAB DATA_CHECKIDENTIFIERS__GET()->current_symtab
 
 TRAVDATA_STUB(INITLOCALVARS)
 
-static void reduceVarArray(node_st *node) {
+static int getArrLength(node_st *node)
+{
+    int i = 0;
+    while(EXPRS_EXPR(node))
+    {
+        i++;
+        node = EXPRS_NEXT(node);
+    }
+
+    return i;
+}
+
+static node_st *reduceVarArray(node_st *node) {
     node_st *red = NULL;
     if(VARDEC_ARR_DIMS(node) != NULL) {
         if(EXPRS_NEXT(VARDEC_ARR_DIMS(node)) != NULL) {
@@ -20,6 +39,7 @@ static void reduceVarArray(node_st *node) {
             VARDEC_ARR_DIMS(node) = ASTexprs(red, NULL);
         }
     }
+    return red;
 }
 
 node_st *reverse_params(node_st *list)
@@ -37,6 +57,13 @@ node_st *reverse_params(node_st *list)
     }
 
     return prev;
+}
+
+node_st *INITLOCALVARS_program(node_st *node)
+{
+    CUR_SYMTAB = SYMTABLE_SYMTAB(PROGRAM_SYMTABLE(node));
+
+    return node;
 }
 
 node_st *INITLOCALVARS_fundef(node_st *node) {
@@ -76,6 +103,7 @@ node_st *INITLOCALVARS_fundef(node_st *node) {
     {
         BASICFUNHEADER_PARAMS(FUNDEF_FUNHEADER(node)) = reverse_params(BASICFUNHEADER_PARAMS(FUNDEF_FUNHEADER(node)));
     }
+    TRAVopt(FUNDEF_FUNBODY(node));
     return node;
 }
 
@@ -110,6 +138,70 @@ node_st *INITLOCALVARS_vardec(node_st *node) {
     } else {
         // single expr
         node_st *expr = EXPRS_EXPR(ARREXPRS_EXPRS(VARDEC_EXPRS(node)));
+        if(NODE_TYPE(expr) == NT_ARREXPR)
+        {
+
+            symtable_entry *ent = symtable_lookup(CUR_SYMTAB, ID_ID(ARREXPR_ID(expr)));
+            
+            if (!ent || !ent->exprs) {
+                CTIerror("Array '%s' not declared or has no dimensions", ID_ID(ARREXPR_ID(expr)));
+                return node;
+            }
+
+            node_st *src = ent->exprs;
+            node_st *acc = ARREXPR_INDICES(expr);
+
+            int src_count = getArrLength(src);
+            int acc_count = getArrLength(acc); 
+            if(acc_count != src_count)
+            {
+                CTI(CTI_ERROR, true, "Array access arity mismatch in assignment '%s' = '%s'", ID_ID(VARDEC_ID(node)), ID_ID(ARREXPR_ID(expr)));
+                CCNerrorAction();
+            }
+
+            if(src_count == 0)
+            {
+                printf("source array index count is 0, this shouldn't happen here!\n");
+                return node;
+            }
+
+            if(src_count != 1)
+            {
+                
+                node_st *dim = ASTbinop(ASTnum(1), EXPRS_EXPR(src), BO_mul);
+                node_st *root = ASTbinop(ASTnum(0), dim, BO_add);
+
+                src = EXPRS_NEXT(src);
+                
+                acc = EXPRS_NEXT(acc);
+                node_st *acc_it = acc;
+                while(acc_it)
+                {
+                    dim = ASTbinop(dim, acc_it, BO_mul);
+                    acc_it = EXPRS_NEXT(acc_it);
+                }
+                
+                while(EXPRS_NEXT(src))
+                {
+                    dim = ASTbinop(ASTnum(1), EXPRS_EXPR(src), BO_mul);
+                    src = EXPRS_NEXT(src);
+                    acc = EXPRS_NEXT(acc);
+                    acc_it = acc;
+
+                    while(acc_it)
+                    {
+                        dim = ASTbinop(dim, acc_it, BO_mul);
+                        acc_it = EXPRS_NEXT(acc_it);
+                    }
+                    
+                    root = ASTbinop(root, dim, BO_add);
+                }
+
+                expr = root;
+                
+            }
+            
+        }   
 
         DATA_INITLOCALVARS__GET()->fun_stmts = ASTstmts(
             ASTassign(ASTvarlet(NULL, CCNcopy(VARDEC_ID(node))), CCNcopy(expr)),

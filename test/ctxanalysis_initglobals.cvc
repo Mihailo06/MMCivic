@@ -12,10 +12,12 @@
 
 //int[1] not_splat = [42];
 
-//int twos = 0;
-int two(int c, int[n,m] a) {
-    //twos = twos + 1;
-    //return 2;
+int twos = 0;
+int two(int c, int[n,m] b) {
+    int[2,3] d;
+    int[2,3] a = 1;
+    twos = twos + 1;
+    return 2;
 }
 
 //void foo() {
