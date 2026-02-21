@@ -37,6 +37,7 @@ polymorphism. This is later covered in @typechecker.
 
 = Compiler Features
 == The Name Mangler
+=== Motivation
 There are several scenarios where we risk name collisions. To generally solve this problem, we have
 implemented a name mangler. The name mangler will transform all identifiers in the code such that
 they are unique. In order to preserve the original name of an identifier as used in-code for use in
@@ -51,7 +52,7 @@ node Id {
     }
 }
 ```)
-There exist two scenarios where this is relevant. Firstly, since `for`-loops do not have their own
+There exist three scenarios where this is relevant. Firstly, since `for`-loops do not have their own
 symbol table, we would run into issues when multiple `for`-loops in one scope use an identical loop
 counter identifier.
 #figure(caption: [Problematic example of `for`-loops with identically named loop variables], ```c
@@ -81,7 +82,66 @@ function name would have resulted in duplicate label names for the function labe
   ```,
 ))
 
-== Symbol Tables
+Finally, when a variable is initialized with an expression referencing a variable from outer scope
+with the same identifier, we would transform it into incorrect code in a further compiler pass.
+#figure(
+  caption: [Problematic example of variable initializer referencing identically named outer
+    variable],
+  grid(
+    columns: (2fr, 1fr, 2fr),
+    ```c
+    int x = 42;
+    void foo() {
+        int x = x;
+    }
+    ```,
+    align(horizon, $~>$),
+    ```c
+    int x = 42;
+    void foo() {
+        int x;
+        x = x; // incorrect
+    }
+    ```,
+  ),
+)
+=== Implementation
+Our name mangler is implemented in two passes, one running before and one running after symbol
+tables (discussed in @symtables) are initialized. In the first pass, we address for-loops by
+prefixing all index variables with a running number.
+#figure(
+  caption: [Example of for loop index name mangling],
+  grid(
+    columns: (10fr, 1fr, 10fr),
+    ```c
+    void foo() {
+        for (int i = 0, 42) {
+            for (int i = i, 42) {}
+        }
+    }
+    ```,
+    align(horizon, $~>$),
+    ```c
+    void foo() {
+        for (int for0@i = 0, 42) {
+            for (int for1@i = for0@i, 42) {}
+        }
+    }
+    ```,
+  ),
+)
+
+This is the only step we have to do before symbol table initialization as it is the only case that
+may result in one symbol table potentially containing multiple identical symbols, causing a false
+compile error.
+
+The second pass is done by using the symbol tables which have now been built. Since every unique
+value now has exactly one unique symbol table entry, all we have to do is to incorporate this entry
+into all identifiers. We traverse every identifier, looking up its respective entry from the symbol
+tables and then suffix that identifier with the pointer address (represented in hexadecimal) of the
+symbol table entry, which we know to be unique.
+
+== Symbol Tables <symtables>
 Contrary to common implementations of symbol tables that were covered in the lecture, we have opted
 for a hash map-based data structure to represent symbol tables. This has the consequence that symbol
 table entries have no well-defined order, and also do not contain the name of the symbol which is
