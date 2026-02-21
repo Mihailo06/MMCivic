@@ -22,10 +22,15 @@ char *genident(void) {
     return STRfmt("__mmcivicc_gen#%d", n++);
 }
 
-node_st *genidNode(void) { return ASTid(genident()); }
+node_st *genidNode(void) {
+    char *id = genident();
+    return ASTid(id, STRcpy(id));
+}
 
 size_t EXPRS_count(node_st *exprs) {
     size_t n = 0;
     for (; exprs; exprs = EXPRS_NEXT(exprs)) n++;
     return n;
 }
+
+char *idId(node_st *node) { return ID_LOGICAL(node) ? ID_LOGICAL(node) : ID_USERID(node); }

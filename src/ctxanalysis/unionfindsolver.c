@@ -113,7 +113,7 @@ term *typeVariable(node_st *node) {
     void *key;
 
     if (NODE_TYPE(node) == NT_ID) {
-        char    *name    = ID_ID(node);
+        char    *name    = idId(node);
         node_st *id_node = HTlookup(DATA_TYPECHECK__GET()->ids, name);
 
         if (id_node == NULL) {
