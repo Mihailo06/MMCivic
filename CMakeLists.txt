@@ -33,8 +33,10 @@ add_executable(civicc
     src/util.c
     src/global/globals.c
 
+    # for loop name mangling
+    src/loop_name_mangling/trav_mangleforloopnames.c
+
     # printing
-    src/print/count_identifiers.c
     src/print/print.c
 
     # parsing
@@ -45,6 +47,7 @@ add_executable(civicc
     # context analysis
     src/ctxanalysis/arrayinitgen.c
     src/ctxanalysis/symtable.c
+    src/ctxanalysis/symtablemangling.c
     src/ctxanalysis/trav_checkarrdims.c
     src/ctxanalysis/trav_checkidentifiers.c
     src/ctxanalysis/trav_freesymtables.c

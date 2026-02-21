@@ -470,7 +470,7 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
 
     if (calle_type->type != TERM_FUNCTION) {
         // fprintf(stderr, "ERROR: CALLED PROCEDURECALL \"%s\" IS NOT A FUNCTION\n",
-        // ID_ID(calle_id));
+        // ID_LOGICAL(calle_id));
         return node;
     }
 

@@ -64,26 +64,26 @@ node_st *INITSYMTABLES_program(node_st *node) {
 }
 
 node_st *INITSYMTABLES_globaldec(node_st *node) {
-    if (checkdupSym(node, ID_ID(GLOBALDEC_ID(node)))) return node; // error
+    if (checkdupSym(node, idId(GLOBALDEC_ID(node)))) return node; // error
 
     symtable_entry ent = {
         .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
         .type = GLOBALDEC_TYPE(node),
     };
 
-    symtable_insert(peekSymtab(), ID_ID(GLOBALDEC_ID(node)), ent);
+    symtable_insert(peekSymtab(), idId(GLOBALDEC_ID(node)), ent);
     return node;
 }
 
 node_st *INITSYMTABLES_globaldef(node_st *node) {
-    if (checkdupSym(node, ID_ID(GLOBALDEF_ID(node)))) return node; // error
+    if (checkdupSym(node, idId(GLOBALDEF_ID(node)))) return node; // error
 
     symtable_entry ent = {
         .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
         .type = GLOBALDEF_TYPE(node),
     };
 
-    symtable_insert(peekSymtab(), ID_ID(GLOBALDEF_ID(node)), ent);
+    symtable_insert(peekSymtab(), idId(GLOBALDEF_ID(node)), ent);
     return node;
 }
 
@@ -109,14 +109,14 @@ node_st *INITSYMTABLES_voidfunheader(node_st *node) {
         param_count++;
         node_st *param = HEADERPARAMS_PARAM(params);
 
-        if (checkdupSym(node, ID_ID(PARAMETER_ID(param)))) continue; // error
+        if (checkdupSym(node, idId(PARAMETER_ID(param)))) continue; // error
 
         symtable_entry ent = {
             .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
             .type = PARAMETER_TYPE(param),
         };
 
-        symtable_insert(peekSymtab(), ID_ID(PARAMETER_ID(param)), ent);
+        symtable_insert(peekSymtab(), idId(PARAMETER_ID(param)), ent);
     }
 
     // Next, add ourselves to outer scope.
@@ -136,7 +136,7 @@ node_st *INITSYMTABLES_voidfunheader(node_st *node) {
         .argtypes = argtypes,
     };
 
-    symtable_insert(peekSymtab(), ID_ID(VOIDFUNHEADER_ID(node)), ent);
+    symtable_insert(peekSymtab(), idId(VOIDFUNHEADER_ID(node)), ent);
 
     pushSymtab(inner);
 
@@ -153,14 +153,14 @@ node_st *INITSYMTABLES_basicfunheader(node_st *node) {
         param_count++;
         node_st *param = HEADERPARAMS_PARAM(params);
 
-        if (checkdupSym(node, ID_ID(PARAMETER_ID(param)))) continue;
+        if (checkdupSym(node, idId(PARAMETER_ID(param)))) continue;
 
         symtable_entry ent = {
             .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
             .type = PARAMETER_TYPE(param),
         };
 
-        symtable_insert(peekSymtab(), ID_ID(PARAMETER_ID(param)), ent);
+        symtable_insert(peekSymtab(), idId(PARAMETER_ID(param)), ent);
     }
 
     // Next, add ourselves to outer scope.
@@ -181,7 +181,7 @@ node_st *INITSYMTABLES_basicfunheader(node_st *node) {
         .argtypes = argtypes,
     };
 
-    symtable_insert(peekSymtab(), ID_ID(BASICFUNHEADER_ID(node)), ent);
+    symtable_insert(peekSymtab(), idId(BASICFUNHEADER_ID(node)), ent);
 
     pushSymtab(inner);
 
@@ -192,14 +192,14 @@ node_st *INITSYMTABLES_funbody(node_st *node) {
     // Variable declaractions
     for (node_st *vardecs = FUNBODY_VARDECS(node); vardecs; vardecs = VARDECS_NEXT(vardecs)) {
         node_st *vardec = VARDECS_VARDEC(vardecs);
-        if (checkdupSym(node, ID_ID(VARDEC_ID(vardec)))) continue; // error
+        if (checkdupSym(node, idId(VARDEC_ID(vardec)))) continue; // error
 
         symtable_entry ent = {
             .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
             .type = VARDEC_TYPE(vardec),
         };
 
-        symtable_insert(peekSymtab(), ID_ID(VARDEC_ID(vardec)), ent);
+        symtable_insert(peekSymtab(), idId(VARDEC_ID(vardec)), ent);
     }
 
     TRAVchildren(node);
@@ -209,7 +209,7 @@ node_st *INITSYMTABLES_funbody(node_st *node) {
 
 node_st *INITSYMTABLES_forloop(node_st *node) {
     symtable_entry ent = { .kind = SYMTABLE_ENTRY_KIND_VARIABLE, .type = BT_int };
-    symtable_insert(peekSymtab(), ID_ID(FORLOOP_ID(node)), ent);
+    symtable_insert(peekSymtab(), idId(FORLOOP_ID(node)), ent);
 
     TRAVchildren(node);
 

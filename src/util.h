@@ -24,3 +24,8 @@ node_st *genidNode(void);
  * Counts the length of an `Exprs` node.
  */
 size_t EXPRS_count(node_st *exprs);
+
+/**
+ * Gets the logical ID of an ID node or the user ID as a fallback
+ */
+char *idId(node_st *node);

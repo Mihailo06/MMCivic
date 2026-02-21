@@ -3,9 +3,30 @@ start phase RootPhase {
 
     actions {
         pass SPdoScanParse;
+        LoopNameMangling;
         TypeChecking;
-        Demo;
         ContextAnalysis;
+        Demo;
+    }
+};
+
+phase LoopNameMangling {
+    actions {
+        traversal MangleForLoopNames {
+            uid = MangleForLoopNames_,
+            nodes = {
+                // For changing IDs
+                Id,
+
+                // For opening new scopes
+                ForLoop
+            },
+            travdata {
+                uint32 cur_idx,
+                uint32 this_idx,
+                string idxid
+            }
+        };
     }
 };
 
@@ -38,15 +59,6 @@ phase ContextAnalysis {
             }
         };
 
-        traversal InitLocalVars {
-            uid = InitLocalVars_,
-            nodes = { FunBody, VarDec },
-            travdata {
-                Stmts fun_stmts,
-                VarDecs fun_vardecs
-            }
-        };
-
         traversal InitSymtables {
             uid = InitSymtables_,
             nodes = {
@@ -61,6 +73,28 @@ phase ContextAnalysis {
             },
             travdata {
                 user symtab_stack_ptr stack
+            }
+        };
+
+        traversal SymtableManglingIds {
+            uid = SymtableManglingIds_,
+            nodes = Scope | { Id },
+            travdata {
+                user symtable_ptr cur_symtab
+            }
+        };
+
+        traversal SymtableManglingTabs {
+            uid = SymtableManglingTabs_,
+            nodes = { Symtable }
+        };
+
+        traversal InitLocalVars {
+            uid = InitLocalVars_,
+            nodes = { FunBody, VarDec },
+            travdata {
+                Stmts fun_stmts,
+                VarDecs fun_vardecs
             }
         };
 
@@ -81,14 +115,6 @@ phase ContextAnalysis {
 
 phase Demo {
     actions {
-        traversal CountIdentifiers {
-            uid = CountIdentifiers_,
-            nodes = { Var, Program },
-            travdata {
-                user htable_stptr table
-            }
-        };
-
         traversal Print {
             uid = PRT,
             travdata {
@@ -331,7 +357,12 @@ node ArrExprs {
 
 node Id {
     attributes {
-        string id { constructor }
+        string logical {
+            constructor
+            // This lifetime is omitted because it causes CCN to generate invalid code.
+            //allowed (MangleNames ->)
+        },
+        string userid { constructor }
     }
 };
 

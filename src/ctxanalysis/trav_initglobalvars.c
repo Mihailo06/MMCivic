@@ -19,8 +19,9 @@ TRAVDATA_STUB(INITGLOBALVARS)
 node_st *INITGLOBALVARS_program(node_st *node) {
     TRAVchildren(node);
 
-    node_st *init_fn = ASTfundef(
-        ASTvoidfunheader(NULL, ASTid(STRcpy("__init")), RT_void),
+    const char *id      = "__init";
+    node_st    *init_fn = ASTfundef(
+        ASTvoidfunheader(NULL, ASTid(STRcpy(id), STRcpy(id)), RT_void),
         ASTfunbody(
             DATA_INITGLOBALVARS__GET()->init_decs,
             NULL,
