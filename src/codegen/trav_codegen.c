@@ -7,6 +7,7 @@
 #include "ccngen/trav_data.h"
 #include "codegen/state.h"
 #include "ctxanalysis/symtable.h"
+#include "global/globals.h"
 #include "palm/dbug.h"
 #include "palm/hash_table.h"
 #include "palm/memory.h"
@@ -191,7 +192,7 @@ node_st *CODEGEN_program(node_st *node) {
 
     TRAVchildren(node);
 
-    codegen_emit(STATE, stdout);
+    codegen_emit(STATE, global.output_file ? global.output_file : stdout);
     return node;
 }
 
