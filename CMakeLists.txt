@@ -33,8 +33,9 @@ add_executable(civicc
     src/util.c
     src/global/globals.c
 
-    # for loop name mangling
-    src/loop_name_mangling/trav_mangleforloopnames.c
+    # primary name mangling
+    src/primary_name_mangling/trav_mangleforloopnames.c
+    src/primary_name_mangling/trav_manglefuncvar.c
 
     # printing
     src/print/print.c

@@ -4,6 +4,8 @@
 #include "ccn/dynamic_core.h"
 #include "ccngen/ast.h"
 #include "ccngen/trav_data.h"
+#include "palm/dbug.h"
+#include "palm/memory.h"
 #include "palm/str.h"
 #include "util.h"
 
@@ -21,10 +23,14 @@ static char *mangle(const char *id) {
 }
 
 node_st *MANGLEFORLOOPNAMES_id(node_st *node) {
+    DBUG_ASSERT(ID_LOGICAL(node), "ID should have logical during mangleforloopnames");
     if (!DATA_MANGLEFORLOOPNAMES__GET()->idxid
         || strcmp(ID_USERID(node), DATA_MANGLEFORLOOPNAMES__GET()->idxid))
         return node;
-    ID_LOGICAL(node) = mangle(ID_USERID(node));
+
+    char *newid = mangle(ID_LOGICAL(node));
+    MEMfree(ID_LOGICAL(node));
+    ID_LOGICAL(node) = newid;
     return node;
 }
 
