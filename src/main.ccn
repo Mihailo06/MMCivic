@@ -3,15 +3,28 @@ start phase RootPhase {
 
     actions {
         pass SPdoScanParse;
-        LoopNameMangling;
+        PrimaryNameMangling;
         TypeChecking;
         ContextAnalysis;
         Demo;
     }
 };
 
-phase LoopNameMangling {
+phase PrimaryNameMangling {
     actions {
+        traversal MangleFuncVar {
+            uid = MangleFuncVar_,
+            nodes = {
+                // For changing IDs
+                Id,
+
+                // For setting the isfunc flag
+                ProcedureCall
+            } | FunHeader,
+            travdata {
+                bool isfunc
+            }
+        };
         traversal MangleForLoopNames {
             uid = MangleForLoopNames_,
             nodes = {
