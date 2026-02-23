@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <errno.h>
 #include <getopt.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -35,6 +36,8 @@ static int ProcessArgs(int argc, char *argv[]) {
     int option_index;
     int c;
 
+    memset(&global, 0, sizeof(struct globals));
+
     while (1) {
         c = getopt_long(argc, argv, "hsvo:b:", long_options, &option_index);
 
@@ -54,7 +57,13 @@ static int ProcessArgs(int argc, char *argv[]) {
                 }
                 break;
             case 's': CCNshowTree(); break;
-            case 'o': global.output_file = optarg; break;
+            case 'o':
+                global.output_file = fopen(optarg, "w");
+                if (!global.output_file) {
+                    fprintf(stderr, "Couldn't open output file: %s", strerror(errno));
+                    exit(EXIT_FAILURE);
+                }
+                break;
             case 'h': Usage(argv[0]); exit(EXIT_SUCCESS);
             case '?': Usage(argv[0]); exit(EXIT_FAILURE);
         }
@@ -79,5 +88,8 @@ int main(int argc, char **argv) {
     ProcessArgs(argc, argv);
 
     CCNrun(NULL);
+
+    if (global.output_file) { fclose(global.output_file); }
+
     return 0;
 }
