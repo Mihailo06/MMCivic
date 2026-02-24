@@ -76,6 +76,11 @@ typedef struct {
      */
     bool is_param;
 
+    /**
+     * The USER_ID of the entry.
+     */
+    char *user_id;
+
     // TODO: array types
 } symtable_entry;
 

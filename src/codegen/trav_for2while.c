@@ -30,11 +30,10 @@ node_st *FOR2WHILE_forloop(node_st *node) {
     if (!canKeepLoopExpr(end_expr)) {
         char *end_id = genident();
 
-        symtable_insert(
-            SYMTABLE_SYMTAB(DATA_FOR2WHILE__GET()->cur_symtab),
-            end_id,
-            new_loopvar_ent
-        );
+        symtable_entry ent = new_loopvar_ent;
+        ent.user_id        = end_id;
+
+        symtable_insert(SYMTABLE_SYMTAB(DATA_FOR2WHILE__GET()->cur_symtab), end_id, ent);
         end_expr            = ASTvar(NULL, end_id_node = ASTid(STRcpy(end_id), end_id));
         EXPR_TYPE(end_expr) = BT_int;
         FUNBODY_VARDECS(DATA_FOR2WHILE__GET()->cur_func) = ASTvardecs(
@@ -48,11 +47,10 @@ node_st *FOR2WHILE_forloop(node_st *node) {
     if (step_expr && !canKeepLoopExpr(step_expr)) {
         char *step_id = genident();
 
-        symtable_insert(
-            SYMTABLE_SYMTAB(DATA_FOR2WHILE__GET()->cur_symtab),
-            step_id,
-            new_loopvar_ent
-        );
+        symtable_entry ent = new_loopvar_ent;
+        ent.user_id        = step_id;
+
+        symtable_insert(SYMTABLE_SYMTAB(DATA_FOR2WHILE__GET()->cur_symtab), step_id, ent);
         step_expr            = ASTvar(NULL, step_id_node = ASTid(STRcpy(step_id), step_id));
         EXPR_TYPE(step_expr) = BT_int;
         FUNBODY_VARDECS(DATA_FOR2WHILE__GET()->cur_func) = ASTvardecs(
