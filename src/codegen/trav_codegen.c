@@ -437,7 +437,7 @@ node_st *CODEGEN_return(node_st *node) {
     bv_printf(
         &STATE->functions->content,
         CODEGEN_INDENT "%s\n",
-        returnInstruction(EXPR_TYPE(RETURN_EXPR(node)))
+        returnInstruction(RETURN_EXPR(node) ? EXPR_TYPE(RETURN_EXPR(node)) : BT_NULL)
     );
 
     return node;
