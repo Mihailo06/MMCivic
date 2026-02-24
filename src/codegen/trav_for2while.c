@@ -79,7 +79,19 @@ node_st *FOR2WHILE_forloop(node_st *node) {
         STMTS_NEXT(last_stmt) = ASTstmts(inc_stmt, NULL);
     }
 
-    node_st *while_expr   = ASTbinop(CCNcopy(i_var), end_expr, BO_lt);
+    node_st *while_expr_pos   = ASTbinop(CCNcopy(i_var), CCNcopy(end_expr), BO_lt);
+    EXPR_TYPE(while_expr_pos) = BT_bool;
+
+    node_st *while_expr_neg   = ASTbinop(CCNcopy(i_var), end_expr, BO_gt);
+    EXPR_TYPE(while_expr_neg) = BT_bool;
+
+    node_st *while_cond_zero   = ASTnum(0);
+    EXPR_TYPE(while_cond_zero) = BT_int;
+
+    node_st *while_expr_cond   = ASTbinop(CCNcopy(step_expr), while_cond_zero, BO_gt);
+    EXPR_TYPE(while_expr_cond) = BT_bool;
+
+    node_st *while_expr   = ASTternary(while_expr_cond, while_expr_pos, while_expr_neg);
     EXPR_TYPE(while_expr) = BT_bool;
 
     stmts = ASTstmts(ASTwhileloop(while_expr, FORLOOP_BLOCK(node)), stmts);

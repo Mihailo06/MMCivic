@@ -693,6 +693,22 @@ node_st *CODEGEN_var(node_st *node) {
     return node;
 }
 
+node_st *CODEGEN_ternary(node_st *node) {
+    codegen_func *func     = STATE->functions;
+    char         *endlabel = genLabel("ternary_end"), *elselabel = genLabel("ternary_else");
+
+    TRAVdo(TERNARY_COND(node));
+    bv_printf(&func->content, CODEGEN_INDENT "branch_f %s\n", elselabel);
+    TRAVdo(TERNARY_THEN(node));
+    bv_printf(&func->content, CODEGEN_INDENT "jump %s\n%s:\n", endlabel, elselabel);
+    TRAVdo(TERNARY_ELS(node));
+    bv_printf(&func->content, CODEGEN_INDENT "%s:\n", endlabel);
+
+    MEMfree(elselabel);
+    MEMfree(endlabel);
+    return node;
+}
+
 node_st *CODEGEN_num(node_st *node) {
     size_t id = codegen_regintconst(STATE, NUM_VAL(node));
     bv_printf(&STATE->functions->content, CODEGEN_INDENT "iloadc %zu\n", id);

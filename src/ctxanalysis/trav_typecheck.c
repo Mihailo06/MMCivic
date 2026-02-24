@@ -6,6 +6,7 @@
 #include "ccngen/enum.h"
 #include "ccngen/trav_data.h"
 #include "ctxanalysis/unionfindsolver.h"
+#include "palm/dbug.h"
 #include "util.h"
 
 // static void prependInit(node_st *id, node_st *expr) {
@@ -645,5 +646,10 @@ node_st *TYPECHECK_bool(node_st *node) {
     TRAVchildren(node);
     uf_unify(typeVariable(node), TYPE_BOOL, DATA_TYPECHECK__GET()->parent);
     BOOL_TYPE(node) = BT_bool;
+    return node;
+}
+
+node_st *TYPECHECK_ternary(node_st *node) {
+    DBUG_ASSERT(false, "typechecking for ternaries isn't implemented");
     return node;
 }
