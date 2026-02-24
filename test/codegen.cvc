@@ -1,0 +1,131 @@
+extern void printInt(int x);
+export int x1 = 1;
+export float x2 = 1.0;
+extern int y;
+
+extern int bar(int x, int y);
+
+export int foo() {
+    return bar(x1, y);
+}
+
+export int baz(float x, float y) {
+    int z;
+    return (int)(x + y);
+}
+
+export void castTests() {
+    int srcInt = 42;
+    float srcFloat = 42.5;
+    bool srcBool = true;
+
+    int int2Int = (int) srcInt;
+    int float2Int = (int) srcFloat;
+    int bool2Int = (int) srcBool;
+
+    float int2Float = (float) srcInt;
+    float float2Float = (float) srcFloat;
+    float bool2Float = (float) srcBool;
+
+    bool int2Bool = (bool) srcInt;
+    bool float2Bool = (bool) srcFloat;
+    bool bool2Bool = (bool) srcBool;
+}
+
+export int ifTest(bool x) {
+    if (x) {
+        return 42;
+    }
+
+    return 0;
+}
+
+export int ifElseTest(bool x) {
+    if (x) {
+        return 42;
+    } else {
+        return 0;
+    }
+}
+
+export void whileTest(bool x) {
+    int y = 0;
+    while (x) {
+        y = y + 1;
+    }
+}
+
+export void doWhileTest() {
+    int y = 0;
+    do {
+        y = y + 1;
+    } while (y < 42);
+}
+
+export void procedurecallTest() {
+    int x = 0;
+    int innerFunc1() {
+        innerFunc2(42); // should be isr
+        return 42;
+    }
+    void innerFunc2(int y) {
+        void innerFunc3() {
+            innerFunc1(); // should be isrn 1
+        }
+        x = y;
+    }
+
+    innerFunc1(); // should be isrl with ipop
+    doWhileTest(); // should be isrg
+    printInt(42); // should be jsre
+}
+
+export void monopTest() {
+    int x = -42;
+    float y = -42.0;
+    bool z = !false;
+}
+
+export void arithBinopTest() {
+    int ix; int iy; int iz;
+    float fx; float fy; float fz;
+    bool bx; bool by; bool bz;
+
+    iz = ix +  iy;
+    iz = ix -  iy;
+    iz = ix *  iy;
+    iz = ix /  iy;
+    bz = ix <  iy;
+    bz = ix <= iy;
+    bz = ix >  iy;
+    bz = ix >= iy;
+    bz = ix == iy;
+    bz = ix != iy;
+
+    fz = fx +  fy;
+    fz = fx -  fy;
+    fz = fx *  fy;
+    fz = fx /  fy;
+    bz = fx <  fy;
+    bz = fx <= fy;
+    bz = fx >  fy;
+    bz = fx >= fy;
+    bz = fx == fy;
+    bz = fx != fy;
+
+    iz = ix %  iy;
+
+    bz = bx == by;
+    bz = bx != by;
+}
+
+export void boolBinopTest() {
+    bool x; bool y; bool z;
+    z = x && y;
+    z = x || y;
+}
+
+export void forLoopTest() {
+    for (int i1 = 0, 10) { foo(); }
+    for (int i2 = 0, 5 * 2, 4 + 1) { foo(); }
+}

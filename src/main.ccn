@@ -3,10 +3,22 @@ start phase RootPhase {
 
     actions {
         pass SPdoScanParse;
+        ParseCleanup;
         PrimaryNameMangling;
         TypeChecking;
         ContextAnalysis;
+        CodegenPhase;
         Demo;
+        Cleanup_;
+    }
+};
+
+phase ParseCleanup {
+    actions {
+        traversal ReverseParams {
+            uid = ReverseParams_,
+            nodes = { HeaderParams }
+        };
     }
 };
 
@@ -72,15 +84,6 @@ phase ContextAnalysis {
             }
         };
 
-        traversal InitLocalVars {
-            uid = InitLocalVars_,
-            nodes = { FunBody, VarDec },
-            travdata {
-                Stmts fun_stmts,
-                VarDecs fun_vardecs
-            }
-        };
-
         traversal InitSymtables {
             uid = InitSymtables_,
             nodes = {
@@ -94,7 +97,9 @@ phase ContextAnalysis {
                 ForLoop
             },
             travdata {
-                user symtab_stack_ptr stack
+                user symtab_stack_ptr stack,
+                user symtable_entry_linkage cur_link,
+                uint32 func_depth
             }
         };
 
@@ -102,13 +107,28 @@ phase ContextAnalysis {
             uid = SymtableManglingIds_,
             nodes = Scope | { Id },
             travdata {
-                user symtable_ptr cur_symtab
+                user symtable_ptr outer_symtab,
+                user symtable_ptr cur_symtab,
+
+                // A table of the identifiers we've seen on the left-hand side of a variable
+                // initializer. We check against this when we encounter one on the right-hand side
+                // to determine what symtable to look in.
+                user htable_stptr seen_ids
             }
         };
 
         traversal SymtableManglingTabs {
             uid = SymtableManglingTabs_,
             nodes = { Symtable }
+        };
+
+        traversal InitLocalVars {
+            uid = InitLocalVars_,
+            nodes = { FunBody, VarDec, VarDecs },
+            travdata {
+                Stmts fun_stmts,
+                VarDecs fun_vardecs
+            }
         };
 
         traversal CheckIdentifiers {
@@ -118,7 +138,68 @@ phase ContextAnalysis {
                 user symtable_ptr current_symtab
             }
         };
+    }
+};
 
+phase CodegenPhase {
+    actions {
+        // Convert casts to booleans to != operators
+        traversal Boolcasts {
+            uid = Boolcasts_,
+            nodes = { Cast }
+        };
+
+        // Convert for loops to while loops
+        traversal For2While {
+            uid = For2While_,
+            nodes = { ForLoop, FunDef },
+            travdata {
+                FunBody cur_func,
+                Symtable cur_symtab
+            }
+        };
+
+        traversal Codegen {
+            uid = Codegen_,
+            nodes = {
+                // Structure
+                Program,
+                FunBody,
+                FunDec,
+                FunDef,
+                VoidFunHeader,
+                BasicFunHeader,
+
+                // Statements
+                Assign,
+                ProcedureCall,
+                Conditional,
+                WhileLoop,
+                DoWhileLoop,
+                Return,
+                // No ForLoop, those were removed by For2While
+
+                // Expressions
+                Binop,
+                Monop,
+                Cast,
+                Var,
+                Num,
+                Float,
+                Bool,
+                Ternary
+            },
+            travdata {
+                user codegen_stateptr state,
+                Symtable cur_symtab
+            }
+        };
+    }
+};
+
+// Can't call this "Cleanup", that makes CCN generate invalid code.
+phase Cleanup_ {
+    actions {
         traversal FreeSymtables {
             uid = FreeSymtables_,
             nodes = { Symtable }
@@ -174,7 +255,7 @@ enum BinOpType {
 nodeset Declaration = {FunDec, FunDef, GlobalDec, GlobalDef};
 nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
 nodeset Expr{
-    nodes = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr},
+    nodes = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr, Ternary},
 
     attributes {
         BasicType type
@@ -216,7 +297,7 @@ node Symtable {
         user symtable_ptr symtab { constructor }
     },
     lifetime {
-        allowed (ContextAnalysis.InitSymtables -> ContextAnalysis.FreeSymtables]
+        allowed (ContextAnalysis.InitSymtables -> Cleanup_.FreeSymtables]
     }
 };
 
@@ -419,6 +500,11 @@ node ProcedureCall {
     children {
         Exprs exprs { constructor },
         Id id { constructor }
+    },
+    attributes {
+        // true if this call is in statement position inside a block rather than in expression
+        // position.
+        bool in_stmt_pos
     }
 };
 
@@ -455,6 +541,9 @@ node ForLoop {
 
     attributes {
         BasicType type { constructor }
+    },
+    lifetime {
+        allowed (-> CodegenPhase.For2While]
     }
 };
 
@@ -524,5 +613,13 @@ node Float {
 node Bool {
     attributes {
         bool val { constructor }
+    }
+};
+
+node Ternary {
+    children {
+        Expr cond { constructor },
+        Expr then { constructor },
+        Expr els { constructor }
     }
 };
