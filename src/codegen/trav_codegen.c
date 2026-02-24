@@ -145,7 +145,12 @@ node_st *CODEGEN_program(node_st *node) {
                         break;
 
                     case SYMTABLE_ENTRY_LINKAGE_EXPORT:
-                        bv_printf(&STATE->header, ".exportvar \"%s\" %zu\n", name, global_i);
+                        bv_printf(
+                            &STATE->header,
+                            ".exportvar \"%s\" %zu\n",
+                            ent->user_id,
+                            global_i
+                        );
                         __attribute__((fallthrough));
                     case SYMTABLE_ENTRY_LINKAGE_INTERNAL:
                         bv_printf(&STATE->header, ".global %s\n", typeName(ent->type));
@@ -156,7 +161,7 @@ node_st *CODEGEN_program(node_st *node) {
                         bv_printf(
                             &STATE->header,
                             ".importvar \"%s\" %s\n",
-                            name,
+                            ent->user_id,
                             typeName(ent->type)
                         );
                         ent->codegen_index = importvar_i++;
@@ -172,12 +177,12 @@ node_st *CODEGEN_program(node_st *node) {
                         break;
 
                     case SYMTABLE_ENTRY_LINKAGE_EXPORT:
-                        bv_printf(&STATE->header, ".exportfun \"%s\" ", name);
+                        bv_printf(&STATE->header, ".exportfun \"%s\" ", ent->user_id);
                         appendFuncSignature(&STATE->header, ent);
                         bv_printf(&STATE->header, " %s\n", label_name);
                         break;
                     case SYMTABLE_ENTRY_LINKAGE_EXTERN:
-                        bv_printf(&STATE->header, ".importfun \"%s\" ", name);
+                        bv_printf(&STATE->header, ".importfun \"%s\" ", ent->user_id);
                         appendFuncSignature(&STATE->header, ent);
                         bv_push(&STATE->header, '\n');
                         ent->codegen_index = importfun_i++;

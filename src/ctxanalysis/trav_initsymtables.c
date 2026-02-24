@@ -70,6 +70,7 @@ node_st *INITSYMTABLES_globaldec(node_st *node) {
         .kind    = SYMTABLE_ENTRY_KIND_VARIABLE,
         .type    = GLOBALDEC_TYPE(node),
         .linkage = SYMTABLE_ENTRY_LINKAGE_EXTERN,
+        .user_id = ID_USERID(GLOBALDEC_ID(node)),
     };
 
     symtable_insert(peekSymtab(), idId(GLOBALDEC_ID(node)), ent);
@@ -84,6 +85,7 @@ node_st *INITSYMTABLES_globaldef(node_st *node) {
         .type    = GLOBALDEF_TYPE(node),
         .linkage = GLOBALDEF_EXPORT(node) ? SYMTABLE_ENTRY_LINKAGE_EXPORT
                                           : SYMTABLE_ENTRY_LINKAGE_INTERNAL,
+        .user_id = ID_USERID(GLOBALDEF_ID(node)),
     };
 
     symtable_insert(peekSymtab(), idId(GLOBALDEF_ID(node)), ent);
@@ -126,6 +128,7 @@ node_st *INITSYMTABLES_voidfunheader(node_st *node) {
             .type     = PARAMETER_TYPE(param),
             .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
             .is_param = true,
+            .user_id  = ID_USERID(PARAMETER_ID(param)),
         };
 
         symtable_insert(peekSymtab(), idId(PARAMETER_ID(param)), ent);
@@ -147,6 +150,7 @@ node_st *INITSYMTABLES_voidfunheader(node_st *node) {
         .arity    = param_count,
         .argtypes = argtypes,
         .linkage  = DATA_INITSYMTABLES__GET()->cur_link,
+        .user_id  = ID_USERID(VOIDFUNHEADER_ID(node)),
     };
 
     symtable_insert(peekSymtab(), idId(VOIDFUNHEADER_ID(node)), ent);
@@ -173,6 +177,7 @@ node_st *INITSYMTABLES_basicfunheader(node_st *node) {
             .type     = PARAMETER_TYPE(param),
             .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
             .is_param = true,
+            .user_id  = ID_USERID(PARAMETER_ID(node)),
         };
 
         symtable_insert(peekSymtab(), idId(PARAMETER_ID(param)), ent);
@@ -195,6 +200,7 @@ node_st *INITSYMTABLES_basicfunheader(node_st *node) {
         .arity    = param_count,
         .argtypes = argtypes,
         .linkage  = DATA_INITSYMTABLES__GET()->cur_link,
+        .user_id  = ID_USERID(BASICFUNHEADER_ID(node)),
     };
 
     symtable_insert(peekSymtab(), idId(BASICFUNHEADER_ID(node)), ent);
@@ -215,6 +221,7 @@ node_st *INITSYMTABLES_funbody(node_st *node) {
             .type     = VARDEC_TYPE(vardec),
             .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
             .is_param = false,
+            .user_id  = ID_USERID(VARDEC_ID(vardec)),
         };
 
         symtable_insert(peekSymtab(), idId(VARDEC_ID(vardec)), ent);
@@ -231,6 +238,7 @@ node_st *INITSYMTABLES_forloop(node_st *node) {
         .type     = BT_int,
         .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
         .is_param = false,
+        .user_id  = ID_USERID(FORLOOP_ID(node)),
     };
     symtable_insert(peekSymtab(), idId(FORLOOP_ID(node)), ent);
 
