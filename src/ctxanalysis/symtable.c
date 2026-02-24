@@ -69,3 +69,11 @@ symtable_entry *symtable_lookup(symtable *tab, const char *sym) {
 }
 
 symtable *symtable_get_parent(symtable *tab) { return tab->parent; }
+
+htable_iter_st *symtable_iterate(symtable *tab) { return HTiterate(tab->tab); }
+
+htable_st *symtable_swap_map(symtable *tab, htable_st *new) {
+    htable_st *old = tab->tab;
+    tab->tab       = new;
+    return old;
+}

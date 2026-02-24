@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "ccngen/enum.h"
+#include "palm/hash_table.h"
 
 typedef struct symtable symtable;
 
@@ -44,6 +45,8 @@ bool            symtable_contains(symtable *tab, const char *sym);
 bool            symtable_isdefined(symtable *tab, const char *sym);
 symtable_entry *symtable_lookup(symtable *tab, const char *sym);
 symtable       *symtable_get_parent(symtable *tab);
+htable_iter_st *symtable_iterate(symtable *tab);
+htable_st      *symtable_swap_map(symtable *tab, htable_st *new);
 
 /**
  * Adds a new entry to the symbol table. Caller asserts that an entry with the given name

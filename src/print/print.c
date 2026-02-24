@@ -13,6 +13,9 @@ static void indent(void) { DATA_PRT_GET()->indent_depth++; }
 
 static void unindent(void) { DATA_PRT_GET()->indent_depth--; }
 
+#define ID_ID ID_LOGICAL
+//#define ID_ID ID_USERID
+
 #define EXPRPOS(blk)                                                   \
     {                                                                  \
         bool __prev_exprpos              = DATA_PRT_GET()->is_exprpos; \
