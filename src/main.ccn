@@ -107,7 +107,13 @@ phase ContextAnalysis {
             uid = SymtableManglingIds_,
             nodes = Scope | { Id },
             travdata {
-                user symtable_ptr cur_symtab
+                user symtable_ptr outer_symtab,
+                user symtable_ptr cur_symtab,
+
+                // A table of the identifiers we've seen on the left-hand side of a variable
+                // initializer. We check against this when we encounter one on the right-hand side
+                // to determine what symtable to look in.
+                user htable_stptr seen_ids
             }
         };
 
