@@ -9,9 +9,14 @@
 #include "palm/str.h"
 #include "util.h"
 
-#define CUR_SYMTAB DATA_SYMTABLEMANGLINGIDS__GET()->cur_symtab
+#define CUR_SYMTAB   DATA_SYMTABLEMANGLINGIDS__GET()->cur_symtab
+#define OUTER_SYMTAB DATA_SYMTABLEMANGLINGIDS__GET()->outer_symtab
 
-TRAVDATA_STUB(SYMTABLEMANGLINGIDS)
+void SYMTABLEMANGLINGIDS_init(void) {
+    DATA_SYMTABLEMANGLINGIDS__GET()->seen_ids = HTnew_String(11);
+}
+
+void SYMTABLEMANGLINGIDS_fini(void) { HTdelete(DATA_SYMTABLEMANGLINGIDS__GET()->seen_ids); }
 
 static char *mangle(const char *prev, symtable_entry *ent) {
     if (strncmp(prev, INTERNAL_IDPREFIX, strlen(INTERNAL_IDPREFIX)) == 0) return STRcpy(prev);
@@ -21,8 +26,11 @@ static char *mangle(const char *prev, symtable_entry *ent) {
 }
 
 node_st *SYMTABLEMANGLINGIDS_id(node_st *node) {
+    bool check_in_outer =
+        OUTER_SYMTAB && !HTlookup(DATA_SYMTABLEMANGLINGIDS__GET()->seen_ids, ID_USERID(node));
     symtable_entry *ent =
-        symtable_lookup(CUR_SYMTAB, ID_LOGICAL(node) ? ID_LOGICAL(node) : ID_USERID(node));
+        symtable_lookup(check_in_outer ? OUTER_SYMTAB : CUR_SYMTAB, idId(node), NULL);
+
     if (ID_LOGICAL(node)) {
         char *new = mangle(ID_LOGICAL(node), ent);
         MEMfree(ID_LOGICAL(node));
@@ -34,14 +42,24 @@ node_st *SYMTABLEMANGLINGIDS_id(node_st *node) {
 }
 
 node_st *SYMTABLEMANGLINGIDS_fundef(node_st *node) {
-    // Mangle the right sides of declarations with the outer symbol table.
-    for (node_st *decs = FUNBODY_VARDECS(FUNDEF_FUNBODY(node)); decs; decs = VARDECS_NEXT(decs)) {
-        TRAVopt(VARDEC_ARR_DIMS(VARDECS_VARDEC(decs)));
-        TRAVopt(VARDEC_EXPRS(VARDECS_VARDEC(decs)));
-    }
+    symtable *prev     = CUR_SYMTAB;
+    symtable *this_tab = SYMTABLE_SYMTAB(FUNDEF_SYMTABLE(node));
+    CUR_SYMTAB         = this_tab;
+    OUTER_SYMTAB       = prev;
 
-    symtable *prev = CUR_SYMTAB;
-    CUR_SYMTAB     = SYMTABLE_SYMTAB(FUNDEF_SYMTABLE(node));
+    // Right-hand side of declarations.
+    // This is tricky because we have to check if this function already declared a variable on the
+    // right-hand side, and if so use that, otherwise use outer scope.
+    for (node_st *decs = FUNBODY_VARDECS(FUNDEF_FUNBODY(node)); decs; decs = VARDECS_NEXT(decs)) {
+        node_st *dec = VARDECS_VARDEC(decs);
+        TRAVopt(VARDEC_ARR_DIMS(dec));
+        TRAVopt(VARDEC_EXPRS(dec));
+
+        char *id = ID_USERID(VARDEC_ID(dec));
+        HTinsert(DATA_SYMTABLEMANGLINGIDS__GET()->seen_ids, id, id);
+    }
+    HTclear(DATA_SYMTABLEMANGLINGIDS__GET()->seen_ids);
+    OUTER_SYMTAB = NULL;
 
     // Left side of declarations
     for (node_st *decs = FUNBODY_VARDECS(FUNDEF_FUNBODY(node)); decs; decs = VARDECS_NEXT(decs)) {

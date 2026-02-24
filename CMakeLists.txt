@@ -32,6 +32,7 @@ add_executable(civicc
     src/main.c
     src/util.c
     src/global/globals.c
+    src/bytevec.c
 
     # primary name mangling
     src/primary_name_mangling/trav_mangleforloopnames.c
@@ -41,6 +42,7 @@ add_executable(civicc
     src/print/print.c
 
     # parsing
+    src/parse_cleanup/trav_reverseparams.c
     src/scanparse/scanParse.c
     ${FLEX_CivicLexer_OUTPUTS}
     ${BISON_CivicParser_OUTPUTS}
@@ -51,7 +53,6 @@ add_executable(civicc
     src/ctxanalysis/symtablemangling.c
     src/ctxanalysis/trav_checkarrdims.c
     src/ctxanalysis/trav_checkidentifiers.c
-    src/ctxanalysis/trav_freesymtables.c
     src/ctxanalysis/trav_initglobalvars.c
     src/ctxanalysis/trav_initlocalvars.c
     src/ctxanalysis/trav_initsymtables.c
@@ -59,6 +60,15 @@ add_executable(civicc
     # type checking
     src/ctxanalysis/unionfindsolver.c
     src/ctxanalysis/trav_typecheck.c
+
+    # codegen
+    src/codegen/state.c
+    src/codegen/trav_boolcasts.c
+    src/codegen/trav_codegen.c
+    src/codegen/trav_for2while.c
+
+    # cleanup
+    src/cleanup/trav_freesymtables.c
 )
 
 target_compile_options(civicc PRIVATE

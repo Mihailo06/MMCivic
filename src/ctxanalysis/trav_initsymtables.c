@@ -67,8 +67,10 @@ node_st *INITSYMTABLES_globaldec(node_st *node) {
     if (checkdupSym(node, idId(GLOBALDEC_ID(node)))) return node; // error
 
     symtable_entry ent = {
-        .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
-        .type = GLOBALDEC_TYPE(node),
+        .kind    = SYMTABLE_ENTRY_KIND_VARIABLE,
+        .type    = GLOBALDEC_TYPE(node),
+        .linkage = SYMTABLE_ENTRY_LINKAGE_EXTERN,
+        .user_id = ID_USERID(GLOBALDEC_ID(node)),
     };
 
     symtable_insert(peekSymtab(), idId(GLOBALDEC_ID(node)), ent);
@@ -79,8 +81,11 @@ node_st *INITSYMTABLES_globaldef(node_st *node) {
     if (checkdupSym(node, idId(GLOBALDEF_ID(node)))) return node; // error
 
     symtable_entry ent = {
-        .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
-        .type = GLOBALDEF_TYPE(node),
+        .kind    = SYMTABLE_ENTRY_KIND_VARIABLE,
+        .type    = GLOBALDEF_TYPE(node),
+        .linkage = GLOBALDEF_EXPORT(node) ? SYMTABLE_ENTRY_LINKAGE_EXPORT
+                                          : SYMTABLE_ENTRY_LINKAGE_INTERNAL,
+        .user_id = ID_USERID(GLOBALDEF_ID(node)),
     };
 
     symtable_insert(peekSymtab(), idId(GLOBALDEF_ID(node)), ent);
@@ -88,16 +93,23 @@ node_st *INITSYMTABLES_globaldef(node_st *node) {
 }
 
 node_st *INITSYMTABLES_fundec(node_st *node) {
-    FUNDEC_SYMTABLE(node) = ASTsymtable(pushNewSymtab());
+    DATA_INITSYMTABLES__GET()->cur_link = SYMTABLE_ENTRY_LINKAGE_EXTERN;
+    FUNDEC_SYMTABLE(node)               = ASTsymtable(pushNewSymtab());
     TRAVchildren(node);
     popSymtab();
     return node;
 }
 
 node_st *INITSYMTABLES_fundef(node_st *node) {
+    bool is_nested = DATA_INITSYMTABLES__GET()->func_depth++ > 0;
+    DATA_INITSYMTABLES__GET()->cur_link =
+        is_nested ? SYMTABLE_ENTRY_LINKAGE_LOCAL
+                  : (FUNDEF_EXPORT(node) ? SYMTABLE_ENTRY_LINKAGE_EXPORT
+                                         : SYMTABLE_ENTRY_LINKAGE_INTERNAL);
     FUNDEF_SYMTABLE(node) = ASTsymtable(pushNewSymtab());
     TRAVchildren(node);
     popSymtab();
+    DATA_INITSYMTABLES__GET()->func_depth--;
     return node;
 }
 
@@ -112,8 +124,11 @@ node_st *INITSYMTABLES_voidfunheader(node_st *node) {
         if (checkdupSym(node, idId(PARAMETER_ID(param)))) continue; // error
 
         symtable_entry ent = {
-            .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
-            .type = PARAMETER_TYPE(param),
+            .kind     = SYMTABLE_ENTRY_KIND_VARIABLE,
+            .type     = PARAMETER_TYPE(param),
+            .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+            .is_param = true,
+            .user_id  = ID_USERID(PARAMETER_ID(param)),
         };
 
         symtable_insert(peekSymtab(), idId(PARAMETER_ID(param)), ent);
@@ -134,6 +149,8 @@ node_st *INITSYMTABLES_voidfunheader(node_st *node) {
         .type     = BT_NULL,
         .arity    = param_count,
         .argtypes = argtypes,
+        .linkage  = DATA_INITSYMTABLES__GET()->cur_link,
+        .user_id  = ID_USERID(VOIDFUNHEADER_ID(node)),
     };
 
     symtable_insert(peekSymtab(), idId(VOIDFUNHEADER_ID(node)), ent);
@@ -156,8 +173,11 @@ node_st *INITSYMTABLES_basicfunheader(node_st *node) {
         if (checkdupSym(node, idId(PARAMETER_ID(param)))) continue;
 
         symtable_entry ent = {
-            .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
-            .type = PARAMETER_TYPE(param),
+            .kind     = SYMTABLE_ENTRY_KIND_VARIABLE,
+            .type     = PARAMETER_TYPE(param),
+            .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+            .is_param = true,
+            .user_id  = ID_USERID(PARAMETER_ID(param)),
         };
 
         symtable_insert(peekSymtab(), idId(PARAMETER_ID(param)), ent);
@@ -179,6 +199,8 @@ node_st *INITSYMTABLES_basicfunheader(node_st *node) {
         .type     = BASICFUNHEADER_TYPE(node),
         .arity    = param_count,
         .argtypes = argtypes,
+        .linkage  = DATA_INITSYMTABLES__GET()->cur_link,
+        .user_id  = ID_USERID(BASICFUNHEADER_ID(node)),
     };
 
     symtable_insert(peekSymtab(), idId(BASICFUNHEADER_ID(node)), ent);
@@ -195,8 +217,11 @@ node_st *INITSYMTABLES_funbody(node_st *node) {
         if (checkdupSym(node, idId(VARDEC_ID(vardec)))) continue; // error
 
         symtable_entry ent = {
-            .kind = SYMTABLE_ENTRY_KIND_VARIABLE,
-            .type = VARDEC_TYPE(vardec),
+            .kind     = SYMTABLE_ENTRY_KIND_VARIABLE,
+            .type     = VARDEC_TYPE(vardec),
+            .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+            .is_param = false,
+            .user_id  = ID_USERID(VARDEC_ID(vardec)),
         };
 
         symtable_insert(peekSymtab(), idId(VARDEC_ID(vardec)), ent);
@@ -208,7 +233,13 @@ node_st *INITSYMTABLES_funbody(node_st *node) {
 }
 
 node_st *INITSYMTABLES_forloop(node_st *node) {
-    symtable_entry ent = { .kind = SYMTABLE_ENTRY_KIND_VARIABLE, .type = BT_int };
+    symtable_entry ent = {
+        .kind     = SYMTABLE_ENTRY_KIND_VARIABLE,
+        .type     = BT_int,
+        .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+        .is_param = false,
+        .user_id  = ID_USERID(FORLOOP_ID(node)),
+    };
     symtable_insert(peekSymtab(), idId(FORLOOP_ID(node)), ent);
 
     TRAVchildren(node);
