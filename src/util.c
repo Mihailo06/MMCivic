@@ -19,7 +19,7 @@ struct ctinfo node_ctinfo(node_st *node) {
 char *genident(void) {
     static int n = 0;
 
-    return STRfmt("__mmcivicc_gen#%d", n++);
+    return STRfmt(INTERNAL_IDPREFIX "_gen#%d", n++);
 }
 
 node_st *genidNode(void) {

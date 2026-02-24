@@ -3,6 +3,8 @@
 #include "ccngen/ast.h"
 #include "palm/ctinfo.h"
 
+#define INTERNAL_IDPREFIX "__mmcivicc"
+
 #define TRAVDATA_STUB(travid)   \
     void travid##_init(void) {} \
     void travid##_fini(void) {}
