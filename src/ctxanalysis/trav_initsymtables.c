@@ -177,7 +177,7 @@ node_st *INITSYMTABLES_basicfunheader(node_st *node) {
             .type     = PARAMETER_TYPE(param),
             .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
             .is_param = true,
-            .user_id  = ID_USERID(PARAMETER_ID(node)),
+            .user_id  = ID_USERID(PARAMETER_ID(param)),
         };
 
         symtable_insert(peekSymtab(), idId(PARAMETER_ID(param)), ent);
