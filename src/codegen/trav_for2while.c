@@ -2,6 +2,7 @@
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
 #include "ctxanalysis/symtable.h"
+#include "palm/str.h"
 #include "util.h"
 
 TRAVDATA_STUB(FOR2WHILE)
@@ -34,7 +35,7 @@ node_st *FOR2WHILE_forloop(node_st *node) {
             end_id,
             new_loopvar_ent
         );
-        end_expr            = ASTvar(NULL, end_id_node = ASTid(end_id));
+        end_expr            = ASTvar(NULL, end_id_node = ASTid(STRcpy(end_id), end_id));
         EXPR_TYPE(end_expr) = BT_int;
         FUNBODY_VARDECS(DATA_FOR2WHILE__GET()->cur_func) = ASTvardecs(
             ASTvardec(NULL, NULL, CCNcopy(end_id_node), BT_int, true),
@@ -52,7 +53,7 @@ node_st *FOR2WHILE_forloop(node_st *node) {
             step_id,
             new_loopvar_ent
         );
-        step_expr            = ASTvar(NULL, step_id_node = ASTid(step_id));
+        step_expr            = ASTvar(NULL, step_id_node = ASTid(STRcpy(step_id), step_id));
         EXPR_TYPE(step_expr) = BT_int;
         FUNBODY_VARDECS(DATA_FOR2WHILE__GET()->cur_func) = ASTvardecs(
             ASTvardec(NULL, NULL, CCNcopy(step_id_node), BT_int, true),
