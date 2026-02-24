@@ -186,7 +186,8 @@ phase CodegenPhase {
                 Var,
                 Num,
                 Float,
-                Bool
+                Bool,
+                Ternary
             },
             travdata {
                 user codegen_stateptr state,
@@ -254,7 +255,7 @@ enum BinOpType {
 nodeset Declaration = {FunDec, FunDef, GlobalDec, GlobalDef};
 nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
 nodeset Expr{
-    nodes = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr},
+    nodes = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr, Ternary},
 
     attributes {
         BasicType type
@@ -612,5 +613,13 @@ node Float {
 node Bool {
     attributes {
         bool val { constructor }
+    }
+};
+
+node Ternary {
+    children {
+        Expr cond { constructor },
+        Expr then { constructor },
+        Expr els { constructor }
     }
 };

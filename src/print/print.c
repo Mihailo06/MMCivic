@@ -431,6 +431,18 @@ node_st *PRTbool(node_st *node) {
     return node;
 }
 
+node_st *PRTternary(node_st *node) {
+    EXPRPOS({
+        TRAVdo(TERNARY_COND(node));
+        printf(" ? ");
+        TRAVdo(TERNARY_THEN(node));
+        printf(" : ");
+        TRAVdo(TERNARY_ELS(node));
+    })
+
+    return node;
+}
+
 #define MK_NOOP_PRINT(nodetype)                            \
     node_st *PRT##nodetype(node_st *node) { return node; }
 
