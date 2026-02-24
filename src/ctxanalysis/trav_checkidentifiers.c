@@ -35,6 +35,13 @@ node_st *CHECKIDENTIFIERS_fundec(node_st *node) {
 
 node_st *CHECKIDENTIFIERS_fundef(node_st *node) {
     DBUG_ASSERT(CUR_SYMTAB, "fundef entered without current symtable!");
+    if(CUR_SYMTAB)
+    {
+        printf("isnt null\n");
+    }
+    if(FUNDEF_SYMTABLE(node)){
+        printf("also isn't null \n");
+    }
     DBUG_ASSERT(
         CUR_SYMTAB == symtable_get_parent(SYMTABLE_SYMTAB(FUNDEF_SYMTABLE(node))),
         "fundef symtable has invalid parent pointer!"

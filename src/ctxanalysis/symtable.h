@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 #include "ccngen/enum.h"
-#include "ccngen/ast.h"
 
 typedef struct symtable symtable;
+typedef struct ccn_node node_st;
 
 enum SymtableEntryKind {
     SYMTABLE_ENTRY_KIND_VARIABLE,

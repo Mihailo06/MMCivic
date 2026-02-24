@@ -15,12 +15,16 @@ TRAVDATA_STUB(INITLOCALVARS)
 
 static int getArrLength(node_st *node)
 {
-    int i = 0;
-    while(EXPRS_EXPR(node))
+    int i = 1;
+
+    while(EXPRS_NEXT(node))
     {
         i++;
+
         node = EXPRS_NEXT(node);
+
     }
+                    printf("count is: %i \n", i);
 
     return i;
 }
@@ -36,7 +40,10 @@ static node_st *reduceVarArray(node_st *node) {
                 red = ASTbinop(red, EXPRS_EXPR(next), BO_mul);
                 next = EXPRS_NEXT(next);
             }
-            VARDEC_ARR_DIMS(node) = ASTexprs(red, NULL);
+            printf("\n1\n");
+            // node_st **old = &VARDEC_ARR_DIMS(node);
+            VARDEC_ARR_DIMS(node) = ASTexprs(red, NULL); // 4 allocs 128 bytes
+            printf("\n2\n");
         }
     }
     return red;
@@ -62,11 +69,13 @@ node_st *reverse_params(node_st *list)
 node_st *INITLOCALVARS_program(node_st *node)
 {
     CUR_SYMTAB = SYMTABLE_SYMTAB(PROGRAM_SYMTABLE(node));
+    TRAVchildren(node);
 
     return node;
 }
 
 node_st *INITLOCALVARS_fundef(node_st *node) {
+
     node_st *params = NULL;
     if(NODE_TYPE(FUNDEF_FUNHEADER(node)) == NT_VOIDFUNHEADER)
     {
@@ -110,7 +119,6 @@ node_st *INITLOCALVARS_fundef(node_st *node) {
 node_st *INITLOCALVARS_funbody(node_st *node) {
     DATA_INITLOCALVARS__GET()->fun_stmts   = FUNBODY_STMTS(node);
     DATA_INITLOCALVARS__GET()->fun_vardecs = FUNBODY_VARDECS(node);
-
     TRAVopt(FUNBODY_VARDECS(node));
 
     FUNBODY_STMTS(node)   = DATA_INITLOCALVARS__GET()->fun_stmts;
@@ -120,11 +128,20 @@ node_st *INITLOCALVARS_funbody(node_st *node) {
 }
 
 node_st *INITLOCALVARS_vardec(node_st *node) {
+    printf("v\n");
     reduceVarArray(node);
-    if (!VARDEC_EXPRS(node)) return node; // no initializer
-
+    printf("v\\nn");
+    
+    
+    if (!VARDEC_EXPRS(node)) 
+    {
+        printf("return\n");
+        return node; // no initializer
+    }
+    printf("-1\n");
     if (VARDEC_ARR_DIMS(node)) {
         // array
+        printf("arrdims\n");
         genArrayInit(
             &DATA_INITLOCALVARS__GET()->fun_stmts,
             &DATA_INITLOCALVARS__GET()->fun_vardecs,
@@ -138,48 +155,63 @@ node_st *INITLOCALVARS_vardec(node_st *node) {
     } else {
         // single expr
         node_st *expr = EXPRS_EXPR(ARREXPRS_EXPRS(VARDEC_EXPRS(node)));
+        int i = 0;
+        printf("%i\n",i++);
         if(NODE_TYPE(expr) == NT_ARREXPR)
         {
-
-            symtable_entry *ent = symtable_lookup(CUR_SYMTAB, ID_ID(ARREXPR_ID(expr)));
+            printf("%i\n",i++);
             
+            symtable_entry *ent = symtable_lookup(CUR_SYMTAB, ID_ID(ARREXPR_ID(expr)));
+            printf("test\n");
             if (!ent || !ent->exprs) {
-                CTIerror("Array '%s' not declared or has no dimensions", ID_ID(ARREXPR_ID(expr)));
+                CTI(CTI_ERROR, true, "Array '%s' not declared or has no dimensions", ID_ID(ARREXPR_ID(expr)));
+                
                 return node;
             }
-
+            printf("%i\n",i++);
+            
+            
             node_st *src = ent->exprs;
             node_st *acc = ARREXPR_INDICES(expr);
-
-            int src_count = getArrLength(src);
+            printf("%i\n",i++);
+            
+            int src_count = getArrLength(src);                    printf("%i\n",i++);
+            
             int acc_count = getArrLength(acc); 
+            printf("%i\n",i++);
+            
             if(acc_count != src_count)
             {
-                CTI(CTI_ERROR, true, "Array access arity mismatch in assignment '%s' = '%s'", ID_ID(VARDEC_ID(node)), ID_ID(ARREXPR_ID(expr)));
+                CTI(CTI_ERROR, true, "Array access arity mismatch in assignment '%s:%i' = '%s:%i'", ID_ID(VARDEC_ID(node)), acc_count, ID_ID(ARREXPR_ID(expr)), src_count);
                 CCNerrorAction();
             }
-
+            
             if(src_count == 0)
             {
                 printf("source array index count is 0, this shouldn't happen here!\n");
                 return node;
             }
-
+            
             if(src_count != 1)
             {
+                printf("%i\n",i++);
                 
-                node_st *dim = ASTbinop(ASTnum(1), EXPRS_EXPR(src), BO_mul);
-                node_st *root = ASTbinop(ASTnum(0), dim, BO_add);
-
+                node_st *dim = ASTbinop(ASTnum(1), CCNcopy(EXPRS_EXPR(src)), BO_mul); //leaks 8B, 24B, 56B, 56B
+                node_st *root = ASTbinop(ASTnum(0), dim, BO_add); // leaks 8B, 24B, 56B, 56B
+                printf("%i\n",i++);
+                
                 src = EXPRS_NEXT(src);
                 
                 acc = EXPRS_NEXT(acc);
+                printf("accessed\n");
                 node_st *acc_it = acc;
                 while(acc_it)
                 {
-                    dim = ASTbinop(dim, acc_it, BO_mul);
+                    dim = ASTbinop(dim, CCNcopy(acc_it), BO_mul); // leaks: 24B, 56B
                     acc_it = EXPRS_NEXT(acc_it);
                 }
+                
+                printf("%i\n",i++);
                 
                 while(EXPRS_NEXT(src))
                 {
@@ -187,24 +219,31 @@ node_st *INITLOCALVARS_vardec(node_st *node) {
                     src = EXPRS_NEXT(src);
                     acc = EXPRS_NEXT(acc);
                     acc_it = acc;
-
+                    
                     while(acc_it)
                     {
-                        dim = ASTbinop(dim, acc_it, BO_mul);
+                        dim = ASTbinop(dim, CCNcopy(acc_it), BO_mul);
                         acc_it = EXPRS_NEXT(acc_it);
                     }
                     
                     root = ASTbinop(root, dim, BO_add);
                 }
-
-                expr = root;
+                printf("%i\n",i++);
+                
+                // CCNfree(expr);
+                CCNfree(ARREXPR_INDICES(expr));
+                ARREXPR_INDICES(expr) = ASTexprs(root, NULL);
+                //CCNfree(ARREXPR_INDICES(EXPRS_EXPR(ARREXPRS_EXPRS(VARDEC_EXPRS(node))))); // I don't think these two lines are needed
+                //ARREXPR_INDICES(EXPRS_EXPR(ARREXPRS_EXPRS(VARDEC_EXPRS(node)))) = root;//
+                
                 
             }
+            printf("%i\n",i++);
             
         }   
-
+        
         DATA_INITLOCALVARS__GET()->fun_stmts = ASTstmts(
-            ASTassign(ASTvarlet(NULL, CCNcopy(VARDEC_ID(node))), CCNcopy(expr)),
+            ASTassign(ASTvarlet(NULL, CCNcopy(VARDEC_ID(node))), CCNcopy(expr)), // freed??
             DATA_INITLOCALVARS__GET()->fun_stmts
         );
     }

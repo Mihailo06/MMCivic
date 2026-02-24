@@ -5,22 +5,22 @@
 //int no_initializer;
 
 //int[3] splat_1d = 1;
-//int[3] arr_1d = [1, 2, 3];
+//int[3,3,3] arr_1d = [[[1, 2, 3],[1,2,3],[1,2,3]],[[1, 2, 3],[1,2,3],[1,2,3]],[[1, 2, 3],[1,2,3],[1,2,3]]];
 
 //int[two(), 2, 3] splat_2d = 0;
-//int[3, 2] arr_2d = [[1, 2], [3, 4], [5, 6]];
+int[4, 3] arr_2d = [[1, 2], [3, 4], [5, 6]];
+//int[4, 5, 6] global;
 
 //int[1] not_splat = [42];
 
-int twos = 0;
+//int twos = 0;
 int two(int c, int[n,m] b) {
-    int[2,3] d;
-    int[2,3] a = 1;
-    twos = twos + 1;
+    //int[2,3] d;
+  //  int a = arr_2d[1,1];
+    //twos = arr_1d[1,1];
+    //twos = twos + 1;
+        int var = arr_2d[2, 2];
+
     return 2;
 }
 
-//void foo() {
-    //int[2, two()] a = two();
-  //  int b = 42;
-//}

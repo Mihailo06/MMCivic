@@ -29,16 +29,6 @@ phase ContextAnalysis {
             nodes = { GlobalDef, VarDec }
         };
 
-        traversal InitGlobalVars {
-            uid = InitGlobalVars_,
-            nodes = { Program, GlobalDef, FunBody, Declarations },
-            travdata {
-                Stmts init_stmts,
-                VarDecs init_decs
-            }
-        };
-
-
         traversal InitSymtables {
             uid = InitSymtables_,
             nodes = {
@@ -61,6 +51,15 @@ phase ContextAnalysis {
             nodes = Scope | WithSymbolReferences,
             travdata {
                 user symtable_ptr current_symtab
+            }
+        };
+        
+        traversal InitGlobalVars {
+            uid = InitGlobalVars_,
+            nodes = { Program, GlobalDef, FunBody, Declarations },
+            travdata {
+                Stmts init_stmts,
+                VarDecs init_decs
             }
         };
 
