@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ccngen/ast.h"
+#include "ctxanalysis/symtable.h"
 
 /**
  * Generate an array ininitialitzer in the form of potentially nested for-loops.
@@ -14,6 +15,7 @@
  * @param update_indices If set, updates `index_exprs` to include intermediate identifiers.
  * @param is_splat If set, this is an initialization of all elements of an array to one scalar
  *                 value. Caller asserts that arrexprs has the appropriate form.
+ * @param symtable If set, add newly created symbols to the symbol table.
  */
 void genArrayInit(
     node_st      **out_stmts,
@@ -23,5 +25,6 @@ void genArrayInit(
     node_st       *index_exprs,
     node_st       *arrexprs,
     bool           update_indices,
-    bool           is_splat
+    bool           is_splat,
+    symtable      *symtab
 );
