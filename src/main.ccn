@@ -5,7 +5,6 @@ start phase RootPhase {
         pass SPdoScanParse;
         ParseCleanup;
         PrimaryNameMangling;
-        TypeChecking;
         ContextAnalysis;
         CodegenPhase;
         Demo;
@@ -50,19 +49,6 @@ phase PrimaryNameMangling {
                 uint32 cur_idx,
                 uint32 this_idx,
                 string idxid
-            }
-        };
-    }
-};
-
-phase TypeChecking {
-    actions {
-        traversal TypeCheck {
-            uid = TypeCheck_,
-            travdata {
-                user htable_stptr solver,
-                user htable_stptr parent,
-                user htable_stptr ids
             }
         };
     }
@@ -114,6 +100,15 @@ phase ContextAnalysis {
                 // initializer. We check against this when we encounter one on the right-hand side
                 // to determine what symtable to look in.
                 user htable_stptr seen_ids
+            }
+        };
+
+        traversal TypeCheck {
+            uid = TypeCheck_,
+            travdata {
+                user htable_stptr solver,
+                user htable_stptr parent,
+                user htable_stptr ids
             }
         };
 
