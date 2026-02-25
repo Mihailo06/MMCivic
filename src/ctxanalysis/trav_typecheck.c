@@ -38,7 +38,7 @@ enum BasicType gettermBT(term *t) {
             return gettermBT(f->ret);
             break;
         case TERM_TYPEVAR: return gettermBT(uf_find(t, DATA_TYPECHECK__GET()->parent)); break;
-        case TERM_VOID: return BT_NULL;
+        case TERM_VOID:    return BT_NULL;
         default:
             fprintf(stderr, "Typechecking error, couldn't find type for term type %d\n", t->type);
             return BT_NULL;
@@ -558,7 +558,7 @@ node_st *TYPECHECK_binop(node_st *node) {
     term *t_r = uf_find(typeVariable(BINOP_RIGHT(node)), DATA_TYPECHECK__GET()->parent);
     uf_unify(t_l, typeVariable(BINOP_RIGHT(node)), DATA_TYPECHECK__GET()->parent);
 
-    if (BINOP_OP(node) == BO_and || BINOP_OP(node) == BO_or) {  // &&, ||
+    if (BINOP_OP(node) == BO_and || BINOP_OP(node) == BO_or) { // &&, ||
         uf_unify(TYPE_BOOL, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         uf_unify(t_l, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         BINOP_TYPE(node) = BT_bool;
@@ -581,10 +581,15 @@ node_st *TYPECHECK_binop(node_st *node) {
             BINOP_TYPE(node) = BT_int;
         } else if (t_l->type == TERM_FLOAT || t_r->type == TERM_FLOAT) { // +,-,*,/
             BINOP_TYPE(node) = BT_float;
-        } else if ((BINOP_OP(node) == BO_add || BINOP_OP(node) == BO_mul) && (t_l->type == TERM_BOOL || t_r->type == TERM_BOOL)) { // +,*
+        } else if ((BINOP_OP(node) == BO_add || BINOP_OP(node) == BO_mul)
+                   && (t_l->type == TERM_BOOL || t_r->type == TERM_BOOL)) { // +,*
             BINOP_TYPE(node) = BT_bool;
         } else { // -,/
-            fprintf(stderr, "TYPECHECK ERROR: wrong expression types used for div/sub ops %i\n", NODE_BLINE(node));
+            fprintf(
+                stderr,
+                "TYPECHECK ERROR: wrong expression types used for div/sub ops %i\n",
+                NODE_BLINE(node)
+            );
         }
     }
 
