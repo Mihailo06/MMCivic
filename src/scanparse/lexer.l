@@ -35,10 +35,19 @@ int yycolumn = 1;
 %option noyywrap
 %option nounput
 %option yylineno
+%x comment 
+
 
 
 %%
-("//".*"\n")               { global.line += 1;}
+("//".*"\n")               { global.line += 1; }
+
+"/*"                       { BEGIN(comment); }
+
+<comment>[^*\n]*           { /* eat anything not '*' or '\n' */ }
+<comment>"*"+[^*/\ n ]*    { /* eat '*'s not followed by '/'s */ }
+<comment>"\n"            { global.line += 1; }
+<comment>"*"+"/"           { BEGIN(INITIAL); }
 
 "{"                        { FILTER( CURLY_BRACKET_L);}
 "}"                        { FILTER( CURLY_BRACKET_R);}
@@ -110,8 +119,8 @@ int yycolumn = 1;
                              yyless(1);
                            }
 
-[ \t]                      { global.col += yyleng;
-                           }
+[ \t]                      { global.col += yyleng; }
+
 %%
 
 static inline void token_action() {

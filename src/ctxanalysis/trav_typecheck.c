@@ -38,6 +38,7 @@ enum BasicType gettermBT(term *t) {
             return gettermBT(f->ret);
             break;
         case TERM_TYPEVAR: return gettermBT(uf_find(t, DATA_TYPECHECK__GET()->parent)); break;
+        case TERM_VOID: return BT_NULL;
         default:
             fprintf(stderr, "Typechecking error, couldn't find type for term type %d\n", t->type);
             return BT_NULL;
@@ -557,31 +558,33 @@ node_st *TYPECHECK_binop(node_st *node) {
     term *t_r = uf_find(typeVariable(BINOP_RIGHT(node)), DATA_TYPECHECK__GET()->parent);
     uf_unify(t_l, typeVariable(BINOP_RIGHT(node)), DATA_TYPECHECK__GET()->parent);
 
-    if (BINOP_OP(node) == BO_and || BINOP_OP(node) == BO_or) {
+    if (BINOP_OP(node) == BO_and || BINOP_OP(node) == BO_or) {  // &&, ||
         uf_unify(TYPE_BOOL, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         uf_unify(t_l, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         BINOP_TYPE(node) = BT_bool;
-    } else if (BINOP_OP(node) == BO_mod) {
+    } else if (BINOP_OP(node) == BO_mod) { // %
         uf_unify(TYPE_INT, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         uf_unify(t_l, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         BINOP_TYPE(node) = BT_int;
-    } else if (BINOP_OP(node) == BO_eq || BINOP_OP(node) == BO_ne) {
+    } else if (BINOP_OP(node) == BO_eq || BINOP_OP(node) == BO_ne) { // ==, !=
         uf_unify(TYPE_BOOL, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         BINOP_TYPE(node) = BT_bool;
     } else if (BINOP_OP(node) == BO_ge || BINOP_OP(node) == BO_gt || BINOP_OP(node) == BO_le
-               || BINOP_OP(node) == BO_lt) {
+               || BINOP_OP(node) == BO_lt) { // >=, >, <=, <
         forbid_bool(t_l, DATA_TYPECHECK__GET()->parent);
         uf_unify(TYPE_BOOL, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         BINOP_TYPE(node) = BT_bool;
-    } else {
+    } else { // +,-,*,/
         forbid_bool(t_l, DATA_TYPECHECK__GET()->parent);
         uf_unify(t_l, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         if (t_l->type == TERM_INT || t_r->type == TERM_INT) {
             BINOP_TYPE(node) = BT_int;
         } else if (t_l->type == TERM_FLOAT || t_r->type == TERM_FLOAT) {
             BINOP_TYPE(node) = BT_float;
+        } else if (t_l->type == TERM_BOOL || t_r->type == TERM_BOOL) {
+            BINOP_TYPE(node) = BT_bool;
         } else {
-            fprintf(stderr, "WARNING: binop type still unknown, this shouldn't happen\n");
+            fprintf(stderr, "WARNING: binop type still unknown, this shouldn't happen %i\n", NODE_BLINE(node));
         }
     }
 
