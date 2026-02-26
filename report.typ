@@ -175,7 +175,68 @@ Consequently, the order of local variables as allocated on the stack in the emit
 does not generally match the declared order of variables in source code.
 
 = Our Typechecker <typechecker>
-// TODO(mihailo)
+We implemented our typechecker using a union-find (disjoint-set union) data structure,
+as opposed to a naive bare-bones traversal approach, avoiding having to directly compare, check and infer types in the traversal.
+It is based on the Damas-Hindley-Milner type system for the lambda calculus with parametric polymorphism.
+One advantage of parametric polymorphism is that type inference and type checking can be realised in the same algorithm.
+We use path compression to flatten the tree and union by rank, which yields practically constant time per operation,
+due to the type constraints being resolved by unifying the roots via find operations.
+The type system can be formally described using civics syntax rules, building on this, typing rules are used 
+to define how expressions and types are related. The type checker is complete with respect
+to its ability to infer the most general type without depending on the programmer for type annotations.
+This is achieved with type rules, which derive the type constraints from the programs AST.
+A program is typeable if the derived type rules are satisfied.
+We believe that our implementation, although using a more advanced algorithm, is more scalable
+and requires less overall complexity, considering we only have to call the unify function for each type terms in the traversal
+and leave the actual type checking and inference over to the union-find-solver. 
+
+Logically we made the actual union-find-solver in a seperate file where every typeterm is represented by a term struct with the following term types:
+
+```c
+typedef enum {
+    TERM_TYPEVAR,
+    TERM_INT,
+    TERM_FLOAT,
+    TERM_BOOL,
+    TERM_VOID,
+    TERM_FUNCTION
+} term_type_t;
+```
+
+For our civic language, we require the 3 basic types float, int and bool,
+a void type for functions without a return value, 
+a function type to derive function typeterms and a typevar for identifiers.
+
+The typeterms for our implementation are defined as following:
+```
+$tau = int | bool | float | void | ($tau, ..., $tau ) → $tau | $alpha
+```
+
+Our union-find-solver contains 4 static terms for the 3 basic types and void,
+for cases where type checking/ inference is trivial.
+
+In the following examples we can derive for the BasicType attribute that it's a TYPE_INT,
+for the right hand side of the assignment that the expression is a TYPE_FLOAT
+and that the BasicType enum for fun is a TYPE_VOID.
+
+```c
+int a;
+b = 1.0;
+void fun(){}
+```
+
+These trivial term of the first BasicType enum will then be used to derive the types of the identifier a when unifying them, 
+which will initially have a typevar term, to ensure correctness when accessing the variable later in the code.
+
+Typevars are special term structs which also store an id, which is why it's important that this traversal happens after the second name mangling (discussed in @symtables).
+We deemed this to be a way simpler method to ensure correctness for nested variables, rather than integrating the symbol tables into our union-find-solver.
+
+Function typeterms also require a new struct, which contains an array of terms for the parameter types, the length of the parameter array and the return typeterm.
+This is required for type checking return statements and procedure calls. 
+During a return statement of a function you need to unify the return statement with the function return type, along with possible return values.
+And to unify two function types, you need to unify the return terms, the parameter array length and the individual parameter terms.
+Which would also for instance allow us to implement generic functions without adding much complexity using the parametric polymorphism mentioned inbeforehere. 
+// TODO(mihailo), continue with the union-find method implementations and mention the hashtables we used and problems we faced along with the solutions we used
 
 = The Code Generation Backend <codegen>
 Instead of directly emitting generated assembly code to a file or `stdout` or representing assembly
