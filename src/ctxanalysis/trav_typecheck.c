@@ -563,7 +563,6 @@ node_st *TYPECHECK_dowhileloop(node_st *node) {
 }
 
 node_st *TYPECHECK_forloop(node_st *node) {
-    uf_unify(TYPE_INT, getBTterm(FORLOOP_TYPE(node)), DATA_TYPECHECK__GET()->parent);
     uf_unify(TYPE_INT, typeVariable(FORLOOP_ASSIGNEXPR(node)), DATA_TYPECHECK__GET()->parent);
     uf_unify(TYPE_INT, typeVariable(FORLOOP_ID(node)), DATA_TYPECHECK__GET()->parent);
 

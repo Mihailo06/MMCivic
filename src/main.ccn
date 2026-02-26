@@ -535,9 +535,6 @@ node ForLoop {
         Id id { constructor }
     },
 
-    attributes {
-        BasicType type { constructor }
-    },
     lifetime {
         allowed (-> CodegenPhase.For2While]
     }

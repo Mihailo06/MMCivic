@@ -182,8 +182,7 @@ void genArrayInit(
                 ASTvar(NULL, CCNcopy(size_ids[i - 1])),
                 NULL,
                 ASTblock(ASTstmts(inner_stmt, NULL)),
-                index_ids[i - 1],
-                BT_int
+                index_ids[i - 1]
             );
         }
         *out_stmts = ASTstmts(inner_stmt, *out_stmts);
