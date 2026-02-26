@@ -444,19 +444,7 @@ node_st *CODEGEN_return(node_st *node) {
 }
 
 ////////// EXPRESSIONS //////////
-int getbttype(enum BasicType type)
-{
-    switch(type)
-    {
-        case BT_int : return 1;
-            break;
-        case BT_float : return 2;
-            break;
-        case BT_bool : return 3;
-            break;
-        default: return 99;
-    }
-}
+
 node_st *CODEGEN_binop(node_st *node) {
     codegen_func  *func  = STATE->functions;
     enum BasicType ltype = EXPR_TYPE(BINOP_LEFT(node)), rtype = EXPR_TYPE(BINOP_RIGHT(node));
@@ -477,7 +465,13 @@ node_st *CODEGEN_binop(node_st *node) {
         case BO_ne:
         case BO_add:
         case BO_mul:
-            DBUG_ASSERT(ltype == rtype, "unequal types on binop, %i = %i, line %i", getbttype(ltype), getbttype(rtype), NODE_BLINE(node));
+            DBUG_ASSERT(
+                ltype == rtype,
+                "unequal types on binop, %i != %i, line %i",
+                ltype,
+                rtype,
+                NODE_BLINE(node)
+            );
             TRAVdo(BINOP_LEFT(node));
             TRAVdo(BINOP_RIGHT(node));
             bv_printf(

@@ -109,7 +109,12 @@ static void *make_typevar_cb(void *key) {
 }
 
 term *typeVariable(node_st *node) {
-    printf("Creating/looking up typevar for node %p  type=%d, line= %i  ", (void*)node, NODE_TYPE(node), NODE_BLINE(node));
+    printf(
+        "Creating/looking up typevar for node %p  type=%d, line= %i  ",
+        (void *) node,
+        NODE_TYPE(node),
+        NODE_BLINE(node)
+    );
     void *key;
 
     if (NODE_TYPE(node) == NT_ID) {
@@ -119,9 +124,19 @@ term *typeVariable(node_st *node) {
         if (id_node == NULL) {
             id_node = node;
             HTinsert(DATA_TYPECHECK__GET()->ids, name, id_node);
-            printf("New id node for '%s': node %p, line:%i \n", name, (void*)id_node, NODE_BLINE(id_node));
+            printf(
+                "New id node for '%s': node %p, line:%i \n",
+                name,
+                (void *) id_node,
+                NODE_BLINE(id_node)
+            );
         } else {
-            printf("Reusing old id node for '%s': node %p, line:%i\n", name, (void*)id_node, NODE_BLINE(node));
+            printf(
+                "Reusing old id node for '%s': node %p, line:%i\n",
+                name,
+                (void *) id_node,
+                NODE_BLINE(node)
+            );
         }
 
         key = id_node;
@@ -181,8 +196,11 @@ void uf_unify(term *t1, term *t2, htable_st *parent) {
             function_type *fun_y = (function_type *) y;
 
             if (fun_x->size != fun_y->size) {
-                printf("\n\nTYPE ERROR: function arity mismatch! %zu = %zu\n\n", fun_x->size,
-                fun_y->size);
+                printf(
+                    "\n\nTYPE ERROR: function arity mismatch! %zu = %zu\n\n",
+                    fun_x->size,
+                    fun_y->size
+                );
             } else {
                 HTinsert(parent, x, y);
 
@@ -214,18 +232,12 @@ void printterm(term *t) {
         return;
     }
 
-    switch(t->type)
-    {
-    case TERM_INT : printf("int");
-        break;
-    case TERM_FLOAT : printf("float");
-        break;
-    case TERM_BOOL : printf("bool");
-        break;
-    case TERM_TYPEVAR : printf("a%d", ((typevar*)t)->id);
-        break;
-    default : printf("?%d", (int)t->type);
-        break;
+    switch (t->type) {
+        case TERM_INT:     printf("int"); break;
+        case TERM_FLOAT:   printf("float"); break;
+        case TERM_BOOL:    printf("bool"); break;
+        case TERM_TYPEVAR: printf("a%d", ((typevar *) t)->id); break;
+        default:           printf("?%d", (int) t->type); break;
     }
 }
 

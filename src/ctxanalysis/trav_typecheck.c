@@ -26,11 +26,10 @@ term *getBTterm(enum BasicType type) {
             break;
     }
     return NULL;
-}    
+}
 
-enum BasicType findgettermBT(term *t)
-{
-        function_type *f;
+enum BasicType findgettermBT(term *t) {
+    function_type *f;
     switch (t->type) {
         case TERM_INT:   return BT_int; break;
         case TERM_BOOL:  return BT_bool; break;
@@ -39,7 +38,10 @@ enum BasicType findgettermBT(term *t)
             f = (function_type *) t;
             return gettermBT(f->ret);
             break;
-        case TERM_TYPEVAR: printf("WARNING: Couldn't find term for typevar in gettermBT(term)\n"); return BT_NULL; break;
+        case TERM_TYPEVAR:
+            printf("WARNING: Couldn't find term for typevar in gettermBT(term)\n");
+            return BT_NULL;
+            break;
         case TERM_VOID: return BT_NULL;
         default:
             fprintf(stderr, "Typechecking error, couldn't find type for term type %d\n", t->type);
@@ -58,14 +60,17 @@ enum BasicType gettermBT(term *t) {
             f = (function_type *) t;
             return gettermBT(f->ret);
             break;
-        case TERM_TYPEVAR: return findgettermBT(uf_find(t, DATA_TYPECHECK__GET()->parent)); break; // currently calling findgettermbt which will always fix the issue, but this might an issue with order of unification    
+        case TERM_TYPEVAR:
+            return findgettermBT(uf_find(t, DATA_TYPECHECK__GET()->parent));
+            break; // currently calling findgettermbt which will always fix the issue, but this
+                   // might an issue with order of unification
         case TERM_VOID: return BT_NULL;
         default:
             fprintf(stderr, "Typechecking error, couldn't find type for term type %d\n", t->type);
             return BT_NULL;
             break;
-    }        
-}    
+    }
+}
 
 static void unify_arrexprs(node_st *arr, term *type) {
     node_st *exprs = NULL;
@@ -492,8 +497,11 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
     term    *calle_type = uf_find(typeVariable(calle_id), DATA_TYPECHECK__GET()->parent);
 
     if (calle_type->type != TERM_FUNCTION) {
-        fprintf(stderr, "ERROR: CALLED PROCEDURECALL \"%s\" IS NOT A FUNCTION\n",
-        ID_LOGICAL(calle_id));
+        fprintf(
+            stderr,
+            "ERROR: CALLED PROCEDURECALL \"%s\" IS NOT A FUNCTION\n",
+            ID_LOGICAL(calle_id)
+        );
         return node;
     }
 
@@ -508,8 +516,12 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
     }
 
     if (arg_count != ft->size) {
-        fprintf(stderr, "ERROR: Wrong number of arguments! expected %zu, got %zu\n", ft->size,
-        arg_count);
+        fprintf(
+            stderr,
+            "ERROR: Wrong number of arguments! expected %zu, got %zu\n",
+            ft->size,
+            arg_count
+        );
         return node;
     }
 
