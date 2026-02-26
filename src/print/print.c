@@ -315,7 +315,7 @@ node_st *PRTdowhileloop(node_st *node) {
 }
 
 node_st *PRTforloop(node_st *node) {
-    printf("%sfor (%s %s = ", padstr(), typeName(FORLOOP_TYPE(node)), ID_ID(FORLOOP_ID(node)));
+    printf("%sfor (int %s = ", padstr(), ID_ID(FORLOOP_ID(node)));
     EXPRPOS({ TRAVopt(FORLOOP_ASSIGNEXPR(node)); })
     printf(", ");
     EXPRPOS({ TRAVopt(FORLOOP_WHILEEXPR(node)); })
