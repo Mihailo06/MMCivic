@@ -1,8 +1,9 @@
 %{
 
+#include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
@@ -35,10 +36,17 @@ int yycolumn = 1;
 %option noyywrap
 %option nounput
 %option yylineno
-
+%x comment
 
 %%
-("//".*"\n")               { global.line += 1;}
+("//".*"\n")               { global.line += 1; }
+
+"/*"                       { BEGIN(comment); }
+
+<comment>[^*\n]*           { /* eat anything not '*' or '\n' */ }
+<comment>"*"+[^*/\ n ]*    { /* eat '*'s not followed by '/'s */ }
+<comment>"\n"              { global.line += 1; }
+<comment>"*"+"/"           { BEGIN(INITIAL); }
 
 "{"                        { FILTER( CURLY_BRACKET_L);}
 "}"                        { FILTER( CURLY_BRACKET_R);}
@@ -99,7 +107,9 @@ int yycolumn = 1;
                              FILTER( FLOAT);
                            }
 
-[0-9]+                     { yylval.cint = atoi(yytext); 
+[0-9]+                     { long val = strtol(yytext, NULL, 10); 
+                             if (val < INT_MIN || val > INT_MAX) yyerror("int out of range");
+                             yylval.cint = (int) val;
                              FILTER( NUM);
                            }
 

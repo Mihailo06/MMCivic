@@ -5,7 +5,6 @@ start phase RootPhase {
         pass SPdoScanParse;
         ParseCleanup;
         PrimaryNameMangling;
-        TypeChecking;
         ContextAnalysis;
         CodegenPhase;
         Demo;
@@ -50,19 +49,6 @@ phase PrimaryNameMangling {
                 uint32 cur_idx,
                 uint32 this_idx,
                 string idxid
-            }
-        };
-    }
-};
-
-phase TypeChecking {
-    actions {
-        traversal TypeCheck {
-            uid = TypeCheck_,
-            travdata {
-                user htable_stptr solver,
-                user htable_stptr parent,
-                user htable_stptr ids
             }
         };
     }
@@ -117,6 +103,15 @@ phase ContextAnalysis {
             }
         };
 
+        traversal TypeCheck {
+            uid = TypeCheck_,
+            travdata {
+                user htable_stptr solver,
+                user htable_stptr parent,
+                user htable_stptr ids
+            }
+        };
+
         traversal SymtableManglingTabs {
             uid = SymtableManglingTabs_,
             nodes = { Symtable }
@@ -124,10 +119,11 @@ phase ContextAnalysis {
 
         traversal InitLocalVars {
             uid = InitLocalVars_,
-            nodes = { FunBody, VarDec, VarDecs },
+            nodes = { FunDef, FunBody, VarDec, VarDecs },
             travdata {
                 Stmts fun_stmts,
-                VarDecs fun_vardecs
+                VarDecs fun_vardecs,
+                user symtable_ptr cur_symtab
             }
         };
 
@@ -539,9 +535,6 @@ node ForLoop {
         Id id { constructor }
     },
 
-    attributes {
-        BasicType type { constructor }
-    },
     lifetime {
         allowed (-> CodegenPhase.For2While]
     }

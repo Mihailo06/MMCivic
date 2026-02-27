@@ -18,6 +18,11 @@ node_st *INITLOCALVARS_funbody(node_st *node) {
     return node;
 }
 
+node_st *INITLOCALVARS_fundef(node_st *node) {
+    DATA_INITLOCALVARS__GET()->cur_symtab = SYMTABLE_SYMTAB(FUNDEF_SYMTABLE(node));
+    return node;
+}
+
 node_st *INITLOCALVARS_vardec(node_st *node) {
     if (!VARDEC_EXPRS(node)) return node; // no initializer
 
@@ -31,7 +36,8 @@ node_st *INITLOCALVARS_vardec(node_st *node) {
             VARDEC_ARR_DIMS(node),
             VARDEC_EXPRS(node),
             true,
-            VARDEC_IS_SINGLE_EXPR(node)
+            VARDEC_IS_SINGLE_EXPR(node),
+            DATA_INITLOCALVARS__GET()->cur_symtab
         );
     } else {
         // single expr

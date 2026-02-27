@@ -431,9 +431,9 @@ dowhileloop: DO block WHILE BRACKET_L expr BRACKET_R SEMICOLON
              }
              ;
 
-forloop: FOR BRACKET_L basictype ID LET expr COMMA forloopincs BRACKET_R block
+forloop: FOR BRACKET_L INT_TYPE ID LET expr COMMA forloopincs BRACKET_R block
          {
-           $$ = ASTforloop($6, $8, current_forloop_inc_expr, $10, ASTid(NULL, $4), $3);
+           $$ = ASTforloop($6, $8, current_forloop_inc_expr, $10, ASTid(NULL, $4));
          }
          ;
 

@@ -23,6 +23,8 @@ static symtable_entry new_loopvar_ent = {
 };
 
 node_st *FOR2WHILE_forloop(node_st *node) {
+    TRAVchildren(node);
+
     node_st *stmts = NULL;
 
     node_st *end_expr    = FORLOOP_WHILEEXPR(node);
