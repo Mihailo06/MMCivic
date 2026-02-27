@@ -708,7 +708,7 @@ node_st *CODEGEN_ternary(node_st *node) {
     TRAVdo(TERNARY_THEN(node));
     bv_printf(&func->content, CODEGEN_INDENT "jump %s\n%s:\n", endlabel, elselabel);
     TRAVdo(TERNARY_ELS(node));
-    bv_printf(&func->content, CODEGEN_INDENT "%s:\n", endlabel);
+    bv_printf(&func->content, "%s:\n", endlabel);
 
     MEMfree(elselabel);
     MEMfree(endlabel);
