@@ -6,8 +6,8 @@ start phase RootPhase {
         ParseCleanup;
         PrimaryNameMangling;
         ContextAnalysis;
+        CheckTypes;
         CodegenPhase;
-        Demo;
         Cleanup_;
     }
 };
@@ -16,7 +16,7 @@ phase ParseCleanup {
     actions {
         traversal ReverseParams {
             uid = ReverseParams_,
-            nodes = { HeaderParams }
+            nodes = { HeaderParams, Exprs }
         };
     }
 };
@@ -47,8 +47,7 @@ phase PrimaryNameMangling {
             },
             travdata {
                 uint32 cur_idx,
-                uint32 this_idx,
-                string idxid
+                user flmangle_idstack_ptr idxids
             }
         };
     }
@@ -103,15 +102,6 @@ phase ContextAnalysis {
             }
         };
 
-        traversal TypeCheck {
-            uid = TypeCheck_,
-            travdata {
-                user htable_stptr solver,
-                user htable_stptr parent,
-                user htable_stptr ids
-            }
-        };
-
         traversal SymtableManglingTabs {
             uid = SymtableManglingTabs_,
             nodes = { Symtable }
@@ -126,12 +116,40 @@ phase ContextAnalysis {
                 user symtable_ptr cur_symtab
             }
         };
+        Demo;
 
         traversal CheckIdentifiers {
             uid = CheckIdentifiers_,
             nodes = Scope | WithSymbolReferences,
             travdata {
                 user symtable_ptr current_symtab
+            }
+        };
+    }
+};
+
+phase CheckTypes {
+    actions {
+        traversal TypeCheckExpr {
+            uid = TypeCheckExpr_,
+            nodes = Scope | Expr | {
+                Conditional, WhileLoop, ForLoop,
+                Return
+            },
+            travdata {
+                user symtable_ptr cur_symtab,
+                BasicType return_type
+            }
+        };
+
+        traversal TypeCheckDecl {
+            uid = TypeCheckDecl_,
+            nodes = {
+                VarDec,
+                GlobalDef
+            } | Expr,
+            travdata {
+                BasicType cur_type
             }
         };
     }

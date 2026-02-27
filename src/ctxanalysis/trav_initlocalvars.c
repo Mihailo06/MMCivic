@@ -2,6 +2,7 @@
 #include "ccngen/ast.h"
 #include "ccngen/trav_data.h"
 #include "ctxanalysis/arrayinitgen.h"
+#include "ctxanalysis/symtable.h"
 #include "util.h"
 
 TRAVDATA_STUB(INITLOCALVARS)
@@ -19,7 +20,10 @@ node_st *INITLOCALVARS_funbody(node_st *node) {
 }
 
 node_st *INITLOCALVARS_fundef(node_st *node) {
+    symtable *prev                        = DATA_INITLOCALVARS__GET()->cur_symtab;
     DATA_INITLOCALVARS__GET()->cur_symtab = SYMTABLE_SYMTAB(FUNDEF_SYMTABLE(node));
+    TRAVchildren(node);
+    DATA_INITLOCALVARS__GET()->cur_symtab = prev;
     return node;
 }
 

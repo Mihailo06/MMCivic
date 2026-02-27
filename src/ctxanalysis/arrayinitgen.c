@@ -126,6 +126,7 @@ void genArrayInit(
             symtable_entry ent = {
                 .kind     = SYMTABLE_ENTRY_KIND_VARIABLE,
                 .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+                .type     = EXPR_TYPE(elem),
                 .is_param = false,
                 .user_id  = ID_USERID(elem_id),
             };
@@ -153,6 +154,7 @@ void genArrayInit(
                 symtable_entry ent = {
                     .kind     = SYMTABLE_ENTRY_KIND_VARIABLE,
                     .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+                    .type     = BT_int,
                     .is_param = false,
                     .user_id  = ID_USERID(index_ids[i]),
                 };
