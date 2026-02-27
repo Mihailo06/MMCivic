@@ -16,6 +16,7 @@ int yyerror(char *errname);
 extern FILE *yyin;
 void AddLocToNode(node_st *node, void *begin_loc, void *end_loc);
 node_st *reverse_vardecs(node_st *vardecs);
+node_st *reverse_exprs(node_st *list);
 
 char *current_id = NULL;
 node_st *current_forloop_inc_expr = NULL;
@@ -434,6 +435,7 @@ dowhileloop: DO block WHILE BRACKET_L expr BRACKET_R SEMICOLON
 forloop: FOR BRACKET_L INT_TYPE ID LET expr COMMA forloopincs BRACKET_R block
          {
            $$ = ASTforloop($6, $8, current_forloop_inc_expr, $10, ASTid(NULL, $4));
+                      current_forloop_inc_expr = NULL;
          }
          ;
 
@@ -478,7 +480,7 @@ varlet: ID
 
 exprs: exprs COMMA expr
        {
-         $$ = ASTexprs($3, $1);
+         $$ = reverse_exprs(ASTexprs($3, $1));
        }
      |
        {
@@ -737,6 +739,23 @@ node_st *reverse_vardecs(node_st *list)
     {
         next = VARDECS_NEXT(curr);
         VARDECS_NEXT(curr) = prev;
+        prev = curr;
+        curr = next;
+    }
+
+    return prev;
+}
+
+node_st *reverse_exprs(node_st *list)
+{
+    node_st *prev = NULL;
+    node_st *curr = list;
+    node_st *next;
+
+    while (curr != NULL)
+    {
+        next = EXPRS_NEXT(curr);
+        EXPRS_NEXT(curr) = prev;
         prev = curr;
         curr = next;
     }

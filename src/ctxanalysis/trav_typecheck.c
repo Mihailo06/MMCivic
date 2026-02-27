@@ -2,10 +2,12 @@
 #include <stdio.h>
 
 #include "ccn/dynamic_core.h"
+#include "ccn/phase_driver.h"
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
 #include "ccngen/trav_data.h"
 #include "ctxanalysis/unionfindsolver.h"
+#include "palm/ctinfo.h"
 #include "palm/dbug.h"
 #include "util.h"
 
@@ -23,6 +25,7 @@ term *getBTterm(enum BasicType type) {
         case BT_bool:  return TYPE_BOOL; break;
         default:
             fprintf(stderr, "Error:Node doesn't have a BasicType. This shouldn't happen\n");
+                    CCNerrorAction();
             break;
     }
     return NULL;
@@ -45,6 +48,7 @@ enum BasicType findgettermBT(term *t) {
         case TERM_VOID: return BT_NULL;
         default:
             fprintf(stderr, "Typechecking error, couldn't find type for term type %d\n", t->type);
+                    CCNerrorAction();
             return BT_NULL;
             break;
     }
@@ -67,6 +71,7 @@ enum BasicType gettermBT(term *t) {
         case TERM_VOID: return BT_NULL;
         default:
             fprintf(stderr, "Typechecking error, couldn't find type for term type %d\n", t->type);
+                    CCNerrorAction();
             return BT_NULL;
             break;
     }
@@ -502,6 +507,7 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
             "ERROR: CALLED PROCEDURECALL \"%s\" IS NOT A FUNCTION\n",
             ID_LOGICAL(calle_id)
         );
+                CCNerrorAction();
         return node;
     }
 
@@ -522,6 +528,7 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
             ft->size,
             arg_count
         );
+                CCNerrorAction();
         return node;
     }
 
@@ -607,7 +614,6 @@ node_st *TYPECHECK_binop(node_st *node) {
         uf_unify(TYPE_BOOL, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         BINOP_TYPE(node) = BT_bool;
     } else { // +,-,*,/
-        forbid_bool(t_l, DATA_TYPECHECK__GET()->parent);
         uf_unify(t_l, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         if (t_l->type == TERM_INT || t_r->type == TERM_INT) { // +,-,*,/
             BINOP_TYPE(node) = BT_int;
@@ -617,11 +623,13 @@ node_st *TYPECHECK_binop(node_st *node) {
                    && (t_l->type == TERM_BOOL || t_r->type == TERM_BOOL)) { // +,*
             BINOP_TYPE(node) = BT_bool;
         } else { // -,/
+            forbid_bool(t_l, DATA_TYPECHECK__GET()->parent);
             fprintf(
                 stderr,
                 "TYPECHECK ERROR: wrong expression types used for div/sub ops %i\n",
                 NODE_BLINE(node)
             );
+                    CCNerrorAction();
         }
     }
 
@@ -649,7 +657,8 @@ node_st *TYPECHECK_cast(node_st *node) {
     TRAVchildren(node);
 
     uf_unify(typeVariable(node), getBTterm(CAST_TYPE(node)), DATA_TYPECHECK__GET()->parent);
-    // CAST_TYPE(node) = CAST_TYPE(node); what a weird line, not sure why this is here
+    EXPR_TYPE(node) = CAST_TYPE(node);
+    CAST_TYPE(node) = CAST_TYPE(node); //what a weird line, not sure why this is here
     return node;
 }
 

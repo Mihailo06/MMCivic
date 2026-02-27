@@ -1,6 +1,7 @@
 #include "unionfindsolver.h"
 
 #include "assert.h"
+#include "ccn/phase_driver.h"
 #include "ccn/dynamic_core.h"
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
@@ -191,6 +192,9 @@ void uf_unify(term *t1, term *t2, htable_st *parent) {
         } else if (x->type != y->type) {
             printf("\n\n TYPE ERROR: ");
             printterms(x, y);
+            printf("\n");
+                    CCNerrorAction();
+            
         } else if (x->type == TERM_FUNCTION && y->type == TERM_FUNCTION) {
             function_type *fun_x = (function_type *) x;
             function_type *fun_y = (function_type *) y;
@@ -201,6 +205,7 @@ void uf_unify(term *t1, term *t2, htable_st *parent) {
                     fun_x->size,
                     fun_y->size
                 );
+                        CCNerrorAction();
             } else {
                 HTinsert(parent, x, y);
 
@@ -252,5 +257,6 @@ void forbid_bool(term *t, htable_st *parent) {
 
     if (t->type == TERM_BOOL) {
         printf("\n\nTYPE ERROR: boolean used in arithmetic expression\n\n");
+                CCNerrorAction();
     }
 }

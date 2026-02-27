@@ -47,8 +47,7 @@ phase PrimaryNameMangling {
             },
             travdata {
                 uint32 cur_idx,
-                uint32 this_idx,
-                string idxid
+                user flmangle_idstack_ptr idxids
             }
         };
     }
