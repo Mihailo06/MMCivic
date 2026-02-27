@@ -58,8 +58,8 @@ add_executable(civicc
     src/ctxanalysis/trav_initsymtables.c
 
     # type checking
-    src/ctxanalysis/unionfindsolver.c
-    src/ctxanalysis/trav_typecheck.c
+    src/checktypes/trav_typecheckexpr.c
+    src/checktypes/trav_typecheckdecl.c
 
     # codegen
     src/codegen/state.c

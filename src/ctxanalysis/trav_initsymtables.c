@@ -74,6 +74,15 @@ node_st *INITSYMTABLES_globaldec(node_st *node) {
     };
 
     symtable_insert(peekSymtab(), idId(GLOBALDEC_ID(node)), ent);
+
+    // add extern indices to symbol table, too
+    ent.type = BT_int;
+    for (node_st *ids = GLOBALDEC_IDS(node); ids; ids = IDS_NEXT(ids)) {
+        node_st *id = IDS_ID(ids);
+        ent.user_id = ID_USERID(id);
+        symtable_insert(peekSymtab(), idId(id), ent);
+    }
+
     return node;
 }
 

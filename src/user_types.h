@@ -6,6 +6,13 @@
 #include "ctxanalysis/symtable.h"
 #include "palm/hash_table.h"
 
+struct flmangle_idstack {
+    struct flmangle_idstack *up;
+    char                    *id;
+    uint32_t                 loopidx;
+};
+typedef struct flmangle_idstack *flmangle_idstack_ptr;
+
 // Context Analysis
 typedef symtable *symtable_ptr;
 
