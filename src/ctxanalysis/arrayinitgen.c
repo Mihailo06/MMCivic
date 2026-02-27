@@ -6,6 +6,7 @@
 #include "ccn/dynamic_core.h"
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
+#include "ctxanalysis/symtable.h"
 #include "palm/dbug.h"
 #include "palm/memory.h"
 #include "util.h"
@@ -56,7 +57,8 @@ static void genIndividualInit(
     node_st  *arrexprs,
     int      *outer_indices,
     size_t    n_outer_indices,
-    int       startidx
+    int       startidx,
+    symtable *symtab
 ) {
     if (ARREXPRS_EXPRS(arrexprs)) {
         genIndividualInit1D(
@@ -75,7 +77,8 @@ static void genIndividualInit(
                 ARREXPRS_DIMEXPRS(arrexprs),
                 outer_indices,
                 n_outer_indices,
-                startidx + 1
+                startidx + 1,
+                symtab
             );
         }
 
@@ -90,7 +93,8 @@ static void genIndividualInit(
                 ARREXPRS_NEXTDIMENSION(arrexprs),
                 indices,
                 n_outer_indices + 1,
-                0
+                0,
+                symtab
             );
 
             MEMfree(indices);
@@ -106,7 +110,8 @@ void genArrayInit(
     node_st       *index_exprs,
     node_st       *arrexprs,
     bool           update_indices,
-    bool           is_splat
+    bool           is_splat,
+    symtable      *symtab
 ) {
     DBUG_ASSERT(index_exprs, "No index exprs! Is this even an array?");
     DBUG_ASSERT(arrexprs, "No array exprs! Is this a declaration with no assignment?");
@@ -116,6 +121,16 @@ void genArrayInit(
         node_st *elem    = EXPRS_EXPR(ARREXPRS_EXPRS(arrexprs));
         node_st *elem_id = genidNode();
         *out_vardecs = ASTvardecs(ASTvardec(NULL, NULL, elem_id, target_type, true), *out_vardecs);
+
+        if (symtab) {
+            symtable_entry ent = {
+                .kind     = SYMTABLE_ENTRY_KIND_VARIABLE,
+                .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+                .is_param = false,
+                .user_id  = ID_USERID(elem_id),
+            };
+            symtable_insert(symtab, ID_LOGICAL(elem_id), ent);
+        }
 
         size_t n_size_ids = EXPRS_count(index_exprs);
 
@@ -133,6 +148,19 @@ void genArrayInit(
                 ASTvardec(NULL, NULL, size_ids[i] = genidNode(), BT_int, true),
                 *out_vardecs
             );
+
+            if (symtab) {
+                symtable_entry ent = {
+                    .kind     = SYMTABLE_ENTRY_KIND_VARIABLE,
+                    .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
+                    .is_param = false,
+                    .user_id  = ID_USERID(index_ids[i]),
+                };
+                symtable_insert(symtab, ID_LOGICAL(index_ids[i]), ent);
+
+                ent.user_id = ID_USERID(size_ids[i]);
+                symtable_insert(symtab, ID_LOGICAL(size_ids[i]), ent);
+            }
         }
 
         // create assignment statement for array
@@ -154,8 +182,7 @@ void genArrayInit(
                 ASTvar(NULL, CCNcopy(size_ids[i - 1])),
                 NULL,
                 ASTblock(ASTstmts(inner_stmt, NULL)),
-                index_ids[i - 1],
-                BT_int
+                index_ids[i - 1]
             );
         }
         *out_stmts = ASTstmts(inner_stmt, *out_stmts);
@@ -190,6 +217,6 @@ void genArrayInit(
         MEMfree(size_ids);
     } else {
         // initialization of individual elements
-        genIndividualInit(out_stmts, target_id, arrexprs, NULL, 0, 0);
+        genIndividualInit(out_stmts, target_id, arrexprs, NULL, 0, 0, symtab);
     }
 }

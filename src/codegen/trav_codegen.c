@@ -451,9 +451,7 @@ node_st *CODEGEN_binop(node_st *node) {
 
     switch (BINOP_OP(node)) {
         // integer and float ops
-        case BO_add:
         case BO_sub:
-        case BO_mul:
         case BO_div:
         case BO_lt:
         case BO_le:
@@ -465,7 +463,15 @@ node_st *CODEGEN_binop(node_st *node) {
         // any type ops
         case BO_eq:
         case BO_ne:
-            DBUG_ASSERT(ltype == rtype, "unequal types on binop");
+        case BO_add:
+        case BO_mul:
+            DBUG_ASSERT(
+                ltype == rtype,
+                "unequal types on binop, %i != %i, line %i",
+                ltype,
+                rtype,
+                NODE_BLINE(node)
+            );
             TRAVdo(BINOP_LEFT(node));
             TRAVdo(BINOP_RIGHT(node));
             bv_printf(

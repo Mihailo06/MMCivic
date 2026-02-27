@@ -14,6 +14,7 @@
 //     DATA_INITGLOBALVARS__GET()->init_stmts =
 //         ASTstmts(assign, DATA_INITGLOBALVARS__GET()->init_stmts);
 // }
+enum BasicType gettermBT(term *t);
 
 term *getBTterm(enum BasicType type) {
     switch (type) {
@@ -27,6 +28,28 @@ term *getBTterm(enum BasicType type) {
     return NULL;
 }
 
+enum BasicType findgettermBT(term *t) {
+    function_type *f;
+    switch (t->type) {
+        case TERM_INT:   return BT_int; break;
+        case TERM_BOOL:  return BT_bool; break;
+        case TERM_FLOAT: return BT_float; break;
+        case TERM_FUNCTION:
+            f = (function_type *) t;
+            return gettermBT(f->ret);
+            break;
+        case TERM_TYPEVAR:
+            printf("WARNING: Couldn't find term for typevar in gettermBT(term)\n");
+            return BT_NULL;
+            break;
+        case TERM_VOID: return BT_NULL;
+        default:
+            fprintf(stderr, "Typechecking error, couldn't find type for term type %d\n", t->type);
+            return BT_NULL;
+            break;
+    }
+}
+
 enum BasicType gettermBT(term *t) {
     function_type *f;
     switch (t->type) {
@@ -37,7 +60,11 @@ enum BasicType gettermBT(term *t) {
             f = (function_type *) t;
             return gettermBT(f->ret);
             break;
-        case TERM_TYPEVAR: return gettermBT(uf_find(t, DATA_TYPECHECK__GET()->parent)); break;
+        case TERM_TYPEVAR:
+            return findgettermBT(uf_find(t, DATA_TYPECHECK__GET()->parent));
+            break; // currently calling findgettermbt which will always fix the issue, but this
+                   // might an issue with order of unification
+        case TERM_VOID: return BT_NULL;
         default:
             fprintf(stderr, "Typechecking error, couldn't find type for term type %d\n", t->type);
             return BT_NULL;
@@ -470,8 +497,11 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
     term    *calle_type = uf_find(typeVariable(calle_id), DATA_TYPECHECK__GET()->parent);
 
     if (calle_type->type != TERM_FUNCTION) {
-        // fprintf(stderr, "ERROR: CALLED PROCEDURECALL \"%s\" IS NOT A FUNCTION\n",
-        // ID_LOGICAL(calle_id));
+        fprintf(
+            stderr,
+            "ERROR: CALLED PROCEDURECALL \"%s\" IS NOT A FUNCTION\n",
+            ID_LOGICAL(calle_id)
+        );
         return node;
     }
 
@@ -486,8 +516,12 @@ node_st *TYPECHECK_procedurecall(node_st *node) {
     }
 
     if (arg_count != ft->size) {
-        // fprintf(stderr, "ERROR: Wrong number of arguments! expected %zu, got %zu\n", ft->size,
-        // arg_count);
+        fprintf(
+            stderr,
+            "ERROR: Wrong number of arguments! expected %zu, got %zu\n",
+            ft->size,
+            arg_count
+        );
         return node;
     }
 
@@ -529,7 +563,6 @@ node_st *TYPECHECK_dowhileloop(node_st *node) {
 }
 
 node_st *TYPECHECK_forloop(node_st *node) {
-    uf_unify(TYPE_INT, getBTterm(FORLOOP_TYPE(node)), DATA_TYPECHECK__GET()->parent);
     uf_unify(TYPE_INT, typeVariable(FORLOOP_ASSIGNEXPR(node)), DATA_TYPECHECK__GET()->parent);
     uf_unify(TYPE_INT, typeVariable(FORLOOP_ID(node)), DATA_TYPECHECK__GET()->parent);
 
@@ -557,31 +590,38 @@ node_st *TYPECHECK_binop(node_st *node) {
     term *t_r = uf_find(typeVariable(BINOP_RIGHT(node)), DATA_TYPECHECK__GET()->parent);
     uf_unify(t_l, typeVariable(BINOP_RIGHT(node)), DATA_TYPECHECK__GET()->parent);
 
-    if (BINOP_OP(node) == BO_and || BINOP_OP(node) == BO_or) {
+    if (BINOP_OP(node) == BO_and || BINOP_OP(node) == BO_or) { // &&, ||
         uf_unify(TYPE_BOOL, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         uf_unify(t_l, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         BINOP_TYPE(node) = BT_bool;
-    } else if (BINOP_OP(node) == BO_mod) {
+    } else if (BINOP_OP(node) == BO_mod) { // %
         uf_unify(TYPE_INT, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         uf_unify(t_l, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         BINOP_TYPE(node) = BT_int;
-    } else if (BINOP_OP(node) == BO_eq || BINOP_OP(node) == BO_ne) {
+    } else if (BINOP_OP(node) == BO_eq || BINOP_OP(node) == BO_ne) { // ==, !=
         uf_unify(TYPE_BOOL, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         BINOP_TYPE(node) = BT_bool;
     } else if (BINOP_OP(node) == BO_ge || BINOP_OP(node) == BO_gt || BINOP_OP(node) == BO_le
-               || BINOP_OP(node) == BO_lt) {
+               || BINOP_OP(node) == BO_lt) { // >=, >, <=, <
         forbid_bool(t_l, DATA_TYPECHECK__GET()->parent);
         uf_unify(TYPE_BOOL, typeVariable(node), DATA_TYPECHECK__GET()->parent);
         BINOP_TYPE(node) = BT_bool;
-    } else {
+    } else { // +,-,*,/
         forbid_bool(t_l, DATA_TYPECHECK__GET()->parent);
         uf_unify(t_l, typeVariable(node), DATA_TYPECHECK__GET()->parent);
-        if (t_l->type == TERM_INT || t_r->type == TERM_INT) {
+        if (t_l->type == TERM_INT || t_r->type == TERM_INT) { // +,-,*,/
             BINOP_TYPE(node) = BT_int;
-        } else if (t_l->type == TERM_FLOAT || t_r->type == TERM_FLOAT) {
+        } else if (t_l->type == TERM_FLOAT || t_r->type == TERM_FLOAT) { // +,-,*,/
             BINOP_TYPE(node) = BT_float;
-        } else {
-            fprintf(stderr, "WARNING: binop type still unknown, this shouldn't happen\n");
+        } else if ((BINOP_OP(node) == BO_add || BINOP_OP(node) == BO_mul)
+                   && (t_l->type == TERM_BOOL || t_r->type == TERM_BOOL)) { // +,*
+            BINOP_TYPE(node) = BT_bool;
+        } else { // -,/
+            fprintf(
+                stderr,
+                "TYPECHECK ERROR: wrong expression types used for div/sub ops %i\n",
+                NODE_BLINE(node)
+            );
         }
     }
 
@@ -609,7 +649,7 @@ node_st *TYPECHECK_cast(node_st *node) {
     TRAVchildren(node);
 
     uf_unify(typeVariable(node), getBTterm(CAST_TYPE(node)), DATA_TYPECHECK__GET()->parent);
-    CAST_TYPE(node) = CAST_TYPE(node);
+    // CAST_TYPE(node) = CAST_TYPE(node); what a weird line, not sure why this is here
     return node;
 }
 
