@@ -36,10 +36,9 @@ node_st *INITLOCALVARS_vardec(node_st *node) {
             &DATA_INITLOCALVARS__GET()->fun_stmts,
             &DATA_INITLOCALVARS__GET()->fun_vardecs,
             VARDEC_ID(node),
-            VARDEC_TYPE(node),
+            VARDEC_TYPE(node) & TYPE_TYPMASK,
             VARDEC_ARR_DIMS(node),
             VARDEC_EXPRS(node),
-            true,
             VARDEC_IS_SINGLE_EXPR(node),
             DATA_INITLOCALVARS__GET()->cur_symtab
         );
