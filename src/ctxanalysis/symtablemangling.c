@@ -2,8 +2,10 @@
 
 #include "ccn/dynamic_core.h"
 #include "ccngen/ast.h"
+#include "ccngen/enum.h"
 #include "ccngen/trav_data.h"
 #include "ctxanalysis/symtable.h"
+#include "palm/dbug.h"
 #include "palm/hash_table.h"
 #include "palm/memory.h"
 #include "palm/str.h"
@@ -46,6 +48,19 @@ node_st *SYMTABLEMANGLINGIDS_fundef(node_st *node) {
     symtable *this_tab = SYMTABLE_SYMTAB(FUNDEF_SYMTABLE(node));
     CUR_SYMTAB         = this_tab;
     OUTER_SYMTAB       = prev;
+
+    // add paramters to seen_ids
+    node_st *header = FUNDEF_FUNHEADER(node);
+    node_st *params;
+    switch (NODE_TYPE(header)) {
+        case NT_VOIDFUNHEADER:  params = VOIDFUNHEADER_PARAMS(header); break;
+        case NT_BASICFUNHEADER: params = BASICFUNHEADER_PARAMS(header); break;
+        default:                DBUG_ASSERT(false, "function header has invalid type"); return node;
+    }
+    for (; params; params = HEADERPARAMS_NEXT(params)) {
+        char *id = ID_USERID(PARAMETER_ID(HEADERPARAMS_PARAM(params)));
+        HTinsert(DATA_SYMTABLEMANGLINGIDS__GET()->seen_ids, id, id);
+    }
 
     // Right-hand side of declarations.
     // This is tricky because we have to check if this function already declared a variable on the
