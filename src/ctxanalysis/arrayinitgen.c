@@ -129,6 +129,7 @@ void genArrayInit(
                 .type     = EXPR_TYPE(elem),
                 .is_param = false,
                 .user_id  = ID_USERID(elem_id),
+                .idxexprs = NULL,
             };
             symtable_insert(symtab, ID_LOGICAL(elem_id), ent);
         }
@@ -157,6 +158,7 @@ void genArrayInit(
                     .type     = BT_int,
                     .is_param = false,
                     .user_id  = ID_USERID(index_ids[i]),
+                    .idxexprs = NULL,
                 };
                 symtable_insert(symtab, ID_LOGICAL(index_ids[i]), ent);
 

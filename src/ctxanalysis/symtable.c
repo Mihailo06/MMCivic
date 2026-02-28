@@ -1,5 +1,6 @@
 #include "symtable.h"
 
+#include "ccn/dynamic_core.h"
 #include "palm/dbug.h"
 #include "palm/hash_table.h"
 #include "palm/memory.h"
@@ -12,6 +13,7 @@ struct symtable {
 
 void symtable_entry_deinit(symtable_entry ent) {
     if (ent.kind == SYMTABLE_ENTRY_KIND_FUNCTION) { MEMfree(ent.argtypes); }
+    if (ent.idxexprs) { CCNfree(ent.idxexprs); }
 }
 
 symtable *symtable_init(symtable *parent) {

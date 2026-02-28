@@ -7,6 +7,8 @@
 #include "ccngen/enum.h"
 #include "palm/hash_table.h"
 
+typedef struct ccn_node node_st;
+
 typedef struct symtable symtable;
 
 enum SymtableEntryKind {
@@ -81,7 +83,11 @@ typedef struct {
      */
     char *user_id;
 
-    // TODO: array types
+    /**
+     * If this is an array variable, this will be non-null and set to an Exprs node containing the
+     * dimensions of this array.
+     */
+    node_st *idxexprs;
 } symtable_entry;
 
 void            symtable_entry_deinit(symtable_entry ent);
