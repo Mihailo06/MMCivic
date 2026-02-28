@@ -20,6 +20,7 @@ static symtable_entry new_loopvar_ent = {
     .type     = BT_int,
     .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
     .is_param = false,
+    .idxexprs = NULL,
 };
 
 node_st *FOR2WHILE_forloop(node_st *node) {

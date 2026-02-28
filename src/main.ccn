@@ -6,6 +6,8 @@ start phase RootPhase {
         ParseCleanup;
         PrimaryNameMangling;
         ContextAnalysis;
+        DimensionReduction;
+        Demo;
         CheckTypes;
         CodegenPhase;
         Cleanup_;
@@ -116,13 +118,27 @@ phase ContextAnalysis {
                 user symtable_ptr cur_symtab
             }
         };
-        Demo;
 
         traversal CheckIdentifiers {
             uid = CheckIdentifiers_,
             nodes = Scope | WithSymbolReferences,
             travdata {
                 user symtable_ptr current_symtab
+            }
+        };
+    }
+};
+
+phase DimensionReduction {
+    actions {
+        traversal ParamDims {
+            uid = ParamDims_,
+            nodes = Scope | {
+                HeaderParams,
+                ArrExpr
+            },
+            travdata {
+                user symtable_ptr cur_symtab
             }
         };
     }
