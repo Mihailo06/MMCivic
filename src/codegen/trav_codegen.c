@@ -715,6 +715,53 @@ node_st *CODEGEN_ternary(node_st *node) {
     return node;
 }
 
+node_st *CODEGEN_arrexpr(node_st *node) {
+    codegen_func   *func = STATE->functions;
+    char           *id   = ID_LOGICAL(ARREXPR_ID(node));
+    unsigned int    up   = 0;
+    symtable_entry *ent  = symtable_lookup(CUR_SYMTAB, id, &up);
+
+    DBUG_ASSERT(ent->idxexprs, "arrexpr references non-array");
+
+    switch (ent->linkage) {
+        case SYMTABLE_ENTRY_LINKAGE_LOCAL: { // local array
+            bv_printf(
+                &func->content,
+                CODEGEN_INDENT "aload %zu ;; <- %s\n",
+                ent->codegen_index,
+                id
+            );
+        } break;
+        case SYMTABLE_ENTRY_LINKAGE_EXPORT:
+        case SYMTABLE_ENTRY_LINKAGE_INTERNAL: { // our global array
+            bv_printf(
+                &func->content,
+                CODEGEN_INDENT "aloadg %zu ;; <- %s\n",
+                ent->codegen_index,
+                id
+            );
+        } break;
+        case SYMTABLE_ENTRY_LINKAGE_EXTERN: { // someone else's global array
+            bv_printf(
+                &func->content,
+                CODEGEN_INDENT "aloade %zu ;; <- %s\n",
+                ent->codegen_index,
+                id
+            );
+        } break;
+    }
+
+    DBUG_ASSERT(
+        !EXPRS_NEXT(ARREXPR_INDICES(node)),
+        "multi-dimensional array found during codegen!"
+    );
+    TRAVdo(ARREXPR_INDICES(node));
+
+    bv_printf(&func->content, CODEGEN_INDENT "%sloada\n", typePrefix(ent->type));
+
+    return node;
+}
+
 node_st *CODEGEN_num(node_st *node) {
     size_t id = codegen_regintconst(STATE, NUM_VAL(node));
     bv_printf(&STATE->functions->content, CODEGEN_INDENT "iloadc %zu\n", id);
