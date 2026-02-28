@@ -7,8 +7,10 @@
 #include "ccngen/ast.h"
 #include "ccngen/enum.h"
 #include "ctxanalysis/symtable.h"
+#include "dimension_reduction/dimreduce.h"
 #include "palm/dbug.h"
 #include "palm/memory.h"
+#include "palm/str.h"
 #include "util.h"
 
 static node_st *concatIntsToExprs(int *ints, size_t n_ints) {
@@ -102,6 +104,17 @@ static void genIndividualInit(
     }
 }
 
+static void genArrinitStmt(
+    node_st      **out_stmts,
+    enum BasicType target_type,
+    node_st       *index_exprs,
+    node_st       *target_id
+) {
+    node_st *arrinit   = ASTarrinit(dimreduce_sizeexprs(index_exprs));
+    EXPR_TYPE(arrinit) = target_type | TYPE_ISARR_BIT;
+    *out_stmts = ASTstmts(ASTassign(ASTvarlet(NULL, CCNcopy(target_id)), arrinit), *out_stmts);
+}
+
 void genArrayInit(
     node_st      **out_stmts,
     node_st      **out_vardecs,
@@ -109,7 +122,6 @@ void genArrayInit(
     enum BasicType target_type,
     node_st       *index_exprs,
     node_st       *arrexprs,
-    bool           update_indices,
     bool           is_splat,
     symtable      *symtab
 ) {
@@ -126,30 +138,23 @@ void genArrayInit(
             symtable_entry ent = {
                 .kind     = SYMTABLE_ENTRY_KIND_VARIABLE,
                 .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
-                .type     = EXPR_TYPE(elem),
+                .type     = target_type,
                 .is_param = false,
-                .user_id  = ID_USERID(elem_id),
+                .user_id  = STRcpy(ID_USERID(elem_id)),
                 .idxexprs = NULL,
             };
             symtable_insert(symtab, ID_LOGICAL(elem_id), ent);
         }
 
-        size_t n_size_ids = EXPRS_count(index_exprs);
-
-        // This is an array containing ID nodes for all dimension sizes of the array.
-        node_st **size_ids = MEMmalloc(n_size_ids * sizeof(node_st *));
+        size_t n_idx_ids = EXPRS_count(index_exprs);
 
         // This is an array containing ID nodes for loop counters initializing the respective
         // dimension.
-        node_st **index_ids = MEMmalloc(n_size_ids * sizeof(node_st *));
+        node_st **index_ids = MEMmalloc(n_idx_ids * sizeof(node_st *));
 
         // initialize variables
-        for (size_t i = 0; i < n_size_ids; i++) {
+        for (size_t i = 0; i < n_idx_ids; i++) {
             index_ids[i] = genidNode();
-            *out_vardecs = ASTvardecs(
-                ASTvardec(NULL, NULL, size_ids[i] = genidNode(), BT_int, true),
-                *out_vardecs
-            );
 
             if (symtab) {
                 symtable_entry ent = {
@@ -157,19 +162,16 @@ void genArrayInit(
                     .linkage  = SYMTABLE_ENTRY_LINKAGE_LOCAL,
                     .type     = BT_int,
                     .is_param = false,
-                    .user_id  = ID_USERID(index_ids[i]),
+                    .user_id  = STRcpy(ID_USERID(index_ids[i])),
                     .idxexprs = NULL,
                 };
                 symtable_insert(symtab, ID_LOGICAL(index_ids[i]), ent);
-
-                ent.user_id = ID_USERID(size_ids[i]);
-                symtable_insert(symtab, ID_LOGICAL(size_ids[i]), ent);
             }
         }
 
         // create assignment statement for array
         node_st *inner_assign_indices = NULL;
-        for (int i = n_size_ids; i > 0; i--) {
+        for (int i = n_idx_ids; i > 0; i--) {
             inner_assign_indices =
                 ASTexprs(ASTvar(NULL, CCNcopy(index_ids[i - 1])), inner_assign_indices);
         }
@@ -179,11 +181,18 @@ void genArrayInit(
             ASTvar(NULL, CCNcopy(elem_id))
         );
 
+        node_st **idx_exprs     = MEMmalloc(n_idx_ids * sizeof(node_st *));
+        node_st  *cur_idx_exprs = index_exprs;
+        for (size_t i = 0; cur_idx_exprs; i++) {
+            idx_exprs[i]  = EXPRS_EXPR(cur_idx_exprs);
+            cur_idx_exprs = EXPRS_NEXT(cur_idx_exprs);
+        }
+
         // generate loops
-        for (size_t i = n_size_ids; i > 0; i--) {
+        for (size_t i = n_idx_ids; i > 0; i--) {
             inner_stmt = ASTforloop(
                 ASTnum(0),
-                ASTvar(NULL, CCNcopy(size_ids[i - 1])),
+                CCNcopy(idx_exprs[i - 1]),
                 NULL,
                 ASTblock(ASTstmts(inner_stmt, NULL)),
                 index_ids[i - 1]
@@ -191,36 +200,20 @@ void genArrayInit(
         }
         *out_stmts = ASTstmts(inner_stmt, *out_stmts);
 
+        // initialize array
+        genArrinitStmt(out_stmts, target_type, index_exprs, target_id);
+
         // initialize copy of element
         *out_stmts =
             ASTstmts(ASTassign(ASTvarlet(NULL, CCNcopy(elem_id)), CCNcopy(elem)), *out_stmts);
 
-        // initialize copies of array bounds
-        node_st *cur_idx_exprs = index_exprs;
-        for (size_t i = n_size_ids; i > 0; i--) {
-            *out_stmts = ASTstmts(
-                ASTassign(
-                    ASTvarlet(NULL, CCNcopy(size_ids[i - 1])),
-                    CCNcopy(EXPRS_EXPR(cur_idx_exprs))
-                ),
-                *out_stmts
-            );
-            cur_idx_exprs = EXPRS_NEXT(cur_idx_exprs);
-        }
-
-        if (update_indices) {
-            node_st *cur_exps = index_exprs;
-            for (size_t i = n_size_ids; i > 0; i--) {
-                CCNfree(EXPRS_EXPR(cur_exps));
-                EXPRS_EXPR(cur_exps) = ASTvar(NULL, CCNcopy(size_ids[i - 1]));
-                cur_exps             = EXPRS_NEXT(cur_exps);
-            }
-        }
-
+        MEMfree(idx_exprs);
         MEMfree(index_ids);
-        MEMfree(size_ids);
     } else {
         // initialization of individual elements
         genIndividualInit(out_stmts, target_id, arrexprs, NULL, 0, 0, symtab);
+
+        // initialize array
+        genArrinitStmt(out_stmts, target_type, index_exprs, target_id);
     }
 }

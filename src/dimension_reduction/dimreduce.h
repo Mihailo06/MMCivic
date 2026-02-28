@@ -19,3 +19,13 @@ node_st *dimreduce_params(node_st *params);
  * the same number of indices as the idxexprs parameter.
  */
 node_st *dimreduce_arrexpr(node_st *arrexpr, node_st *idxexprs);
+
+/**
+ * Perform dimension reduction on the left-hand side of an assignment.
+ */
+node_st *dimreduce_varlet(node_st *varlet, node_st *idxexprs);
+
+/**
+ * Reduces dimension on a list of exprs for the sizes of an array by multiplying them.
+ */
+node_st *dimreduce_sizeexprs(node_st *exprs);

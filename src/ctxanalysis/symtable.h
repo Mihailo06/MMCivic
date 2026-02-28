@@ -59,6 +59,8 @@ typedef struct {
      * A MEMmalloc'd array of `arity` argument types.
      * This field is only defined if `kind == SYMTABLE_ENTRY_KIND_FUNCTION` it is an error to use
      * it otherwise.
+     *
+     * These may also have additional flag bits, see util.h
      */
     enum BasicType *argtypes;
 

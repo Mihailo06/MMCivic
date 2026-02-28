@@ -62,6 +62,17 @@ phase ContextAnalysis {
             nodes = { GlobalDef, VarDec }
         };
 
+        traversal ExtractIndices {
+            uid = ExtractIndices_,
+            nodes = {
+                Program,
+                GlobalDef
+            },
+            travdata {
+                Declarations decls
+            }
+        };
+
         traversal InitGlobalVars {
             uid = InitGlobalVars_,
             nodes = { Program, GlobalDef, FunBody, Declarations },
@@ -135,10 +146,17 @@ phase DimensionReduction {
             uid = ParamDims_,
             nodes = Scope | {
                 HeaderParams,
-                ArrExpr
+                ArrExpr,
+                VarLet,
+                GlobalDef,
+                VarDec,
+
+                // for arrinit assign special case
+                Assign
             },
             travdata {
-                user symtable_ptr cur_symtab
+                user symtable_ptr cur_symtab,
+                bool is_arrinit
             }
         };
     }
@@ -217,7 +235,9 @@ phase CodegenPhase {
                 Num,
                 Float,
                 Bool,
-                Ternary
+                Ternary,
+                Arrexpr,
+                ArrInit
             },
             travdata {
                 user codegen_stateptr state,
@@ -285,7 +305,7 @@ enum BinOpType {
 nodeset Declaration = {FunDec, FunDef, GlobalDec, GlobalDef};
 nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
 nodeset Expr{
-    nodes = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr, Ternary},
+    nodes = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr, Ternary, ArrInit},
 
     attributes {
         BasicType type
@@ -648,5 +668,11 @@ node Ternary {
         Expr cond { constructor },
         Expr then { constructor },
         Expr els { constructor }
+    }
+};
+
+node ArrInit {
+    children {
+        Expr len { constructor }
     }
 };

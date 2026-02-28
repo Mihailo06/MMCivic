@@ -14,6 +14,7 @@ struct symtable {
 void symtable_entry_deinit(symtable_entry ent) {
     if (ent.kind == SYMTABLE_ENTRY_KIND_FUNCTION) { MEMfree(ent.argtypes); }
     if (ent.idxexprs) { CCNfree(ent.idxexprs); }
+    MEMfree(ent.user_id);
 }
 
 symtable *symtable_init(symtable *parent) {

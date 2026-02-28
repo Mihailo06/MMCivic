@@ -46,3 +46,21 @@ node_st *dimreduce_arrexpr(node_st *arrexpr, node_st *idxexprs) {
 
     return new;
 }
+
+node_st *dimreduce_varlet(node_st *varlet, node_st *idxexprs) {
+    node_st *new = ASTvarlet(
+        ASTexprs(arrexprIdx(VARLET_EXPRS(varlet), EXPRS_NEXT(idxexprs)), NULL),
+        VARLET_ID(varlet)
+    );
+
+    VARLET_ID(varlet) = NULL;
+    CCNfree(varlet);
+
+    return new;
+}
+
+node_st *dimreduce_sizeexprs(node_st *exprs) {
+    if (!EXPRS_NEXT(exprs)) return CCNcopy(EXPRS_EXPR(exprs));
+
+    return ASTbinop(CCNcopy(EXPRS_EXPR(exprs)), dimreduce_sizeexprs(EXPRS_NEXT(exprs)), BO_mul);
+}

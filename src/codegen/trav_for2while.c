@@ -34,7 +34,7 @@ node_st *FOR2WHILE_forloop(node_st *node) {
         char *end_id = genident();
 
         symtable_entry ent = new_loopvar_ent;
-        ent.user_id        = end_id;
+        ent.user_id        = STRcpy(end_id);
 
         symtable_insert(SYMTABLE_SYMTAB(DATA_FOR2WHILE__GET()->cur_symtab), end_id, ent);
         end_expr            = ASTvar(NULL, end_id_node = ASTid(STRcpy(end_id), end_id));
@@ -51,7 +51,7 @@ node_st *FOR2WHILE_forloop(node_st *node) {
         char *step_id = genident();
 
         symtable_entry ent = new_loopvar_ent;
-        ent.user_id        = step_id;
+        ent.user_id        = STRcpy(step_id);
 
         symtable_insert(SYMTABLE_SYMTAB(DATA_FOR2WHILE__GET()->cur_symtab), step_id, ent);
         step_expr            = ASTvar(NULL, step_id_node = ASTid(STRcpy(step_id), step_id));

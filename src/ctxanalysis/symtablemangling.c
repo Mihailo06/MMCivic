@@ -21,7 +21,7 @@ void SYMTABLEMANGLINGIDS_init(void) {
 void SYMTABLEMANGLINGIDS_fini(void) { HTdelete(DATA_SYMTABLEMANGLINGIDS__GET()->seen_ids); }
 
 static char *mangle(const char *prev, symtable_entry *ent) {
-    if (strncmp(prev, INTERNAL_IDPREFIX, strlen(INTERNAL_IDPREFIX)) == 0) return STRcpy(prev);
+    if (strncmp(prev, "__", 2) == 0) return STRcpy(prev);
 
     // deterministic symbol names are for noobs.
     return STRfmt("%s#%p", prev, ent);

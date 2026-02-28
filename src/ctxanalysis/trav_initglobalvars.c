@@ -62,10 +62,9 @@ node_st *INITGLOBALVARS_globaldef(node_st *node) {
             &DATA_INITGLOBALVARS__GET()->init_stmts,
             &DATA_INITGLOBALVARS__GET()->init_decs,
             GLOBALDEF_ID(node),
-            GLOBALDEF_TYPE(node),
+            GLOBALDEF_TYPE(node) & TYPE_TYPMASK,
             GLOBALDEF_INDEX_EXPRS(node),
             GLOBALDEF_VALUE_EXPRS(node),
-            false,
             GLOBALDEF_IS_SINGLE_EXPR(node),
             NULL
         );
