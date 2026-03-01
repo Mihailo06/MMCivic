@@ -21,7 +21,8 @@ node_st *dimreduce_params(node_st *params) {
     IDS_ID(paramids) = NULL;
     CCNfree(paramids);
 
-    node_st *new_param = ASTparameter(NULL, id, BT_int);
+    node_st *new_param = ASTparameter(NULL, id, BT_int, true);
+    
 
     return ASTheaderparams(new_param, dimreduce_params(params));
 }
