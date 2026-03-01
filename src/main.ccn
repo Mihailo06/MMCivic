@@ -207,6 +207,11 @@ phase CodegenPhase {
             }
         };
 
+        traversal IndexLocals {
+            uid = IndexLocals_,
+            nodes = { FunDef }
+        };
+
         traversal Codegen {
             uid = Codegen_,
             nodes = {
