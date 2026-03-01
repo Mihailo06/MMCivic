@@ -11,9 +11,9 @@
 
 #define CUR_SYMTAB DATA_CHECKIDENTIFIERS__GET()->current_symtab
 
-static void checkdef(node_st *node, const char *name) {
-    if (!symtable_isdefined(CUR_SYMTAB, name)) {
-        CTIobj(CTI_ERROR, true, node_ctinfo(node), "reference to undefined symbol '%s'\n", name);
+static void checkdef(node_st *node, const char *logical, const char *user) {
+    if (!symtable_isdefined(CUR_SYMTAB, logical)) {
+        CTIobj(CTI_ERROR, true, node_ctinfo(node), "reference to undefined symbol '%s'\n", user);
         CCNerrorAction();
     }
 }
@@ -48,19 +48,19 @@ node_st *CHECKIDENTIFIERS_fundef(node_st *node) {
 }
 
 node_st *CHECKIDENTIFIERS_var(node_st *node) {
-    checkdef(node, ID_LOGICAL(VAR_ID(node)));
+    checkdef(node, ID_LOGICAL(VAR_ID(node)), ID_USERID(VAR_ID(node)));
     TRAVchildren(node);
     return node;
 }
 
 node_st *CHECKIDENTIFIERS_varlet(node_st *node) {
-    checkdef(node, ID_LOGICAL(VARLET_ID(node)));
+    checkdef(node, ID_LOGICAL(VARLET_ID(node)), ID_USERID(VARLET_ID(node)));
     TRAVchildren(node);
     return node;
 }
 
 node_st *CHECKIDENTIFIERS_arrexpr(node_st *node) {
-    checkdef(node, ID_LOGICAL(ARREXPR_ID(node)));
+    checkdef(node, ID_LOGICAL(ARREXPR_ID(node)), ID_USERID(ARREXPR_ID(node)));
     TRAVchildren(node);
     return node;
 }
