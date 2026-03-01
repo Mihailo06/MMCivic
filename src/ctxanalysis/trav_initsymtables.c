@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "ccn/dynamic_core.h"
@@ -81,9 +82,10 @@ node_st *INITSYMTABLES_globaldec(node_st *node) {
     // add extern indices to symbol table, too
     ent.type     = BT_int;
     ent.idxexprs = NULL;
+    size_t i     = 0;
     for (node_st *ids = GLOBALDEC_IDS(node); ids; ids = IDS_NEXT(ids)) {
         node_st *id = IDS_ID(ids);
-        ent.user_id = STRcpy(ID_USERID(id));
+        ent.user_id = STRfmt("__%s_%zu", ID_USERID(GLOBALDEC_ID(node)), i++);
         symtable_insert(peekSymtab(), idId(id), ent);
     }
 

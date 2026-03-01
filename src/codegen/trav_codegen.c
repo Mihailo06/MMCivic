@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "bytevec.h"
 #include "ccn/dynamic_core.h"
@@ -167,22 +168,24 @@ node_st *CODEGEN_program(node_st *node) {
                     case SYMTABLE_ENTRY_LINKAGE_EXPORT:
                         bv_printf(
                             &STATE->header,
-                            ".exportvar \"%s\" %zu\n",
+                            ".exportvar \"%s\" %zu ;; %s\n",
                             ent->user_id,
-                            global_i
+                            global_i,
+                            name
                         );
                         __attribute__((fallthrough));
                     case SYMTABLE_ENTRY_LINKAGE_INTERNAL:
-                        bv_printf(&STATE->header, ".global %s\n", entryTypeName(ent));
+                        bv_printf(&STATE->header, ".global %s ;; %s\n", entryTypeName(ent), name);
                         ent->codegen_index = global_i++;
                         break;
 
                     case SYMTABLE_ENTRY_LINKAGE_EXTERN:
                         bv_printf(
                             &STATE->header,
-                            ".importvar \"%s\" %s\n",
+                            ".importvar \"%s\" %s ;; %s\n",
                             ent->user_id,
-                            entryTypeName(ent)
+                            entryTypeName(ent),
+                            name
                         );
                         ent->codegen_index = importvar_i++;
                         break;
