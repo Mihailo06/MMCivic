@@ -46,17 +46,14 @@ node_st *INITGLOBALVARS_declarations(node_st *node) {
 }
 
 node_st *INITGLOBALVARS_globaldef(node_st *node) {
-    // If we already have a node without initializer, return
-    if (!GLOBALDEF_VALUE_EXPRS(node)) return node;
-
-    node_st *exprs1d = ARREXPRS_EXPRS(GLOBALDEF_VALUE_EXPRS(node));
-    if (exprs1d && !GLOBALDEF_INDEX_EXPRS(node)) {
+    if (GLOBALDEF_VALUE_EXPRS(node) && ARREXPRS_EXPRS(GLOBALDEF_VALUE_EXPRS(node))
+        && !GLOBALDEF_INDEX_EXPRS(node)) {
         // single value
         prependInit(
             CCNcopy(GLOBALDEF_ID(node)),
             CCNcopy(EXPRS_EXPR(ARREXPRS_EXPRS(GLOBALDEF_VALUE_EXPRS(node))))
         );
-    } else {
+    } else if (GLOBALDEF_INDEX_EXPRS(node)) {
         // array
         genArrayInit(
             &DATA_INITGLOBALVARS__GET()->init_stmts,

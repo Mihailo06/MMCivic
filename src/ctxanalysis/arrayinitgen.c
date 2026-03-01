@@ -126,9 +126,11 @@ void genArrayInit(
     symtable      *symtab
 ) {
     DBUG_ASSERT(index_exprs, "No index exprs! Is this even an array?");
-    DBUG_ASSERT(arrexprs, "No array exprs! Is this a declaration with no assignment?");
 
-    if (is_splat) {
+    if (!arrexprs) {
+        // array with no initializer, only create empty array
+        genArrinitStmt(out_stmts, target_type, index_exprs, target_id);
+    } else if (is_splat) {
         // splat
         node_st *elem    = EXPRS_EXPR(ARREXPRS_EXPRS(arrexprs));
         node_st *elem_id = genidNode();
