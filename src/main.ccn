@@ -6,6 +6,8 @@ start phase RootPhase {
         ParseCleanup;
         PrimaryNameMangling;
         ContextAnalysis;
+        DimensionReduction;
+        Demo;
         CheckTypes;
         CodegenPhase;
         Cleanup_;
@@ -58,6 +60,17 @@ phase ContextAnalysis {
         traversal CheckArrDims {
             uid = CheckArrDims_,
             nodes = { GlobalDef, VarDec }
+        };
+
+        traversal ExtractIndices {
+            uid = ExtractIndices_,
+            nodes = {
+                Program,
+                GlobalDef
+            },
+            travdata {
+                Declarations decls
+            }
         };
 
         traversal InitGlobalVars {
@@ -116,13 +129,34 @@ phase ContextAnalysis {
                 user symtable_ptr cur_symtab
             }
         };
-        Demo;
 
         traversal CheckIdentifiers {
             uid = CheckIdentifiers_,
             nodes = Scope | WithSymbolReferences,
             travdata {
                 user symtable_ptr current_symtab
+            }
+        };
+    }
+};
+
+phase DimensionReduction {
+    actions {
+        traversal ParamDims {
+            uid = ParamDims_,
+            nodes = Scope | {
+                HeaderParams,
+                ArrExpr,
+                VarLet,
+                GlobalDef,
+                VarDec,
+
+                // for arrinit assign special case
+                Assign
+            },
+            travdata {
+                user symtable_ptr cur_symtab,
+                bool is_arrinit
             }
         };
     }
@@ -201,7 +235,9 @@ phase CodegenPhase {
                 Num,
                 Float,
                 Bool,
-                Ternary
+                Ternary,
+                Arrexpr,
+                ArrInit
             },
             travdata {
                 user codegen_stateptr state,
@@ -269,7 +305,7 @@ enum BinOpType {
 nodeset Declaration = {FunDec, FunDef, GlobalDec, GlobalDef};
 nodeset Stmt = {Assign, ProcedureCall, Conditional, WhileLoop, DoWhileLoop, ForLoop, Return};
 nodeset Expr{
-    nodes = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr, Ternary},
+    nodes = {Num, Float, Bool, Binop, Monop, Var, ProcedureCall, Cast, ArrExpr, Ternary, ArrInit},
 
     attributes {
         BasicType type
@@ -632,5 +668,11 @@ node Ternary {
         Expr cond { constructor },
         Expr then { constructor },
         Expr els { constructor }
+    }
+};
+
+node ArrInit {
+    children {
+        Expr len { constructor }
     }
 };

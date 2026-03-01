@@ -443,6 +443,15 @@ node_st *PRTternary(node_st *node) {
     return node;
 }
 
+node_st *PRTarrinit(node_st *node) {
+    EXPRPOS({
+        printf("arrinit<%s>(", typeName(EXPR_TYPE(node)));
+        TRAVdo(ARRINIT_LEN(node));
+        printf(")");
+    })
+    return node;
+}
+
 #define MK_NOOP_PRINT(nodetype)                            \
     node_st *PRT##nodetype(node_st *node) { return node; }
 

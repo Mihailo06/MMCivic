@@ -2,8 +2,10 @@
 
 #include "ccn/dynamic_core.h"
 #include "ccngen/ast.h"
+#include "ccngen/enum.h"
 #include "ccngen/trav_data.h"
 #include "ctxanalysis/symtable.h"
+#include "palm/dbug.h"
 #include "palm/hash_table.h"
 #include "palm/memory.h"
 #include "palm/str.h"
@@ -19,7 +21,7 @@ void SYMTABLEMANGLINGIDS_init(void) {
 void SYMTABLEMANGLINGIDS_fini(void) { HTdelete(DATA_SYMTABLEMANGLINGIDS__GET()->seen_ids); }
 
 static char *mangle(const char *prev, symtable_entry *ent) {
-    if (strncmp(prev, INTERNAL_IDPREFIX, strlen(INTERNAL_IDPREFIX)) == 0) return STRcpy(prev);
+    if (strncmp(prev, "__", 2) == 0) return STRcpy(prev);
 
     // deterministic symbol names are for noobs.
     return STRfmt("%s#%p", prev, ent);
@@ -46,6 +48,24 @@ node_st *SYMTABLEMANGLINGIDS_fundef(node_st *node) {
     symtable *this_tab = SYMTABLE_SYMTAB(FUNDEF_SYMTABLE(node));
     CUR_SYMTAB         = this_tab;
     OUTER_SYMTAB       = prev;
+
+    // add paramters to seen_ids
+    node_st *header = FUNDEF_FUNHEADER(node);
+    node_st *params;
+    switch (NODE_TYPE(header)) {
+        case NT_VOIDFUNHEADER:  params = VOIDFUNHEADER_PARAMS(header); break;
+        case NT_BASICFUNHEADER: params = BASICFUNHEADER_PARAMS(header); break;
+        default:                DBUG_ASSERT(false, "function header has invalid type"); return node;
+    }
+    for (; params; params = HEADERPARAMS_NEXT(params)) {
+        node_st *param = HEADERPARAMS_PARAM(params);
+        char    *id    = ID_USERID(PARAMETER_ID(param));
+        HTinsert(DATA_SYMTABLEMANGLINGIDS__GET()->seen_ids, id, id);
+        for (node_st *indices = PARAMETER_PARAMID(param); indices; indices = IDS_NEXT(indices)) {
+            id = ID_USERID(IDS_ID(indices));
+            HTinsert(DATA_SYMTABLEMANGLINGIDS__GET()->seen_ids, id, id);
+        }
+    }
 
     // Right-hand side of declarations.
     // This is tricky because we have to check if this function already declared a variable on the
@@ -89,10 +109,24 @@ node_st *SYMTABLEMANGLINGIDS_program(node_st *node) {
 }
 
 node_st *SYMTABLEMANGLINGTABS_symtable(node_st *node) {
+    // mangle entry array indices
+    for (htable_iter_st *iter = symtable_iterate(SYMTABLE_SYMTAB(node)); iter;
+         iter                 = HTiterateNext(iter)) {
+        symtable_entry *ent = HTiterValue(iter);
+        if (ent->idxexprs) {
+            TRAVpush(TRAV_SYMTABLEMANGLINGIDS_);
+            CUR_SYMTAB    = SYMTABLE_SYMTAB(node);
+            OUTER_SYMTAB  = NULL;
+            ent->idxexprs = TRAVdo(ent->idxexprs);
+            TRAVpop();
+        }
+    }
+
     htable_st *new = HTnew_String(11);
     for (htable_iter_st *iter = symtable_iterate(SYMTABLE_SYMTAB(node)); iter;
          iter                 = HTiterateNext(iter)) {
         char *new_key = mangle(HTiterKey(iter), HTiterValue(iter));
+
         HTinsert(new, new_key, HTiterValue(iter));
         MEMfree(HTiterKey(iter));
     }

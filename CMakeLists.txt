@@ -53,9 +53,14 @@ add_executable(civicc
     src/ctxanalysis/symtablemangling.c
     src/ctxanalysis/trav_checkarrdims.c
     src/ctxanalysis/trav_checkidentifiers.c
+    src/ctxanalysis/trav_extractindices.c
     src/ctxanalysis/trav_initglobalvars.c
     src/ctxanalysis/trav_initlocalvars.c
     src/ctxanalysis/trav_initsymtables.c
+
+    # dimension reduction
+    src/dimension_reduction/dimreduce.c
+    src/dimension_reduction/trav_paramdims.c
 
     # type checking
     src/checktypes/trav_typecheckexpr.c

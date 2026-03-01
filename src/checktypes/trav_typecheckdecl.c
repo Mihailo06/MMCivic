@@ -73,3 +73,5 @@ EXPR_TRAV(procedurecall)
 EXPR_TRAV(cast)
 EXPR_TRAV(arrexpr)
 EXPR_TRAV(ternary)
+
+node_st *TYPECHECKDECL_arrinit(node_st *node) { return node; }
