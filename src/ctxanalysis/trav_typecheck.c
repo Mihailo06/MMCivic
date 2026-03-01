@@ -143,7 +143,7 @@ void TYPECHECK_fini(void) {
     free_all_terms();
     if(DATA_TYPECHECK__GET()->typable == false)
     {
-        printf("TYPE ERROR FOUND SOMEWHERE");
+        // printf("TYPE ERROR FOUND SOMEWHERE");
         CCNerrorAction();
     }
 }
