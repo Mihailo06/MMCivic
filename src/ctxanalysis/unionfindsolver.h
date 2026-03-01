@@ -45,8 +45,8 @@ typedef struct {
     term  *ret;    // return type
 } function_type;
 
-void uf_unify(term *x, term *y, htable_st *parent);
+bool uf_unify(term *x, term *y, htable_st *parent);
 
-void forbid_bool(term *t, htable_st *parent);
+bool forbid_bool(term *t, htable_st *parent);
 
 term *uf_find(term *x, htable_st *parent);
