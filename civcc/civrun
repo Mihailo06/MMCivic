@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-"$DIR/civcc" -o _tmp.s "$*" &&
-"$DIR/civas" -o _tmp.out _tmp.s &&
-"$DIR/civvm" _tmp.out
-ret_val=$?
-rm -f _tmp.s _tmp.out
-exit $ret_val
