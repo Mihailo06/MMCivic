@@ -7,6 +7,11 @@ extern float scanFloat( );
 extern void printSpaces( int num);
 extern void printNewlines( int num);
 
+export int main() {
+    fun();
+    bar();
+    return 0;
+}
 int foo(int a, float b,int c)
 {
     return a+(int)b+c;
@@ -47,8 +52,3 @@ void bar() {
     printNewlines(1);
 }
 
-export int main() {
-    fun();
-    bar();
-    return 0;
-}
