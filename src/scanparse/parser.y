@@ -388,6 +388,7 @@ stmt: assign
 assign: varlet LET expr SEMICOLON
         {
           $$ = ASTassign($1, $3);
+          AddLocToNode($$, &@1, &@1);
         }
         ;
 
@@ -401,6 +402,7 @@ procedurecall: ID BRACKET_L procedurecalltail
 procedurecalltail: expr exprs BRACKET_R SEMICOLON
                    {
                      $$ = ASTexprs($1, $2);
+                     AddLocToNode($$, &@1, &@1);
                    }
                  | BRACKET_R SEMICOLON
                    {
@@ -411,31 +413,36 @@ procedurecalltail: expr exprs BRACKET_R SEMICOLON
 conditional: IF BRACKET_L expr BRACKET_R block %prec IFF
              {
                $$ = ASTconditional($3, $5, NULL);
+               AddLocToNode($$, &@1, &@1);
              }
              ;
 
 conditionalelse: IF BRACKET_L expr BRACKET_R block ELSE block
              {
                $$ = ASTconditional($3, $5, $7);
+               AddLocToNode($$, &@1, &@1);
              }
              ;
 
 whileloop: WHILE BRACKET_L expr BRACKET_R block
            {
              $$ = ASTwhileloop($3, $5);
+             AddLocToNode($$, &@1, &@1);
            }
            ;
 
 dowhileloop: DO block WHILE BRACKET_L expr BRACKET_R SEMICOLON
              {
                $$ = ASTdowhileloop($2, $5);
+               AddLocToNode($$, &@1, &@1);
              }
              ;
 
 forloop: FOR BRACKET_L INT_TYPE ID LET expr COMMA forloopincs BRACKET_R block
          {
            $$ = ASTforloop($6, $8, current_forloop_inc_expr, $10, ASTid(NULL, $4));
-                      current_forloop_inc_expr = NULL;
+           current_forloop_inc_expr = NULL;
+           AddLocToNode($$, &@1, &@1);
          }
          ;
 
@@ -445,7 +452,7 @@ forloopincs: expr
              }
            | expr COMMA expr
              {
-              current_forloop_inc_expr = $3;
+               current_forloop_inc_expr = $3;
                $$ = $1;
              }
              ;
@@ -453,6 +460,7 @@ forloopincs: expr
 return: RETURN returnprime
         {
           $$ = ASTreturn($2);
+          AddLocToNode($$, &@1, &@1);
         }
         ;
 
@@ -480,7 +488,8 @@ varlet: ID
 
 exprs: exprs COMMA expr
        {
-         $$ = reverse_exprs(ASTexprs($3, $1));
+         $$ = ASTexprs($3, $1);
+         AddLocToNode($$, &@1, &@1);
        }
      |
        {
@@ -608,6 +617,7 @@ exprunary: MINUS exprunary
          | BRACKET_L basictype BRACKET_R exprunary
            {
              $$ = ASTcast($4, $2);
+             AddLocToNode($$, &@1, &@1);
            }
          | exprprime
            {
@@ -626,16 +636,22 @@ exprprime: BRACKET_L expr BRACKET_R
            }
          | ID BRACKET_L expr exprs BRACKET_R
            {
-             $$ = ASTprocedurecall(ASTexprs($3, $4), ASTid(NULL, $1));
+             node_st *exprs = ASTexprs($3, $4);
+             AddLocToNode(exprs, &@1, &@1);
+             node_st *id = ASTid(NULL, $1);
+             AddLocToNode(id, &@1, &@1);
+             $$ = ASTprocedurecall(exprs, id);
              AddLocToNode($$, &@1, &@1);
            }
          | ID SQUARE_BRACKET_L expr exprs SQUARE_BRACKET_R
            {
              $$ = ASTarrexpr(ASTexprs($3, $4), ASTid(NULL, $1));
+             AddLocToNode($$, &@1, &@1);
            }
          | ID
            {
              $$ = ASTvar(NULL, ASTid(NULL, $1));
+             AddLocToNode($$, &@1, &@1);
            }
          | constant
            {
@@ -646,10 +662,12 @@ exprprime: BRACKET_L expr BRACKET_R
 block: CURLY_BRACKET_L stmts CURLY_BRACKET_R
        {
          $$ = ASTblock($2);
+         AddLocToNode($$, &@1, &@1);
        }
      | stmt
        {
          $$ = ASTblock(ASTstmts($1, NULL));
+         AddLocToNode($$, &@1, &@1);
        }
        ;
 
@@ -670,22 +688,26 @@ constant: floatval
 floatval: FLOAT
            {
              $$ = ASTfloat($1);
+             AddLocToNode($$, &@1, &@1);
            }
            ;
 
 intval: NUM
         {
           $$ = ASTnum($1);
+          AddLocToNode($$, &@1, &@1);
         }
         ;
 
 boolval: TRUEVAL
          {
            $$ = ASTbool(true);
+           AddLocToNode($$, &@1, &@1);
          }
        | FALSEVAL
          {
            $$ = ASTbool(false);
+           AddLocToNode($$, &@1, &@1);
          }
          ;
 

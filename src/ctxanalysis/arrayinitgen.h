@@ -12,7 +12,6 @@
  * @param target_id :: Id - Identifier of the array to initialize
  * @param index_exprs :: Exprs - Index exprs of the array definition.
  * @param arrexprs :: ArrExprs - Initializer of the array
- * @param update_indices If set, updates `index_exprs` to include intermediate identifiers.
  * @param is_splat If set, this is an initialization of all elements of an array to one scalar
  *                 value. Caller asserts that arrexprs has the appropriate form.
  * @param symtable If set, add newly created symbols to the symbol table.
@@ -24,7 +23,6 @@ void genArrayInit(
     enum BasicType target_type,
     node_st       *index_exprs,
     node_st       *arrexprs,
-    bool           update_indices,
     bool           is_splat,
     symtable      *symtab
 );

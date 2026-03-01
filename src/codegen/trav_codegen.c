@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "bytevec.h"
 #include "ccn/dynamic_core.h"
@@ -26,10 +27,29 @@ static char *genLabel(const char *hint) {
     return STRfmt("mmcivicc_gen%zu_%s", labelidx++, hint);
 }
 
+static const char *entryTypeName(symtable_entry *ent) {
+    if (ent->kind != SYMTABLE_ENTRY_KIND_FUNCTION && ent->idxexprs) {
+        switch (ent->type & TYPE_TYPMASK) {
+            case BT_NULL:  return "void[]"; // wtf?
+            case BT_bool:  return "bool[]";
+            case BT_int:   return "int[]";
+            case BT_float: return "float[]";
+        }
+    } else {
+        switch (ent->type & TYPE_TYPMASK) {
+            case BT_NULL:  return "void";
+            case BT_bool:  return "bool";
+            case BT_int:   return "int";
+            case BT_float: return "float";
+        }
+    }
+    return NULL; // unreachable
+}
+
 static void appendFuncSignature(bytevec *bv, symtable_entry *ent) {
     DBUG_ASSERT(ent->kind == SYMTABLE_ENTRY_KIND_FUNCTION, "can't append signature of variable");
 
-    bv_strappend(bv, typeName(ent->type));
+    bv_strappend(bv, entryTypeName(ent));
 
     for (size_t i = 0; i < ent->arity; i++) {
         bv_push(bv, ' ');
@@ -38,7 +58,8 @@ static void appendFuncSignature(bytevec *bv, symtable_entry *ent) {
 }
 
 static const char *typePrefix(enum BasicType type) {
-    switch (type) {
+    if (type & TYPE_ISARR_BIT) return "a";
+    switch (type & TYPE_TYPMASK) {
         case BT_NULL:  return "";
         case BT_bool:  return "b";
         case BT_int:   return "i";
@@ -78,7 +99,14 @@ static void nextFunction(
     for (node_st *params = headerparams; params; params = HEADERPARAMS_NEXT(params)) {
         node_st        *param = HEADERPARAMS_PARAM(params);
         symtable_entry *ent   = symtable_lookup(symtab, ID_LOGICAL(PARAMETER_ID(param)), NULL);
-        argtypes[ent->codegen_index = i++] = PARAMETER_TYPE(param);
+        DBUG_ASSERTF(
+            ent->codegen_index == i,
+            "parameter codegen index mismatch for %s: want: %s, have: %s",
+            ID_LOGICAL(PARAMETER_ID(param)),
+            ent->codegen_index,
+            i
+        );
+        argtypes[i++] = PARAMETER_TYPE(param);
     }
 
     codegen_func *func = MEMmalloc(sizeof(codegen_func));
@@ -89,18 +117,8 @@ static void nextFunction(
     func->arity        = arity;
     func->return_type  = return_type;
     func->symtab       = symtab;
+    func->n_locals     = symtable_elemcount(symtab) - i;
 
-    i = arity; // indices of locals start where arguments end
-    for (htable_iter_st *iter = symtable_iterate(symtab); iter; iter = HTiterateNext(iter)) {
-        symtable_entry *ent = HTiterValue(iter);
-        DBUG_ASSERT(
-            ent->linkage == SYMTABLE_ENTRY_LINKAGE_LOCAL,
-            "found non-local in function symtable"
-        );
-        if (ent->kind != SYMTABLE_ENTRY_KIND_VARIABLE || ent->is_param) continue;
-        ent->codegen_index = i++;
-    }
-    func->n_locals   = i - arity;
     STATE->functions = func;
 }
 
@@ -147,22 +165,24 @@ node_st *CODEGEN_program(node_st *node) {
                     case SYMTABLE_ENTRY_LINKAGE_EXPORT:
                         bv_printf(
                             &STATE->header,
-                            ".exportvar \"%s\" %zu\n",
+                            ".exportvar \"%s\" %zu ;; %s\n",
                             ent->user_id,
-                            global_i
+                            global_i,
+                            name
                         );
                         __attribute__((fallthrough));
                     case SYMTABLE_ENTRY_LINKAGE_INTERNAL:
-                        bv_printf(&STATE->header, ".global %s\n", typeName(ent->type));
+                        bv_printf(&STATE->header, ".global %s ;; %s\n", entryTypeName(ent), name);
                         ent->codegen_index = global_i++;
                         break;
 
                     case SYMTABLE_ENTRY_LINKAGE_EXTERN:
                         bv_printf(
                             &STATE->header,
-                            ".importvar \"%s\" %s\n",
+                            ".importvar \"%s\" %s ;; %s\n",
                             ent->user_id,
-                            typeName(ent->type)
+                            entryTypeName(ent),
+                            name
                         );
                         ent->codegen_index = importvar_i++;
                         break;
@@ -251,16 +271,55 @@ node_st *CODEGEN_basicfunheader(node_st *node) {
 }
 
 ////////// STATEMENTS //////////
+static void codegenLoadArrayRef(char *id, symtable_entry *ent, unsigned int up) {
+    codegen_func *func = STATE->functions;
+    DBUG_ASSERT(ent->idxexprs, "attempt to codegen aload for non-array");
 
-// TODO: arrays
-node_st *CODEGEN_assign(node_st *node) {
+    switch (ent->linkage) {
+        case SYMTABLE_ENTRY_LINKAGE_LOCAL: { // local array
+            if (up == 0) {
+                bv_printf(
+                    &func->content,
+                    CODEGEN_INDENT "aload %zu ;; <- %s\n",
+                    ent->codegen_index,
+                    id
+                );
+            } else {
+                bv_printf(
+                    &func->content,
+                    CODEGEN_INDENT "aloadn %u %zu ;; <- %s\n",
+                    up,
+                    ent->codegen_index,
+                    id
+                );
+            }
+        } break;
+        case SYMTABLE_ENTRY_LINKAGE_EXPORT:
+        case SYMTABLE_ENTRY_LINKAGE_INTERNAL: { // our global array
+            bv_printf(
+                &func->content,
+                CODEGEN_INDENT "aloadg %zu ;; <- %s\n",
+                ent->codegen_index,
+                id
+            );
+        } break;
+        case SYMTABLE_ENTRY_LINKAGE_EXTERN: { // someone else's global array
+            bv_printf(
+                &func->content,
+                CODEGEN_INDENT "aloade %zu ;; <- %s\n",
+                ent->codegen_index,
+                id
+            );
+        } break;
+    }
+}
+
+static void codegenSimpleAssign(node_st *node, symtable_entry *ent, unsigned int up) {
+    codegen_func *func = STATE->functions;
+    char         *id   = ID_LOGICAL(VARLET_ID(ASSIGN_LET(node)));
+
     // push right side onto stack
     TRAVdo(ASSIGN_EXPR(node));
-
-    char           *id   = ID_LOGICAL(VARLET_ID(ASSIGN_LET(node)));
-    unsigned int    up   = 0;
-    symtable_entry *ent  = symtable_lookup(CUR_SYMTAB, id, &up);
-    codegen_func   *func = STATE->functions;
 
     switch (ent->linkage) {
         case SYMTABLE_ENTRY_LINKAGE_LOCAL: { // function-level variable
@@ -303,6 +362,38 @@ node_st *CODEGEN_assign(node_st *node) {
             );
         } break;
     }
+}
+
+static void codegenArrayAssign(node_st *node, symtable_entry *ent, unsigned int up) {
+    codegen_func *func = STATE->functions;
+    char         *id   = ID_LOGICAL(VARLET_ID(ASSIGN_LET(node)));
+
+    // push value
+    TRAVdo(ASSIGN_EXPR(node));
+
+    // push index
+    DBUG_ASSERT(
+        !EXPRS_NEXT(VARLET_EXPRS(ASSIGN_LET(node))),
+        "multi-dimensional array found during codegen!"
+    );
+    TRAVdo(VARLET_EXPRS(ASSIGN_LET(node)));
+
+    // push array ref
+    codegenLoadArrayRef(id, ent, up);
+
+    bv_printf(&func->content, CODEGEN_INDENT "%sstorea\n", typePrefix(ent->type & TYPE_TYPMASK));
+}
+
+node_st *CODEGEN_assign(node_st *node) {
+    char           *id  = ID_LOGICAL(VARLET_ID(ASSIGN_LET(node)));
+    unsigned int    up  = 0;
+    symtable_entry *ent = symtable_lookup(CUR_SYMTAB, id, &up);
+
+    if (ent->idxexprs && NODE_TYPE(ASSIGN_EXPR(node)) != NT_ARRINIT) {
+        codegenArrayAssign(node, ent, up);
+    } else {
+        codegenSimpleAssign(node, ent, up);
+    }
 
     return node;
 }
@@ -338,15 +429,22 @@ node_st *CODEGEN_procedurecall(node_st *node) {
     size_t arity = 0;
     for (node_st *cur_param = PROCEDURECALL_EXPRS(node); cur_param;
          cur_param          = EXPRS_NEXT(cur_param)) {
-        TRAVdo(EXPRS_EXPR(cur_param));
+        node_st *param = EXPRS_EXPR(cur_param);
+
+        if (NODE_TYPE(param) == NT_VAR) {
+            symtable_entry *param_ent =
+                symtable_lookup(CUR_SYMTAB, ID_LOGICAL(VAR_ID(param)), NULL);
+            for (node_st *idxs = param_ent->idxexprs; idxs; idxs = EXPRS_NEXT(idxs)) {
+                TRAVdo(EXPRS_EXPR(idxs));
+                arity++;
+            }
+        }
+
+        TRAVdo(param);
         arity++;
     }
 
     if (is_extern) {
-        DBUG_ASSERT(
-            arity == ent->arity,
-            "Arity of function in symtable doesn't match actual argument count"
-        );
         bv_printf(&func->content, CODEGEN_INDENT "jsre %zu\n", ent->codegen_index);
     } else {
         char *label = functionLabelName(ID_LOGICAL(PROCEDURECALL_ID(node)));
@@ -667,9 +765,9 @@ node_st *CODEGEN_var(node_st *node) {
                 bv_printf(
                     &func->content,
                     CODEGEN_INDENT "%sloadn %u %zu ;; <- %s\n",
-                    ent->codegen_index,
                     typePrefix(ent->type),
                     up,
+                    ent->codegen_index,
                     id
                 );
             }
@@ -708,10 +806,29 @@ node_st *CODEGEN_ternary(node_st *node) {
     TRAVdo(TERNARY_THEN(node));
     bv_printf(&func->content, CODEGEN_INDENT "jump %s\n%s:\n", endlabel, elselabel);
     TRAVdo(TERNARY_ELS(node));
-    bv_printf(&func->content, CODEGEN_INDENT "%s:\n", endlabel);
+    bv_printf(&func->content, "%s:\n", endlabel);
 
     MEMfree(elselabel);
     MEMfree(endlabel);
+    return node;
+}
+
+node_st *CODEGEN_arrexpr(node_st *node) {
+    codegen_func   *func = STATE->functions;
+    char           *id   = ID_LOGICAL(ARREXPR_ID(node));
+    unsigned int    up   = 0;
+    symtable_entry *ent  = symtable_lookup(CUR_SYMTAB, id, &up);
+
+    DBUG_ASSERT(
+        !EXPRS_NEXT(ARREXPR_INDICES(node)),
+        "multi-dimensional array found during codegen!"
+    );
+    TRAVdo(ARREXPR_INDICES(node));
+
+    codegenLoadArrayRef(id, ent, up);
+
+    bv_printf(&func->content, CODEGEN_INDENT "%sloada\n", typePrefix(ent->type & TYPE_TYPMASK));
+
     return node;
 }
 
@@ -733,6 +850,20 @@ node_st *CODEGEN_bool(node_st *node) {
     char inst_suffix = BOOL_VAL(node) ? 't' : 'f';
 
     bv_printf(&STATE->functions->content, CODEGEN_INDENT "bloadc_%c\n", inst_suffix);
+
+    return node;
+}
+
+node_st *CODEGEN_arrinit(node_st *node) {
+    // push len
+    TRAVdo(ARRINIT_LEN(node));
+
+    // create new array
+    bv_printf(
+        &STATE->functions->content,
+        CODEGEN_INDENT "%snewa\n",
+        typePrefix(EXPR_TYPE(node) & TYPE_TYPMASK)
+    );
 
     return node;
 }

@@ -20,6 +20,7 @@ static char *mangle(uint32_t loopidx, const char *id) { return STRfmt("for%u@%s"
 
 node_st *MANGLEFORLOOPNAMES_id(node_st *node) {
     DBUG_ASSERT(ID_LOGICAL(node), "ID should have logical during mangleforloopnames");
+
     uint32_t loopidx = UINT32_MAX;
     for (struct flmangle_idstack *idxs = DATA_MANGLEFORLOOPNAMES__GET()->idxids; idxs;
          idxs                          = idxs->up) {
@@ -30,7 +31,8 @@ node_st *MANGLEFORLOOPNAMES_id(node_st *node) {
     }
     if (loopidx == UINT32_MAX) return node;
 
-    char *newid = mangle(loopidx, ID_LOGICAL(node));MEMfree(ID_LOGICAL(node));
+    char *newid = mangle(loopidx, ID_LOGICAL(node));
+    MEMfree(ID_LOGICAL(node));
     ID_LOGICAL(node) = newid;
     return node;
 }
@@ -51,5 +53,6 @@ node_st *MANGLEFORLOOPNAMES_forloop(node_st *node) {
 
     struct flmangle_idstack *prev_idxs = DATA_MANGLEFORLOOPNAMES__GET()->idxids->up;
     MEMfree(DATA_MANGLEFORLOOPNAMES__GET()->idxids);
-    DATA_MANGLEFORLOOPNAMES__GET()->idxids = prev_idxs;return node;
+    DATA_MANGLEFORLOOPNAMES__GET()->idxids = prev_idxs;
+    return node;
 }
