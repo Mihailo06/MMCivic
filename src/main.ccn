@@ -107,7 +107,8 @@ phase ContextAnalysis {
             travdata {
                 user htable_stptr solver,
                 user htable_stptr parent,
-                user htable_stptr ids
+                user htable_stptr ids,
+                bool typable
             }
         };
 

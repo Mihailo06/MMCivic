@@ -175,7 +175,7 @@ term *uf_find(term *x, htable_st *parent) {
     return x;
 }
 
-void uf_unify(term *t1, term *t2, htable_st *parent) {
+bool uf_unify(term *t1, term *t2, htable_st *parent) {
     printf("Typechecking: new type constraint ");
     printterms(t1, t2);
     uf_makeSet(t1, parent);
@@ -193,7 +193,8 @@ void uf_unify(term *t1, term *t2, htable_st *parent) {
             printf("\n\n TYPE ERROR: ");
             printterms(x, y);
             printf("\n");
-                    CCNerrorAction();
+            return false;
+                    // CCNerrorAction();
             
         } else if (x->type == TERM_FUNCTION && y->type == TERM_FUNCTION) {
             function_type *fun_x = (function_type *) x;
@@ -205,7 +206,8 @@ void uf_unify(term *t1, term *t2, htable_st *parent) {
                     fun_x->size,
                     fun_y->size
                 );
-                        CCNerrorAction();
+                return false;
+                        // CCNerrorAction();
             } else {
                 HTinsert(parent, x, y);
 
@@ -229,6 +231,7 @@ void uf_unify(term *t1, term *t2, htable_st *parent) {
     printf(" = ");
     printterms(x, y);
     printf("\n");
+    return true;
 }
 
 void printterm(term *t) {
@@ -252,11 +255,13 @@ void printterms(term *x, term *y) {
     printterm(y);
 }
 
-void forbid_bool(term *t, htable_st *parent) {
+bool forbid_bool(term *t, htable_st *parent) {
     t = uf_find(t, parent);
 
     if (t->type == TERM_BOOL) {
         printf("\n\nTYPE ERROR: boolean used in arithmetic expression\n\n");
-                CCNerrorAction();
+        return false;
+                // CCNerrorAction();
     }
+    return true;
 }
