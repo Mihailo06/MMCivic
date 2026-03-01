@@ -17,7 +17,7 @@
   ],
   align(center)[
     Mihailo Jovic \
-    Mat. Nr. XXXXXX \
+    Mat. Nr. 211284 \
     B. Sc. Computer Science \
   ],
 )
