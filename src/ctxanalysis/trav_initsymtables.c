@@ -156,6 +156,7 @@ node_st *INITSYMTABLES_voidfunheader(node_st *node) {
         for (node_st *ids = PARAMETER_PARAMID(param); ids; ids = IDS_NEXT(ids)) {
             node_st *id = IDS_ID(ids);
             ent.user_id = STRcpy(ID_USERID(id));
+            if (checkdupSym(id, idId(id))) continue; // error
             symtable_insert(peekSymtab(), idId(id), ent);
         }
     }
