@@ -81,7 +81,8 @@ typedef struct {
     bool is_param;
 
     /**
-     * The USER_ID of the entry.
+     * The USER_ID of the entry, used for extern declarations.  This differs from the user id for
+     * extern array dimensions.
      */
     char *user_id;
 
