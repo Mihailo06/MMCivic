@@ -7,6 +7,7 @@ start phase RootPhase {
         PrimaryNameMangling;
         ContextAnalysis;
         DimensionReduction;
+        TypeChecking;
         Demo;
         CodegenPhase;
         Cleanup_;
@@ -114,15 +115,6 @@ phase ContextAnalysis {
             }
         };
 
-        traversal TypeCheck {
-            uid = TypeCheck_,
-            travdata {
-                user htable_stptr solver,
-                user htable_stptr parent,
-                user htable_stptr ids,
-                bool typable
-            }
-        };
 
         traversal SymtableManglingTabs {
             uid = SymtableManglingTabs_,
@@ -168,6 +160,21 @@ phase DimensionReduction {
                 bool is_arrinit
             }
         };
+    }
+};
+
+phase TypeChecking {
+    actions {
+        traversal TypeCheck {
+            uid = TypeCheck_,
+            travdata {
+                user htable_stptr solver,
+                user htable_stptr parent,
+                user htable_stptr ids,
+                bool typable
+            }
+        };
+        
     }
 };
 
@@ -426,7 +433,8 @@ node Parameter {
         Id id { constructor }
     },
     attributes {
-        BasicType type { constructor }
+        BasicType type { constructor },
+        bool reduced { constructor }
     }
 };
 

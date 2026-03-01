@@ -261,7 +261,7 @@ headerparamstail: headerparams COMMA
 
 parameter: basictype parameterarray
            {
-             $$ = ASTparameter($2, ASTid(NULL, current_id), $1);
+             $$ = ASTparameter($2, ASTid(NULL, current_id), $1, false);
            }
            ;
 

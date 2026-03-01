@@ -251,7 +251,7 @@ void printterm(term *t) {
 
 void printterms(term *x, term *y) {
     printterm(x);
-    printf(" = ");
+    // printf(" = ");
     printterm(y);
 }
 

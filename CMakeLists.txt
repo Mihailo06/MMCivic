@@ -63,8 +63,8 @@ add_executable(civicc
     src/dimension_reduction/trav_paramdims.c
 
     # type checking
-    src/checktypes/trav_typecheckexpr.c
-    src/checktypes/trav_typecheckdecl.c
+    src/ctxanalysis/unionfindsolver.c
+    src/ctxanalysis/trav_typecheck.c
 
     # codegen
     src/codegen/state.c
