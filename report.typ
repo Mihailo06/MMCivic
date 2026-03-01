@@ -178,25 +178,24 @@ does not generally match the declared order of variables in source code.
 == Our Typechecker <typechecker>
 We implemented our typechecker using a union-find (disjoint-set union) data structure, as opposed to
 a naive bare-bones traversal approach, avoiding having to directly compare, check and infer types in
-the traversal. 
-It is based on the Damas-Hindley-Milner type system for the lambda calculus with
+the traversal. It is based on the Damas-Hindley-Milner type system for the lambda calculus with
 parametric polymorphism. One advantage of parametric polymorphism is that type inference and type
-checking can be realised in the same algorithm. 
-We use path compression to flatten the tree and union by rank, which yields practically constant time 
-per operation, due to the type constraints being resolved by unifying the roots via find operations. 
-The type system can be formally described using civics syntax rules, building on this, typing rules are used 
-to define how expressions and types are related. 
-The type checker is complete with respect to its ability to infer even the most
-general type without depending on the programmer for type annotations. 
-This is achieved with type rules, which derive the type constraints from the programs AST. 
-A program is typeable if the derived type rules are satisfied. 
+checking can be realised in the same algorithm. We use path compression to flatten the tree and
+union by rank, which yields practically constant time per operation, due to the type constraints
+being resolved by unifying the roots via find operations. The type system can be formally described
+using CiviC's syntax rules, building on this, typing rules are used to define how expressions and
+types are related. The type checker is complete with respect to its ability to infer even the most
+general type without depending on the programmer for type annotations. This is achieved with type
+rules, which derive the type constraints from the programs AST. A program is typeable if the derived
+type rules are satisfied. 
 
-We believe that our implementation, although using a more advanced algorithm, is more scalable 
-and requires less overall complexity, considering we only have to call the unify function 
-for each type terms in the traversal and leave the actual type checking and inference over to the union-find-solver.
+We believe that our implementation, although using a more advanced algorithm, is more scalable and
+requires less overall complexity, considering we only have to call the unify function for each type
+terms in the traversal and leave the actual type checking and inference over to the
+union-find-solver.
 
 Logically, we made the actual union-find-solver in a seperate file where every typeterm is
-represented by a term struct with the following term types, which server as potential roots.
+represented by a term struct with the following term types, which serve as potential roots.
 
 === Implementation
 #figure(caption: [Term types], ```c
@@ -210,7 +209,7 @@ typedef enum {
 } term_type_t;
 ```)
 
-For our civic language, we require three basic types: `float`, `int`, `bool`, and a `void` type for
+For the CiviC language, we require three basic types: `float`, `int`, `bool`, and a `void` type for
 functions without a return value, a function type to derive function typeterms and a typevar for
 identifiers.
 
@@ -248,37 +247,32 @@ function types, you need to unify the return terms, the parameter array length a
 parameter terms. Which would also for instance allow us to implement generic functions without
 adding much complexity using the parametric polymorphism mentioned inbeforehere.
 
+The Union-Find datastructure uses the following operations to manage a partition of disjoint sets.
 
-Union-Find datastructure uses following operations to manage a partition into disjoint sets.
+/ `makeset`: Creates the set ${x}$ with canonical element $x$.
+/ `find`: Determining the canonical element of the set that also contains $x$.
+/ `union`: Unions the sets that contain $x$ and $y$.
 
-==== makeset
-Creates the set {x} with canonical element x.
-==== find
-Determining the canonical element of the set that also contains x.
-==== union
-Unions the sets that contain x and y.
+To support efficient look-up and storage of type variables in our implementation, three hashtables
+are maintained.
 
+/ `solver` (primary union-find parent map):
+  Maps each type variable node to it's current term. Used in the find operation.
 
-To support efficient look-up and storage of type variables in our implementation, three hashtables are maintained.
+/ `parent` (term map):
+  This is the actual union-find datastructure in which the unified terms are stored.
+  In the function `bool uf_unify(term *t1, term *t2, htable_st *parent)` each term initially gets it's own set, 
+  which is made using the `term *uf_makeSet(term *x, htable_st *parent)` function.
+  Then afterwards we find the canonical elements `x` and `y` using `term *uf_find(term *x, htable_st *parent)`
+  which we then compare (e.g. canonical elements $x="TERM_INT"$, $y="TERM_FLOAT"$ would yield a type
+error because the canonical elements are different). During this process we flatten the parent tree
+by setting the canonical element as the root node to ensure efficiency during the find operation.
 
-==== solver (primary union-find parent map)
-    Maps each type variable node to it's current term. Used in the find operation.
-
-==== parent (term map)
-    This is the actual union-find datastructure in which the unified terms are stored.
-    In the function `bool uf_unify(term *t1, term *t2, htable_st *parent)` each term initially gets it's own set, 
-    which is made using the `term *uf_makeSet(term *x, htable_st *parent)` function.
-    Then afterwards we find the canonical elements x and y using term *uf_find(term *x, htable_st *parent)
-    which we then compare (e.g. canonical elements x=TERM_INT, y=TERM_FLOAT would yield a type error 
-    because the canonical elements are different).
-    During this process we flatten the parent tree by setting the canonical element as the root node
-    to ensure efficiency during the find operation.
-
-==== ids (identifier-to-typevar map)
-    This is a simple and correct way to map identifier strings to their corresponding type variable nodes.
-    Ensures that the same identifier in the same scope always refers to the same type variable.
-    This is possible due to the fact that we mangle each identifier prior to our typechecking traversal.
-
+/ `ids` (identifier-to-typevar map):
+  This is a simple and correct way to map identifier strings to their corresponding type variable
+  nodes. It ensures that the same identifier in the same scope always refers to the same type
+  variable. This is possible due to the fact that we mangle each identifier prior to our
+  typechecking traversal.
 
 #figure(caption: [Code snippet for unify], ```c
 bool uf_unify(term *t1, term *t2, htable_st *parent) {
@@ -294,7 +288,7 @@ bool uf_unify(term *t1, term *t2, htable_st *parent) {
         } else if (y->type == TERM_TYPEVAR) {
             HTinsert(parent, y, x);
         } else if (x->type != y->type) {
-            printf("\n\n TYPE ERROR: ");
+            printf("TYPE ERROR:\n");
             printterms(x, y);
             printf("\n");
             return false;
