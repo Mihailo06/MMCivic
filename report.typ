@@ -1,0 +1,411 @@
+#set page(paper: "a4", numbering: "1")
+#show title: set align(center)
+#set text(font: "DejaVu Sans")
+#set par(justify: true)
+#set heading(numbering: "1.")
+#show heading: set text(size: 12pt)
+
+#title[Compiler Construction Project Report]
+#align(center)[*Winter Term 2025/2026*]
+
+#grid(
+  columns: (1fr, 1fr),
+  align(center)[
+    Moritz Thomae \
+    Mat. Nr. 213295 \
+    B. Sc. Applied Computer Science \
+  ],
+  align(center)[
+    Mihailo Jovic \
+    Mat. Nr. 211284 \
+    B. Sc. Computer Science \
+  ],
+)
+
+#align(center)[*March 1, 2026*]
+
+#outline()
+
+= Introduction
+As part of the Compiler Construction course, we have implemented a fairly standard CiviC compiler we
+have chosen to name _mmcivicc_, using the first letters of our names as a prefix. The compiler
+implements all three extensions (one-dimensional and two-dimensional arrays as well as nested
+functions). We employ a standard Flex/Bison-based parser, which is free of conflicts and has no
+known issues. For typechecking, however, we use an advanced union-find-based algorithm theoretically
+capable of handling possible future extensions such as user-defined types and perhaps even
+polymorphism. This is later covered in @typechecker.
+
+Our compiler passes all test in the public test suite.
+
+= Compiler Features
+== The Name Mangler <name_mangler>
+=== Motivation
+There are several scenarios where we risk name collisions. To generally solve this problem, we have
+implemented a name mangler. The name mangler will transform all identifiers in the code such that
+they are unique. In order to preserve the original name of an identifier as used in-code for use in
+user-facing messages, we have extended our representation of identifiers from a simple string to a
+custom AST node where a _logical_ and _userid_ identifier are saved, the former being the mangled
+identifier used internally and the latter being the original, non-unique identifier.
+#figure(caption: "AST node for identifiers", ```
+node Id {
+    attributes {
+        string logical { constructor },
+        string userid { constructor }
+    }
+}
+```)
+There exist three scenarios where this is relevant. Firstly, since `for`-loops do not have their own
+symbol table, we would run into issues when multiple `for`-loops in one scope use an identical loop
+counter identifier.
+#figure(caption: [Problematic example of `for`-loops with identically named loop variables], ```c
+void foo() {
+    for (int i = 0, 1) {}
+    for (int i = 0, 1) {}
+}
+```)
+Had we not implemented name mangling to use unique identifiers for both instances of `int i`, we
+would have run into a false-positive error where we supposedly would have two variables declared
+with the same name in the same scope.
+
+Secondly, nested functions with identical names, while not causing trouble during context analysis
+would have become a problem with non-unique identifiers during code generation since a non-unique
+function name would have resulted in duplicate label names for the function labels in assembly code.
+#figure(caption: [Problematic example of nested functions with identical names], grid(
+  columns: (1fr, 1fr),
+  ```c
+  void bar() {
+      void foo() {}
+  }
+  ```,
+  ```c
+  void baz() {
+      void foo() {}
+  }
+  ```,
+))
+
+Finally, when a variable is initialized with an expression referencing a variable from outer scope
+with the same identifier, we would transform it into incorrect code in a further compiler pass.
+#figure(
+  caption: [Problematic example of variable initializer referencing identically named outer
+    variable],
+  grid(
+    columns: (2fr, 1fr, 2fr),
+    ```c
+    int x = 42;
+    void foo() {
+        int x = x;
+    }
+    ```,
+    align(horizon, $~>$),
+    ```c
+    int x = 42;
+    void foo() {
+        int x;
+        x = x; // incorrect
+    }
+    ```,
+  ),
+)
+=== Implementation
+Our name mangler is implemented in two passes, one running before and one running after symbol
+tables (discussed in @symtables) are initialized. In the first pass, we address for-loops by
+prefixing all index variables with a running number.
+#figure(
+  caption: [Example of for loop index name mangling],
+  grid(
+    columns: (10fr, 1fr, 10fr),
+    ```c
+    void foo() {
+        for (int i = 0, 42) {
+            for (int i = i, 42) {}
+        }
+    }
+    ```,
+    align(horizon, $~>$),
+    ```c
+    void foo() {
+        for (int for0@i = 0, 42) {
+            for (int for1@i = for0@i, 42) {}
+        }
+    }
+    ```,
+  ),
+)
+
+This is the only step we have to do before symbol table initialization as it is the only case that
+may result in one symbol table potentially containing multiple identical symbols, causing a false
+compile error.
+
+The second pass is done by using the symbol tables which have now been built. Since every unique
+value now has exactly one unique symbol table entry, all we have to do is to incorporate this entry
+into all identifiers. We traverse every identifier, looking up its respective entry from the symbol
+tables and then suffix that identifier with the pointer address (represented in hexadecimal) of the
+symbol table entry, which we know to be unique.
+
+== Symbol Tables <symtables>
+Contrary to common implementations of symbol tables that were covered in the lecture, we have opted
+for a hash map-based data structure to represent symbol tables. This has the consequence that symbol
+table entries have no well-defined order, and also do not contain the name of the symbol which is
+instead used as a key to the map. Each function has a symbol table contains such a map as well as
+pointer to the symbol table of outer scope. Additionally to the per-function symbol tables, there
+also exists a global symbol table which does not have an outer scope pointer since there is no outer
+scope.
+#figure(caption: [Highly simplified pseudocode model of our symbol table data structure], grid(
+  columns: (1fr, 1fr),
+  ```c
+  struct symbol_table {
+      // parent scope for non-global
+      // symbol tables
+      struct symbol_table *parent;
+      string_to_entry_map entries;
+  };
+  ```,
+  ```c
+  struct symbol_table_entry {
+      // function or variable
+      enum EntryKind kind;
+      // variable type or return type
+      enum BasicType type;
+      // argument types for functions
+      enum BasicType *argtypes;
+  };
+  ```,
+))
+Consequently, the order of local variables as allocated on the stack in the emitted assembly code
+does not generally match the declared order of variables in source code.
+
+== Our Typechecker <typechecker>
+We implemented our typechecker using a union-find (disjoint-set union) data structure, as opposed to
+a naive bare-bones traversal approach, avoiding having to directly compare, check and infer types in
+the traversal. It is based on the Damas-Hindley-Milner type system for the lambda calculus with
+parametric polymorphism. One advantage of parametric polymorphism is that type inference and type
+checking can be realised in the same algorithm. We use path compression to flatten the tree and
+union by rank, which yields practically constant time per operation, due to the type constraints
+being resolved by unifying the roots via find operations. The type system can be formally described
+using CiviC's syntax rules, building on this, typing rules are used to define how expressions and
+types are related. The type checker is complete with respect to its ability to infer even the most
+general type without depending on the programmer for type annotations. This is achieved with type
+rules, which derive the type constraints from the programs AST. A program is typeable if the derived
+type rules are satisfied. 
+
+We believe that our implementation, although using a more advanced algorithm, is more scalable and
+requires less overall complexity, considering we only have to call the unify function for each type
+terms in the traversal and leave the actual type checking and inference over to the
+union-find-solver.
+
+Logically, we made the actual union-find-solver in a seperate file where every typeterm is
+represented by a term struct with the following term types, which serve as potential roots.
+
+=== Implementation
+#figure(caption: [Term types], ```c
+typedef enum {
+    TERM_TYPEVAR,
+    TERM_INT,
+    TERM_FLOAT,
+    TERM_BOOL,
+    TERM_VOID,
+    TERM_FUNCTION
+} term_type_t;
+```)
+
+For the CiviC language, we require three basic types: `float`, `int`, `bool`, and a `void` type for
+functions without a return value, a function type to derive function typeterms and a typevar for
+identifiers.
+
+The typeterms for our implementation are defined as following.
+#figure(
+  caption: [Definition (Typeterms)],
+  $ tau = "int" | "bool" | "float" | "void" | (tau, ..., tau ) → tau | alpha $,
+)
+
+Our union-find-solver contains four static terms for the three basic types and void, for cases where
+type checking/ inference is trivial.
+
+In the following examples we can derive for the `BasicType` attribute that it's a `TYPE_INT`, for
+the right hand side of the assignment that the expression is a `TYPE_FLOAT` and that the `BasicType`
+enum for fun is a `TYPE_VOID`.
+
+#figure(caption: [Example for type deduction], ```c
+int a;
+b = 1.0;
+void fun() {}
+```)
+
+These trivial terms of the first `BasicType` enum will then be used to derive the types of the
+identifier `a` when unifying them, which will initially have a typevar term, to ensure correctness
+when accessing the variable later in the code.
+
+Typevars are special term structs which also store an identifier, which is why it's important that this
+traversal happens after name mangling (discussed in @name_mangler).
+
+Function typeterms also require a new struct, which contains an array of terms for the parameter
+types, the length of the parameter array and the return typeterm. This is required for type checking
+return statements and procedure calls. During a return statement of a function you need to unify the
+return statement with the function return type, along with possible return values. And to unify two
+function types, you need to unify the return terms, the parameter array length and the individual
+parameter terms. Which would also for instance allow us to implement generic functions without
+adding much complexity using the parametric polymorphism mentioned inbeforehere.
+
+The Union-Find datastructure uses the following operations to manage a partition of disjoint sets.
+
+/ `makeset`: Creates the set ${x}$ with canonical element $x$.
+/ `find`: Determining the canonical element of the set that also contains $x$.
+/ `union`: Unions the sets that contain $x$ and $y$.
+
+To support efficient look-up and storage of type variables in our implementation, three hashtables
+are maintained.
+
+/ `solver` (primary union-find parent map):
+  Maps each type variable node to it's current term. Used in the find operation.
+
+/ `parent` (term map):
+  This is the actual union-find datastructure in which the unified terms are stored.
+  In the function `bool uf_unify(term *t1, term *t2, htable_st *parent)` each term initially gets it's own set, 
+  which is made using the `term *uf_makeSet(term *x, htable_st *parent)` function.
+  Then afterwards we find the canonical elements `x` and `y` using `term *uf_find(term *x, htable_st *parent)`
+  which we then compare (e.g. canonical elements $x="TERM_INT"$, $y="TERM_FLOAT"$ would yield a type
+error because the canonical elements are different). During this process we flatten the parent tree
+by setting the canonical element as the root node to ensure efficiency during the find operation.
+
+/ `ids` (identifier-to-typevar map):
+  This is a simple and correct way to map identifier strings to their corresponding type variable
+  nodes. It ensures that the same identifier in the same scope always refers to the same type
+  variable. This is possible due to the fact that we mangle each identifier prior to our
+  typechecking traversal.
+
+#figure(caption: [Code snippet for unify], ```c
+bool uf_unify(term *t1, term *t2, htable_st *parent) {
+    uf_makeSet(t1, parent);
+    uf_makeSet(t2, parent);
+    term *x = uf_find(t1, parent);
+    term *y = uf_find(t2, parent);
+    if (x != y) {
+        if (x->type == TERM_TYPEVAR && y->type == TERM_TYPEVAR) {
+            HTinsert(parent, x, y);
+        } else if (x->type == TERM_TYPEVAR) {
+            HTinsert(parent, x, y);
+        } else if (y->type == TERM_TYPEVAR) {
+            HTinsert(parent, y, x);
+        } else if (x->type != y->type) {
+            printf("TYPE ERROR:\n");
+            printterms(x, y);
+            printf("\n");
+            return false;
+        
+        [...]
+```)
+
+
+== The Code Generation Backend <codegen>
+Instead of directly emitting generated assembly code to a file or `stdout` or representing assembly
+code in a CoCoNut AST, we have instead implemented a custom data structure entirely in C. In this
+data structure, we heavily utilize a custom type named `bytevec`. This custom type is a typical
+implementation of a dynamically-sized array, similar to a `std::vec` in C++ or an `ArrayList` in
+Java with extra utilities for appending strings as well as using `printf`-like API to append
+formatted string content to it. We use the `bytevec` to store the assembly code for function bodies
+and the global header containing pseudo-instructions such as `.global` individually. As a final step
+in code generation, we then piece these snippets together into a full assembly file.
+
+This approach has the advantage that the order of the emitted code does not necessarily have to
+match the order the AST is traversed during code generation. This is utilized in the approach we
+take in constructing our constant table. Our compiler does not construct the constant table
+ahead-of-time, but instead constructs it during code generation, which in turn is done entirely in a
+single pass. Whenever we encounter a constant during code generation, we check if it is already in
+our constant table (which starts empty at the start of code generation) using a linear search. If
+so, we use the index we have found out and are done. If not, we append a new constant to our
+constant table and also emit a `.global` pseudo-instruction to the global header `bytevec`.
+
+== Handling of `for`-loops <forloops>
+We implement `for`-loops by reducing them to `while`-loops, utilizing an intermediate ternary
+operator AST node as in C99.
+#figure(caption: [Example of `for`-loop conversion to `while`-loops], grid(
+  columns: (9fr, 1fr, 20fr),
+  ```c
+  for (int i = 0, 42, 2) {
+      foo(i);
+  }
+  ```,
+  align(horizon, $~>$),
+  ```c
+  int i = 0;
+  int __for_end = 42;
+  int __for_step = 2;
+  while (__for_step > 0 ? i < __for_end : i > __for_end) {
+      foo(i);
+      i = i + __for_step;
+  }
+  ```,
+))
+
+We extract end and step values into local variables such that they are only evaluated once in the
+case of side-effects. Then, we employ a ternary operator in the `while`-loop's condition to ensure
+proper handling of negative step values.
+
+== Handling of short-circuiting boolean operators
+An obvious solution to implement the `||` and `&&` operators would have been conversion to the
+ternary operator we have shown in @forloops. This is not what the compiler actually uses, as we have
+implemented short-circuiting boolean operators before we decided to introduce the ternary operator
+node. Thus, our code generation backend is capable of directly emitting suitable assembly code when
+such a binary operator is encountered, utilizing labels and jumps directly.
+
+#figure(caption: [Example of assembly code emitted for short-circuiting boolean operators],
+  grid(
+    columns: (1fr, 1fr),
+    ```
+        do_left_side
+        branch_f and_f
+        do_right_side
+        jump and_end
+    and_f:
+        bloadc_f
+    and_end:
+    ```,
+    ```
+        do_left_side
+        branch_t or_t
+        do_right_side
+        jump or_end
+    or_t:
+        bloadc_t
+    or_end:
+    ```,
+  )
+)
+Here, we utilize that fact that, given that the left-hand side of the operator evaluated to a value
+such that the right-hand side should be executed, the value of the operator will always be the value
+of the right-hand side for both logical `AND` and `OR` operators.
+
+= What could be improved in CoCoNut?
+One major pain point we had in using CoCoNut was the fact that traversal `uid`s are always
+capitalized when function names are derived from them, as well as the fact that a traversal's `uid`
+cannot be identical to its name.
+#figure(caption: [Invalid traversal where the `uid` equals the name], ```
+traversal Print {
+    uid = Print
+};
+```)
+
+While the documentation for CoCoNut appears to suggest that short abbreviations be used for
+traversal `uid`s, such as "PRT" for "Print", we think that this makes intent unclear as, when
+looking at a function such as `PRTbinop`, it is not immediately obvious what its purpose is if the
+reader does not already know the abbreviation that was chosen.
+
+To mitigate this, we have opted for a convention where the `uid` of a traversal is always the
+traversal's name suffixed with an underscore.
+#figure(caption: [Traversal with a `uid` according to our convention], ```
+traversal Print {
+    uid = Print_
+};
+```)
+This results in function names such as `PRINT_binop` where intent is clear. We would however have
+preferred if the `uid` was not capitalized and perhaps an underscore would have been inserted
+without having to be part of the `uid`, resulting in `Print_binop` instead.
+
+= Summary
+Looking back at our work, we believe that there would have been room for improvement, especially
+regarding time management. A large part of all work including the implementation of entire code
+generation system was done in the short time after the lecture period and before the deadline.
+Furthermore, code quality could have been held to a higher standard. Testing has been largely
+neglected during the development of the parser, context analysis and type checker and was being done
+almost exclusively in the form of small ad-hoc test files that we manually invoked the compiler on.
