@@ -1,6 +1,7 @@
 #include "codegen/state.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include "bytevec.h"
 #include "ctxanalysis/symtable.h"

@@ -9,6 +9,9 @@
     void travid##_init(void) {} \
     void travid##_fini(void) {}
 
+#define TYPE_TYPMASK   0xff
+#define TYPE_ISARR_BIT 1 << 8
+
 struct ctinfo node_ctinfo(node_st *node);
 
 /**
@@ -38,6 +41,6 @@ char *idId(node_st *node);
 void fwrite_all(FILE *f, const char *data, size_t len);
 
 /**
- * The name of a type as in source code.
+ * The name of a type as in source code. Also handles arrays.
  */
 const char *typeName(enum BasicType type);
