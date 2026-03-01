@@ -44,19 +44,27 @@ node_st *SYMTABLEMANGLINGIDS_id(node_st *node) {
 }
 
 node_st *SYMTABLEMANGLINGIDS_fundef(node_st *node) {
-    symtable *prev     = CUR_SYMTAB;
-    symtable *this_tab = SYMTABLE_SYMTAB(FUNDEF_SYMTABLE(node));
-    CUR_SYMTAB         = this_tab;
-    OUTER_SYMTAB       = prev;
-
-    // add paramters to seen_ids
     node_st *header = FUNDEF_FUNHEADER(node);
     node_st *params;
     switch (NODE_TYPE(header)) {
-        case NT_VOIDFUNHEADER:  params = VOIDFUNHEADER_PARAMS(header); break;
-        case NT_BASICFUNHEADER: params = BASICFUNHEADER_PARAMS(header); break;
-        default:                DBUG_ASSERT(false, "function header has invalid type"); return node;
+        case NT_VOIDFUNHEADER:
+            params = VOIDFUNHEADER_PARAMS(header);
+            TRAVdo(VOIDFUNHEADER_ID(header));
+            break;
+        case NT_BASICFUNHEADER:
+            params = BASICFUNHEADER_PARAMS(header);
+            TRAVdo(BASICFUNHEADER_ID(header));
+            break;
+        default: DBUG_ASSERT(false, "function header has invalid type"); return node;
     }
+
+    symtable *prev     = CUR_SYMTAB;
+    symtable *this_tab = SYMTABLE_SYMTAB(FUNDEF_SYMTABLE(node));
+    CUR_SYMTAB         = this_tab;
+    TRAVopt(params);
+    OUTER_SYMTAB = prev;
+
+    // add paramters to seen_ids
     for (; params; params = HEADERPARAMS_NEXT(params)) {
         node_st *param = HEADERPARAMS_PARAM(params);
         char    *id    = ID_USERID(PARAMETER_ID(param));
@@ -86,7 +94,6 @@ node_st *SYMTABLEMANGLINGIDS_fundef(node_st *node) {
         TRAVdo(VARDEC_ID(VARDECS_VARDEC(decs)));
     }
 
-    TRAVdo(FUNDEF_FUNHEADER(node));
     TRAVopt(FUNBODY_LOCALFUNDEFS(FUNDEF_FUNBODY(node)));
     TRAVopt(FUNBODY_STMTS(FUNDEF_FUNBODY(node)));
 

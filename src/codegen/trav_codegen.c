@@ -99,7 +99,14 @@ static void nextFunction(
     for (node_st *params = headerparams; params; params = HEADERPARAMS_NEXT(params)) {
         node_st        *param = HEADERPARAMS_PARAM(params);
         symtable_entry *ent   = symtable_lookup(symtab, ID_LOGICAL(PARAMETER_ID(param)), NULL);
-        argtypes[ent->codegen_index = i++] = PARAMETER_TYPE(param);
+        DBUG_ASSERTF(
+            ent->codegen_index == i,
+            "parameter codegen index mismatch for %s: want: %s, have: %s",
+            ID_LOGICAL(PARAMETER_ID(param)),
+            ent->codegen_index,
+            i
+        );
+        argtypes[i++] = PARAMETER_TYPE(param);
     }
 
     codegen_func *func = MEMmalloc(sizeof(codegen_func));
@@ -110,18 +117,8 @@ static void nextFunction(
     func->arity        = arity;
     func->return_type  = return_type;
     func->symtab       = symtab;
+    func->n_locals     = symtable_elemcount(symtab) - i;
 
-    i = arity; // indices of locals start where arguments end
-    for (htable_iter_st *iter = symtable_iterate(symtab); iter; iter = HTiterateNext(iter)) {
-        symtable_entry *ent = HTiterValue(iter);
-        DBUG_ASSERT(
-            ent->linkage == SYMTABLE_ENTRY_LINKAGE_LOCAL,
-            "found non-local in function symtable"
-        );
-        if (ent->kind != SYMTABLE_ENTRY_KIND_VARIABLE || ent->is_param) continue;
-        ent->codegen_index = i++;
-    }
-    func->n_locals   = i - arity;
     STATE->functions = func;
 }
 
