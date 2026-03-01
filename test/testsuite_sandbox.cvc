@@ -7,11 +7,6 @@ extern float scanFloat( );
 extern void printSpaces( int num);
 extern void printNewlines( int num);
 
-export int main() {
-    fun();
-    bar();
-    return 0;
-}
 int foo(int a, float b,int c)
 {
     return a+(int)b+c;
@@ -27,23 +22,23 @@ int fun()
     float w=1.0;
     float x=2.0;
     //bool q = TRUE;  This is the original line, which has a typo
-    bool q = true;
+    //bool q = true;
 
     d = (int)(a<b&&c>d);
-    printInt(d);//0
-    printNewlines(1);
+    //printInt(d);//0
+    //printNewlines(1);
 
     d = foo((int)(a<c),w+x,(int)(b<d));//4
-    printInt(d);//5
+  /*  printInt(d);//5
     printNewlines(1);
 
 
     if(b<d||a>c)
         a=7;
-
+*/
     return 1;
 }
-
+/*
 void bar() {
     int a = 5;
     float b = 6.0;
@@ -52,3 +47,9 @@ void bar() {
     printNewlines(1);
 }
 
+export int main() {
+    fun();
+    bar();
+    return 0;
+}
+/*

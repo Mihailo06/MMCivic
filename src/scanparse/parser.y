@@ -16,6 +16,7 @@ int yyerror(char *errname);
 extern FILE *yyin;
 void AddLocToNode(node_st *node, void *begin_loc, void *end_loc);
 node_st *reverse_vardecs(node_st *vardecs);
+node_st *reverse_exprs(node_st *list);
 
 char *current_id = NULL;
 node_st *current_forloop_inc_expr = NULL;
@@ -260,7 +261,7 @@ headerparamstail: headerparams COMMA
 
 parameter: basictype parameterarray
            {
-             $$ = ASTparameter($2, ASTid(NULL, current_id), $1);
+             $$ = ASTparameter($2, ASTid(NULL, current_id), $1, false);
            }
            ;
 
@@ -760,6 +761,23 @@ node_st *reverse_vardecs(node_st *list)
     {
         next = VARDECS_NEXT(curr);
         VARDECS_NEXT(curr) = prev;
+        prev = curr;
+        curr = next;
+    }
+
+    return prev;
+}
+
+node_st *reverse_exprs(node_st *list)
+{
+    node_st *prev = NULL;
+    node_st *curr = list;
+    node_st *next;
+
+    while (curr != NULL)
+    {
+        next = EXPRS_NEXT(curr);
+        EXPRS_NEXT(curr) = prev;
         prev = curr;
         curr = next;
     }

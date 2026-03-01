@@ -7,8 +7,8 @@ start phase RootPhase {
         PrimaryNameMangling;
         ContextAnalysis;
         DimensionReduction;
+        TypeChecking;
         Demo;
-        CheckTypes;
         CodegenPhase;
         Cleanup_;
     }
@@ -115,6 +115,7 @@ phase ContextAnalysis {
             }
         };
 
+
         traversal SymtableManglingTabs {
             uid = SymtableManglingTabs_,
             nodes = { Symtable }
@@ -162,30 +163,18 @@ phase DimensionReduction {
     }
 };
 
-phase CheckTypes {
+phase TypeChecking {
     actions {
-        traversal TypeCheckExpr {
-            uid = TypeCheckExpr_,
-            nodes = Scope | Expr | {
-                Conditional, WhileLoop, ForLoop,
-                Return
-            },
+        traversal TypeCheck {
+            uid = TypeCheck_,
             travdata {
-                user symtable_ptr cur_symtab,
-                BasicType return_type
+                user htable_stptr solver,
+                user htable_stptr parent,
+                user htable_stptr ids,
+                bool typable
             }
         };
-
-        traversal TypeCheckDecl {
-            uid = TypeCheckDecl_,
-            nodes = {
-                VarDec,
-                GlobalDef
-            } | Expr,
-            travdata {
-                BasicType cur_type
-            }
-        };
+        
     }
 };
 
@@ -444,7 +433,8 @@ node Parameter {
         Id id { constructor }
     },
     attributes {
-        BasicType type { constructor }
+        BasicType type { constructor },
+        bool reduced { constructor }
     }
 };
 
