@@ -245,7 +245,7 @@ parameter terms. Which would also for instance allow us to implement generic fun
 adding much complexity using the parametric polymorphism mentioned inbeforehere.
 // TODO(mihailo), continue with the union-find method implementations and mention the hashtables we used and problems we faced along with the solutions we used
 
-= The Code Generation Backend <codegen>
+== The Code Generation Backend <codegen>
 Instead of directly emitting generated assembly code to a file or `stdout` or representing assembly
 code in a CoCoNut AST, we have instead implemented a custom data structure entirely in C. In this
 data structure, we heavily utilize a custom type named `bytevec`. This custom type is a typical
@@ -263,6 +263,32 @@ single pass. Whenever we encounter a constant during code generation, we check i
 our constant table (which starts empty at the start of code generation) using a linear search. If
 so, we use the index we have found out and are done. If not, we append a new constant to our
 constant table and also emit a `.global` pseudo-instruction to the global header `bytevec`.
+
+== Handling of `for`-loops
+We implement `for`-loops by reducing them to `while`-loops, utilizing an intermediate ternary
+operator AST node as in C99.
+#figure(caption: [Example of `for`-loop conversion to `while`-loops], grid(
+  columns: (9fr, 1fr, 20fr),
+  ```c
+  for (int i = 0, 42, 2) {
+      foo(i);
+  }
+  ```,
+  align(horizon, $~>$),
+  ```c
+  int i = 0;
+  int __for_end = 42;
+  int __for_step = 2;
+  while (__for_step > 0 ? i < __for_end : i > __for_end) {
+      foo(i);
+      i = i + __for_step;
+  }
+  ```,
+))
+
+We extract end and step values into local variables such that they are only evaluated once in the
+case of side-effects. Then, we employ a ternary operator in the `while`-loop's condition to ensure
+proper handling of negative step values.
 
 = What could be improved in CoCoNut?
 One major pain point we had in using CoCoNut was the fact that traversal `uid`s are always
