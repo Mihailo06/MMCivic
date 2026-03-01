@@ -264,7 +264,7 @@ our constant table (which starts empty at the start of code generation) using a 
 so, we use the index we have found out and are done. If not, we append a new constant to our
 constant table and also emit a `.global` pseudo-instruction to the global header `bytevec`.
 
-== Handling of `for`-loops
+== Handling of `for`-loops <forloops>
 We implement `for`-loops by reducing them to `while`-loops, utilizing an intermediate ternary
 operator AST node as in C99.
 #figure(caption: [Example of `for`-loop conversion to `while`-loops], grid(
@@ -289,6 +289,40 @@ operator AST node as in C99.
 We extract end and step values into local variables such that they are only evaluated once in the
 case of side-effects. Then, we employ a ternary operator in the `while`-loop's condition to ensure
 proper handling of negative step values.
+
+== Handling of short-circuiting boolean operators
+An obvious solution to implement the `||` and `&&` operators would have been conversion to the
+ternary operator we have shown in @forloops. This is not what the compiler actually uses, as we have
+implemented short-circuiting boolean operators before we decided to introduce the ternary operator
+node. Thus, our code generation backend is capable of directly emitting suitable assembly code when
+such a binary operator is encountered, utilizing labels and jumps directly.
+
+#figure(caption: [Example of assembly code emitted for short-circuiting boolean operators],
+  grid(
+    columns: (1fr, 1fr),
+    ```
+        do_left_side
+        branch_f and_f
+        do_right_side
+        jump and_end
+    and_f:
+        bloadc_f
+    and_end:
+    ```,
+    ```
+        do_left_side
+        branch_t or_t
+        do_right_side
+        jump or_end
+    or_t:
+        bloadc_t
+    or_end:
+    ```,
+  )
+)
+Here, we utilize that fact that, given that the left-hand side of the operator evaluated to a value
+such that the right-hand side should be executed, the value of the operator will always be the value
+of the right-hand side for both logical `AND` and `OR` operators.
 
 = What could be improved in CoCoNut?
 One major pain point we had in using CoCoNut was the fact that traversal `uid`s are always
