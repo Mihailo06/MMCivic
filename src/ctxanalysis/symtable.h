@@ -7,6 +7,8 @@
 #include "ccngen/enum.h"
 #include "palm/hash_table.h"
 
+typedef struct ccn_node node_st;
+
 typedef struct symtable symtable;
 
 enum SymtableEntryKind {
@@ -57,6 +59,8 @@ typedef struct {
      * A MEMmalloc'd array of `arity` argument types.
      * This field is only defined if `kind == SYMTABLE_ENTRY_KIND_FUNCTION` it is an error to use
      * it otherwise.
+     *
+     * These may also have additional flag bits, see util.h
      */
     enum BasicType *argtypes;
 
@@ -77,11 +81,16 @@ typedef struct {
     bool is_param;
 
     /**
-     * The USER_ID of the entry.
+     * The USER_ID of the entry, used for extern declarations.  This differs from the user id for
+     * extern array dimensions.
      */
     char *user_id;
 
-    // TODO: array types
+    /**
+     * If this is an array variable, this will be non-null and set to an Exprs node containing the
+     * dimensions of this array.
+     */
+    node_st *idxexprs;
 } symtable_entry;
 
 void            symtable_entry_deinit(symtable_entry ent);

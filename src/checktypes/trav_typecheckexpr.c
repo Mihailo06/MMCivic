@@ -236,11 +236,27 @@ node_st *TYPECHECKEXPR_ternary(node_st *node) {
 node_st *TYPECHECKEXPR_arrexpr(node_st *node) {
     TRAVchildren(node);
     symtable_entry *ent = symtable_lookup(CUR_SYMTAB, ID_LOGICAL(ARREXPR_ID(node)), NULL);
-    EXPR_TYPE(node)     = ent->type;
+    EXPR_TYPE(node)     = ent->type & TYPE_TYPMASK; // strip array flag
 
     for (node_st *exprs = ARREXPR_INDICES(node); exprs; exprs = EXPRS_NEXT(exprs)) {
         // indices need to be ints
         checktype(BT_int, EXPRS_EXPR(exprs));
+    }
+
+    return node;
+}
+
+node_st *TYPECHECKEXPR_arrinit(node_st *node) {
+    DBUG_ASSERT(EXPR_TYPE(node), "found arrinit node with no type set");
+    TRAVchildren(node);
+    if (EXPR_TYPE(ARRINIT_LEN(node)) != BT_int) {
+        CTIobj(
+            CTI_ERROR,
+            true,
+            node_ctinfo(node),
+            "attempt to initialize array with non-integer length\n"
+        );
+        CCNerrorAction();
     }
 
     return node;

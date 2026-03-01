@@ -1,3 +1,6 @@
+extern void printNewlines(int n);
+extern void printSpaces(int n);
+extern void printInt(int n);
 
 export void printIntVec(int[n] vec)
 {

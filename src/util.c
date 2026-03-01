@@ -48,11 +48,20 @@ void fwrite_all(FILE *f, const char *data, size_t len) {
 }
 
 const char *typeName(enum BasicType type) {
-    switch (type) {
-        case BT_NULL:  return "void";
-        case BT_bool:  return "bool";
-        case BT_int:   return "int";
-        case BT_float: return "float";
+    if (type & TYPE_ISARR_BIT) {
+        switch (type & TYPE_TYPMASK) {
+            case BT_NULL:  return "void[]"; // wtf?
+            case BT_bool:  return "bool[]";
+            case BT_int:   return "int[]";
+            case BT_float: return "float[]";
+        }
+    } else {
+        switch (type & TYPE_TYPMASK) {
+            case BT_NULL:  return "void";
+            case BT_bool:  return "bool";
+            case BT_int:   return "int";
+            case BT_float: return "float";
+        }
     }
     return NULL; // unreachable
 }
